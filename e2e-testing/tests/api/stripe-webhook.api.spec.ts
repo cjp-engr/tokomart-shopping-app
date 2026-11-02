@@ -1,5 +1,5 @@
-// TC coverage: TC-229 / TC-STRIPE-WH-01 (webhook with an invalid signature → 400),
-//              TC-295 / TC-193 / TC-STRIPE-WH-02 (card order without a payment intent)
+// TC coverage: TC-229 (webhook with an invalid signature → 400),
+//              TC-295 / TC-193 (card order without a payment intent)
 //
 // The full webhook flow (signed events) is covered by the backend integration tests and tested
 // manually with `stripe listen` during development.
@@ -15,8 +15,8 @@ const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1556821840-3a63f956
 // The backend will reject the signature — we test the 400 path.
 
 test(
-  'TC-STRIPE-WH-01: webhook with invalid signature returns 400',
-  { tag: ['@TC-229', '@TC-STRIPE-WH-01', '@api', '@stripe', '@webhook'] },
+  'TC-229: webhook with invalid signature returns 400',
+  { tag: ['@TC-229', '@api', '@stripe', '@webhook'] },
   async ({ request }) => {
     const response = await request.post(`${API_URL}/api/payments/webhook`, {
       headers: {
@@ -32,8 +32,8 @@ test(
 );
 
 test(
-  'TC-STRIPE-WH-02: a card order without a payment intent is refused under manual_capture and unverified under legacy',
-  { tag: ['@TC-295', '@TC-193', '@TC-STRIPE-WH-02', '@api', '@stripe', '@orders'] },
+  'TC-295: a card order without a payment intent is refused under manual_capture and unverified under legacy',
+  { tag: ['@TC-295', '@TC-193', '@api', '@stripe', '@orders'] },
   async ({ request }) => {
     let productId: string;
     let sellerToken: string;

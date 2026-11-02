@@ -925,13 +925,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: API
 **Parity**: Both
 **Automation**: Playwright-API
-**Automation status**: Needs review
-**Script mapping**: Unverified
-**Latest result**: Not recorded
-**Last run**: Not recorded
-**Run evidence**: Not recorded
-**Run baseline**: Not recorded
-**Test File**: Unmapped
+**Automation status**: In progress (the spec covers credit-card only: steps 1 and 3; step 2, cash on delivery, is not in it)
+**Script mapping**: Verified for steps 1 and 3 (credit-card): test "TC-295: a card order without a payment intent is refused under manual_capture and unverified under legacy" in `e2e-testing/tests/api/stripe-webhook.api.spec.ts`, tagged `@TC-193` (formerly titled `TC-STRIPE-WH-02`)
+**Latest result**: Passed (steps 1 and 3, credit-card)
+**Last run**: 2026-11-02
+**Run evidence**: Local run of `e2e-testing/tests/api/stripe-webhook.api.spec.ts` (2 tests, `npx playwright test --project=api`) against a private backend on port 5057 and database `tokomart_sp_test` on the replica set at 27018, once with `CHECKOUT_FLOW` unset (legacy) and once with `manual_capture`; all passed; the seller account the spec logs in with was created by hand on that database; no report file kept. Under `manual_capture` the test took the 426 branch (`update_required`, `card_order_requires_session`, `/api/checkout/sessions`); under legacy it took the 201 branch
+**Run baseline**: Branch `main` at `7b807c9`, clean working tree
+**Test File**: `e2e-testing/tests/api/stripe-webhook.api.spec.ts`
 **Preconditions**: `CHECKOUT_FLOW=manual_capture`; cart with items
 **Steps**:
 1. `POST /api/orders` with `paymentMethod.type = credit-card` (then `debit-card`)
@@ -1996,19 +1996,22 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: API
 **Parity**: API
 **Automation**: Playwright-API
-**Automation status**: Needs review
-**Script mapping**: Unverified
-**Latest result**: Not recorded
-**Last run**: Not recorded
-**Run evidence**: Not recorded
-**Run baseline**: Not recorded
-**Test File**: Unmapped
+**Automation status**: In progress (step 2, no signature header, is not in the spec)
+**Script mapping**: Verified for step 1: test "TC-229: webhook with invalid signature returns 400" in `e2e-testing/tests/api/stripe-webhook.api.spec.ts`, tagged `@TC-229` (formerly titled `TC-STRIPE-WH-01`)
+**Latest result**: Passed (step 1)
+**Last run**: 2026-11-02
+**Run evidence**: Local run of `e2e-testing/tests/api/stripe-webhook.api.spec.ts` (2 tests, `npx playwright test --project=api`) against a private backend on port 5057 and database `tokomart_sp_test` on the replica set at 27018, once with `CHECKOUT_FLOW` unset (legacy) and once with `manual_capture`; all passed; the seller account the spec logs in with was created by hand on that database; no report file kept
+**Run baseline**: Branch `main` at `7b807c9`, clean working tree
+**Test File**: `e2e-testing/tests/api/stripe-webhook.api.spec.ts`
 **Preconditions**: Webhook secret configured
 **Steps**:
-1. `POST /api/payments/webhook` with a body and no `stripe-signature`, then with a wrong one
+1. `POST /api/payments/webhook` with a JSON body and the header `stripe-signature: invalid_signature`
+2. The same request with no `stripe-signature` header
 
 **Expected Results**:
-- **400** `Invalid signature`; no order or payment state changes
+- (1) and (2) **400** with the body `{ "error": "Invalid signature" }`. The webhook uses its own body shape, not the usual `{ success, message }` envelope (see TC-297)
+- The handler returns before it writes the event inbox or touches an order, so no state changes (read from `paymentController.ts`; the spec does not assert it)
+- Step 2 was checked by hand on 2026-11-02 (400 and the same body); the spec asserts step 1 only. A valid signature is covered by the integration suite (TC-230)
 **Business Rule**: Authorize-capture §Recovery and Stripe events
 **Selectors/API**: `POST /api/payments/webhook`
 **Suggested Layer**: API
@@ -3951,12 +3954,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: API
 **Parity**: Both (extends TC-193)
 **Automation**: Playwright-API
-**Automation status**: Needs review
-**Script mapping**: Unverified
-**Latest result**: Not recorded
-**Last run**: Not recorded
-**Run evidence**: Not recorded
-**Run baseline**: Not recorded
+**Automation status**: In progress (the spec sends credit-card only; debit-card is not in it)
+**Script mapping**: Verified for credit-card: test "TC-295: a card order without a payment intent is refused under manual_capture and unverified under legacy" in `e2e-testing/tests/api/stripe-webhook.api.spec.ts`, tagged `@TC-295` (formerly titled `TC-STRIPE-WH-02`)
+**Latest result**: Passed (credit-card, both flows)
+**Last run**: 2026-11-02
+**Run evidence**: Local run of `e2e-testing/tests/api/stripe-webhook.api.spec.ts` (2 tests, `npx playwright test --project=api`) against a private backend on port 5057 and database `tokomart_sp_test` on the replica set at 27018, once with `CHECKOUT_FLOW` unset (legacy) and once with `manual_capture`; all passed; the seller account the spec logs in with was created by hand on that database; no report file kept. Under `manual_capture` the test took the 426 branch; under legacy it took the 201 branch and adds a `known-gap` annotation
+**Run baseline**: Branch `main` at `7b807c9`, clean working tree
 **Test File**: `e2e-testing/tests/api/stripe-webhook.api.spec.ts`
 **Preconditions**: A real product and a fresh buyer; run once with each `CHECKOUT_FLOW` value
 **Steps**:
