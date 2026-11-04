@@ -2,16 +2,16 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Web scenarios (`test-scenarios-web.md`, 108) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
+**Platform filter:** Web scenarios (`test-scenarios-web.md`, 109) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
 **Updated:** 2026-10-24. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.
 
 ---
 
-## Pyramid (Web scenarios, 108)
+## Pyramid (Web scenarios, 109)
 
 | Layer | Count | Tool |
 |-------|-------|------|
-| E2E Web | 72 | Playwright |
+| E2E Web | 73 | Playwright |
 | Multi (≥ 2 layers) | 17 | Playwright + API / Vitest / integration |
 | Component | 7 | Vitest + RTL |
 | Unit | 7 | Vitest |
@@ -129,7 +129,7 @@
 | TC-062 | Blocked | — | P3 |
 | TC-063 | E2E | Playwright | P2 |
 
-## Added 2026-10-24 — Web scenarios (48)
+## Added 2026-10-24 — Web scenarios (49)
 
 Layers, sources, rationale and existing-coverage candidates for every row are in **`test-strategy.md` §4c–§4d**. Included: scenarios added on 2026-10-24 and older scenarios the strategy had never assigned.
 
@@ -183,6 +183,7 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-169 | Refund is unavailable when the order is not eligible | API | Playwright-API | P1 |
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | P2 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
+| TC-400 | An expired checkout is not resumed and its stored attempt is cleared | E2E | Playwright | P2 |
 
 ## Shared API scenarios (127 added or previously unassigned)
 

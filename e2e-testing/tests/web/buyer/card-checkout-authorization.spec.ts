@@ -1,9 +1,9 @@
-// TC coverage: TC-AUTH-01 — single seller, new card: payment reserved, order pending
-//              TC-AUTH-02 — single seller, saved card: payment reserved, order pending
-//              TC-AUTH-03 — two sellers: each seller's payment reserved, one order per seller
-//              TC-AUTH-04 — declined card: no order, buyer stays on review
-//              TC-AUTH-05 — 3DS cancelled, then resumed from the same session
-//              TC-AUTH-06 — expired session is not resumed
+// TC coverage: TC-143 — single seller, new card: payment reserved, order pending
+//              TC-144 — single seller, saved card: payment reserved, order pending
+//              TC-148 — two sellers: each seller's payment reserved, one order per seller
+//              TC-146 — declined card: no order, buyer stays on review
+//              TC-147 / TC-151 — 3DS cancelled, then resumed from the same session
+//              TC-400 — expired session is not resumed
 //
 // Runs only when the backend and frontend use CHECKOUT_FLOW=manual_capture.
 
@@ -55,7 +55,8 @@ async function addProductsAndOpenCheckout(
 
 /** The challenge frame that currently holds the named button, if Stripe has rendered it. */
 async function findChallengeButton(page: Page, name: RegExp): Promise<{ frame: Frame; button: Locator } | undefined> {
-  const isChallenge = (url: string) => /hooks\.stripe\.com|3d_secure/i.test(url);
+  // The challenge page (FAIL / COMPLETE) and the modal around it (Cancel) are separate Stripe frames
+  const isChallenge = (url: string) => /hooks\.stripe\.com|3d_secure|three-ds-2-challenge/i.test(url);
   for (const frame of page.frames().filter(f => isChallenge(f.url()))) {
     const button = frame.getByRole('button', { name }).first();
     if (await button.count()) return { frame, button };
@@ -64,20 +65,25 @@ async function findChallengeButton(page: Page, name: RegExp): Promise<{ frame: F
 }
 
 /**
- * Stripe's 3D Secure challenge runs in a frame served from Stripe's hosts, not from the checkout page.
- * Several Stripe frames can match the host, so use the one that holds the named button. The button
- * appears in the DOM before Stripe's challenge script binds its handlers, so wait for the frame to load.
+ * Stripe's 3D Secure challenge runs in frames served from Stripe's hosts, not from the checkout page. Click the
+ * named button until `done` reports the result. Stripe draws the buttons before its challenge script (and its bot
+ * check) is ready, and a click in that window is accepted by the browser but silently ignored by Stripe, so one
+ * click is not enough. A fixed wait would be a guess; clicking again until the result shows is not.
  */
-async function challengeButton(page: Page, name: RegExp): Promise<Locator> {
-  const deadline = Date.now() + 60_000;
-  let match = await findChallengeButton(page, name);
-  while (!match) {
-    if (Date.now() > deadline) throw new Error(`Stripe challenge button ${name} did not appear`);
-    await page.waitForTimeout(500);
-    match = await findChallengeButton(page, name);
+async function clickChallengeUntil(page: Page, name: RegExp, done: () => Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    if (await done()) return;
+    const match = await findChallengeButton(page, name);
+    if (match) await match.button.click({ timeout: 5_000 }).catch(() => undefined);
+    // give Stripe a few seconds to react before clicking again
+    const settled = Date.now() + 5_000;
+    while (Date.now() < settled) {
+      if (await done()) return;
+      await page.waitForTimeout(500);
+    }
   }
-  await match.frame.waitForLoadState('load');
-  return match.button;
+  throw new Error(`Clicking the Stripe challenge button ${name} did not lead to the expected result`);
 }
 
 async function openedSessionId(page: Page, userId: string): Promise<string | undefined> {
@@ -87,9 +93,9 @@ async function openedSessionId(page: Page, userId: string): Promise<string | und
   }, checkoutAttemptKey(userId));
 }
 
-test.describe('TC-AUTH: manual-capture card checkout', () => {
-  test('TC-AUTH-01: single seller, new card — payment is reserved and the order is pending',
-    { tag: ['@TC-AUTH-01', '@buyer', '@checkout', '@authorization'] },
+test.describe('Manual-capture card checkout', () => {
+  test('TC-143: single seller, new card — payment is reserved and the order is pending',
+    { tag: ['@TC-143', '@buyer', '@checkout', '@authorization'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       const [productId] = await createProductsFromTwoSellers(request);
 
@@ -124,8 +130,8 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
       });
     });
 
-  test('TC-AUTH-02: single seller, saved card — payment is reserved and the order is pending',
-    { tag: ['@TC-AUTH-02', '@buyer', '@checkout', '@authorization'] },
+  test('TC-144: single seller, saved card — payment is reserved and the order is pending',
+    { tag: ['@TC-144', '@buyer', '@checkout', '@authorization'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       await ensureSavedStripeCard(request);
       const [productId] = await createProductsFromTwoSellers(request);
@@ -146,8 +152,8 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
       });
     });
 
-  test('TC-AUTH-03: two sellers — each payment is reserved and each seller gets its own order',
-    { tag: ['@TC-AUTH-03', '@buyer', '@checkout', '@authorization', '@multi-seller'] },
+  test('TC-148: two sellers — each payment is reserved and each seller gets its own order',
+    { tag: ['@TC-148', '@buyer', '@checkout', '@authorization', '@multi-seller'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       const productIds = await createProductsFromTwoSellers(request);
 
@@ -174,8 +180,8 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
       });
     });
 
-  test('TC-AUTH-04: declined card — no order is placed and the buyer stays on review',
-    { tag: ['@TC-AUTH-04', '@buyer', '@checkout', '@authorization'] },
+  test('TC-146: declined card — no order is placed and the buyer stays on review',
+    { tag: ['@TC-146', '@buyer', '@checkout', '@authorization'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       const [productId] = await createProductsFromTwoSellers(request);
       const ordersBefore = ordersForProducts(await fetchBuyerOrders(request), [productId]).length;
@@ -200,8 +206,8 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
       });
     });
 
-  test('TC-AUTH-05: 3DS cancelled, then resumed from the same session',
-    { tag: ['@TC-AUTH-05', '@buyer', '@checkout', '@authorization', '@resume'] },
+  test('TC-147: 3DS cancelled, then resumed from the same session',
+    { tag: ['@TC-147', '@TC-151', '@buyer', '@checkout', '@authorization', '@resume'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       const [productId] = await createProductsFromTwoSellers(request);
 
@@ -213,9 +219,10 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
         await checkoutPage.continueToReview();
         await checkoutPage.placeOrder();
 
-        // Stripe's test-mode challenge page has a "Fail" choice that cancels the verification.
-        await (await challengeButton(page, /fail/i)).click({ timeout: 60_000 });
-        await expect(checkoutPage.authorizationPanel.getByRole('alert')).toContainText(/verification|not completed/i, { timeout: 60_000 });
+        // Cancel through the modal's own Cancel button, which does not depend on Stripe's test challenge page
+        const alert = checkoutPage.authorizationPanel.getByRole('alert');
+        await clickChallengeUntil(page, /^cancel$/i, async () => (await alert.count()) > 0);
+        await expect(alert).toContainText(/verification|not completed/i, { timeout: 60_000 });
       });
 
       await test.step('The session is kept for resume and no order exists yet', async () => {
@@ -237,15 +244,15 @@ test.describe('TC-AUTH: manual-capture card checkout', () => {
 
       await test.step('Complete verification and place the order', async () => {
         await checkoutPage.placeOrder();
-        await (await challengeButton(page, /complete/i)).click({ timeout: 60_000 });
+        await clickChallengeUntil(page, /complete/i, async () => /\/orders/.test(page.url()));
         await expect(page).toHaveURL(/\/orders/, { timeout: 90_000 });
         const [order] = ordersForProducts(await fetchBuyerOrders(request), [productId]);
         expect(order).toMatchObject({ status: 'pending', paymentStatus: 'authorized' });
       });
     });
 
-  test('TC-AUTH-06: an expired checkout is not resumed and its attempt is cleared',
-    { tag: ['@TC-AUTH-06', '@buyer', '@checkout', '@authorization'] },
+  test('TC-400: an expired checkout is not resumed and its attempt is cleared',
+    { tag: ['@TC-400', '@buyer', '@checkout', '@authorization'] },
     async ({ page, request, productDetailPage, cartPage, checkoutPage }) => {
       const [productId] = await createProductsFromTwoSellers(request);
 

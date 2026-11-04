@@ -107,7 +107,7 @@ Mobile
 ## 7. Other open items from phase 2 (not phase 3)
 
 - Staging: merge and deploy phase 1, run `npm run migrate:check-intents` on staging, run the Playwright suite against staging with `CHECKOUT_FLOW=manual_capture`.
-- Playwright web gate: TC-AUTH-05 (reload path never reaches review) and four product-page `page.goto` timeouts (TC-012, TC-098, TC-105, TC-106) still failing in the last full run.
+- Playwright web gate: four product-page `page.goto` timeouts (TC-012, TC-098, TC-105, TC-106) still failing in the last full run. TC-147 (formerly TC-AUTH-05) was failing too and passes since 2026-11-04 (3 runs in a row): the test now clicks Stripe's 3DS buttons until the result shows.
 - Patrol: Android build blocked by the Gradle loopback error (needs a Windows networking change you approve); M4 3DS flow not written.
 - Open decisions implemented with defaults: buyer cancellation of manual-capture orders (now enabled by ChatGPT's change), seller visibility of manual-capture orders behind `SELLER_SEES_MANUAL_CAPTURE`.
 

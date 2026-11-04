@@ -61,21 +61,21 @@ Uses the `CheckoutPage` page object (`fillStripeCard`) and the test cards in `he
 
 ---
 
-### TC-AUTH-01 … TC-AUTH-06 — `card-checkout-authorization.spec.ts`
+### TC-143, TC-144, TC-146, TC-147, TC-148, TC-400 — `card-checkout-authorization.spec.ts`
 **Manual-capture card checkout (authorize now, capture on fulfilment)**
 
 Runs only when the backend and the web app use `CHECKOUT_FLOW=manual_capture`; otherwise the whole describe is skipped.
 
 | TC | Scenario |
 |----|----------|
-| TC-AUTH-01 | Single seller, new card: payment is reserved and the order is pending |
-| TC-AUTH-02 | Single seller, saved card: payment is reserved and the order is pending |
-| TC-AUTH-03 | Two sellers: each payment is reserved and each seller gets its own order |
-| TC-AUTH-04 | Declined card: no order is placed and the buyer stays on review |
-| TC-AUTH-05 | 3DS challenge cancelled, then resumed from the same checkout session |
-| TC-AUTH-06 | An expired checkout is not resumed and its attempt is cleared |
+| TC-143 | Single seller, new card: payment is reserved and the order is pending (formerly TC-AUTH-01) |
+| TC-144 | Single seller, saved card: payment is reserved and the order is pending (formerly TC-AUTH-02) |
+| TC-148 | Two sellers: each payment is reserved and each seller gets its own order (formerly TC-AUTH-03) |
+| TC-146 | Declined card: no order is placed and the buyer stays on review (formerly TC-AUTH-04) |
+| TC-147 | 3DS challenge cancelled, then resumed from the same checkout session; also tagged TC-151 (formerly TC-AUTH-05) |
+| TC-400 | An expired checkout is not resumed and its attempt is cleared (formerly TC-AUTH-06; a new scenario) |
 
-3DS steps drive Stripe's challenge frame: `challengeButton()` finds the frame that holds the FAIL or COMPLETE button.
+3DS steps drive Stripe's challenge frames: `clickChallengeUntil()` clicks the Cancel or COMPLETE button until the result shows, because Stripe ignores a click made right after the button appears (the buttons are drawn before its challenge script is ready).
 
 ---
 
