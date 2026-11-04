@@ -121,7 +121,7 @@ From `e2e-testing`, with the verification web/API processes already running:
 $env:API_URL='http://127.0.0.1:5001'
 $env:WEB_URL='http://localhost:5173'
 $env:CHECKOUT_FLOW='manual_capture'
-npx playwright test tests/web/buyer/card-checkout-authorization.spec.ts --project=web-buyer --grep 'TC-AUTH-0[123]:' --workers=1
+npx playwright test tests/web/buyer/card-checkout-authorization.spec.ts --project=web-buyer --grep 'TC-(143|144|148):' --workers=1
 $env:LOCAL_PAYMENT_VERIFICATION='true'
 npx playwright test tests/web/buyer/local-payment-settlement.spec.ts --project=web-buyer --workers=1
 ```

@@ -7,13 +7,13 @@
 
 ---
 
-## Pyramid (Buyer, 242 scenarios; 129 added 2026-10-24 to 2026-10-26)
+## Pyramid (Buyer, 243 scenarios; 130 added 2026-10-24 to 2026-10-26)
 
 Role = Buyer or Both across web, mobile and API. Counts are recomputed from the master; the old per-platform split is replaced by one table.
 
 | Layer | Count | Of which added 2026-10-24 |
 |-------|-------|---------------------------|
-| E2E (Playwright + Patrol) | 99 | 10 |
+| E2E (Playwright + Patrol) | 100 | 11 |
 | API | 82 | 69 |
 | Multi (≥ 2 layers) | 30 | 24 |
 | Component / widget | 10 | 10 |
@@ -144,6 +144,7 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-168 | Refund chips and order tabs reflect refund state | Component | Vitest + RTL | P1 |
 | TC-169 | Refund is unavailable when the order is not eligible | API | Playwright-API | P1 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
+| TC-400 | An expired checkout is not resumed and its stored attempt is cleared | E2E | Playwright | P2 |
 | TC-172 | Save a new address at checkout (mobile) | E2E | Patrol | P1 |
 | TC-173 | Edit a saved address (mobile) | E2E | Patrol | P1 |
 | TC-174 | Deleting a saved address asks for confirmation (mobile) | E2E | Patrol | P2 |

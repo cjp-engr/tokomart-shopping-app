@@ -1,6 +1,6 @@
 # TokoMart Test Strategy
 
-> **Input mode:** A — from `docs/test-cases/test-scenarios.md` and its web, mobile and API files (336 scenarios: web 108, mobile 78, API 150)  
+> **Input mode:** A — from `docs/test-cases/test-scenarios.md` and its web, mobile and API files (337 scenarios: web 109, mobile 78, API 150)  
 > **Date:** 2026-08-03; **updated 2026-10-24** (code reviewed on branch `main` at `2251348`; no tests were run for this update)  
 > **Platform scope:** Web (Playwright) + Mobile (Patrol) + API, with unit, integration, component and widget layers
 
@@ -9,7 +9,7 @@
 ## 1. Summary
 
 Test strategy for the **full scenario suite**. The 2026-10-24 update:
-- assigns a layer to the **175 scenarios added for the authorize-at-checkout, cancellation, refund, saved-address and offline features** (TC-137–311, new §4c),
+- assigns a layer to the **176 scenarios added for the authorize-at-checkout, cancellation, refund, saved-address and offline features** (TC-137–311 and TC-400, new §4c),
 - assigns the **23 older scenarios the strategy had never listed** (TC-099–100, TC-102, TC-105–106, TC-123–136, TC-621–624; new §4d),
 - corrects the tooling status (the unit, integration, component and widget layers **now exist**, so most new rules are pushed down to them),
 - adds an **Integration** layer (backend tests against a MongoDB replica set with Stripe mocked), and an automation status map (§10).
@@ -38,7 +38,7 @@ Test strategy for the **full scenario suite**. The 2026-10-24 update:
 
 ## 2. Pyramid distribution
 
-Counts are recomputed from the assignment tables in §4–§4d (336 scenarios, each counted once by its primary layer). Run times were not measured for this update.
+Counts are recomputed from the assignment tables in §4–§4d (337 scenarios, each counted once by its primary layer). Run times were not measured for this update.
 
 | Layer | Count | Focus | Tool |
 |-------|-------|-------|------|
@@ -46,12 +46,12 @@ Counts are recomputed from the assignment tables in §4–§4d (336 scenarios, e
 | Integration | 7 | Acceptance deadline, races, seller-cancel edge shapes, refund eligibility, webhooks, flag off | Vitest, `vitest.integration.config.ts` (replica set, Stripe mocked) |
 | API | 117 | Orders, coupons, auth, reviews, rate limiting, cancellation, refund and checkout-session contracts, isolation | Playwright `request` |
 | Component / widget | 13 | Refund panels, chips, tabs, notices, offline banner, seller dialogs | Vitest + RTL, `flutter_test` |
-| E2E Web | 72 | Auth, cart, checkout, seller wizard, catalog, pagination, saved addresses, Stripe checkout | Playwright `page` |
+| E2E Web | 73 | Auth, cart, checkout, seller wizard, catalog, pagination, saved addresses, Stripe checkout | Playwright `page` |
 | E2E Mobile | 59 | Auth gate, cart checkbox, checkout, 7-step wizard, seller CRUD, new settings screens | Patrol |
 | Multi (≥ 2 layers) | 44 | Web 17 · Mobile 8 · API 19: card authorization, capture, cancellation, refunds, multi-seller | Mixed |
 | Manual / Blocked | 9 | Manual: TC-052, TC-178, TC-189, TC-270, TC-300, TC-604, TC-605 · Blocked: TC-062, TC-603 | — |
 
-*E2E is 131 of 336 scenarios (39%) before counting the E2E legs inside the 44 Multi rows, so the pyramid is still top-heavy. The 175 scenarios added in 2026-10 are better shaped: 10 E2E, 37 Multi, 91 API, 13 Component, 13 Unit, 7 Integration, 4 Manual. The older E2E-heavy block is a candidate for pushing logic down; see §8.*
+*E2E is 132 of 337 scenarios (39%) before counting the E2E legs inside the 44 Multi rows, so the pyramid is still top-heavy. The 176 scenarios added in 2026-10 and 2026-11 are better shaped: 11 E2E, 37 Multi, 91 API, 13 Component, 13 Unit, 7 Integration, 4 Manual. The older E2E-heavy block is a candidate for pushing logic down; see §8.*
 
 ---
 
@@ -227,7 +227,7 @@ Counts are recomputed from the assignment tables in §4–§4d (336 scenarios, e
 > **Existing coverage** lists files that exist in the repo and look relevant by name. They are *candidates*: their assertions were not compared with the scenario and none were run for this update. "Exists (tagged)" means the spec references the `TC-` id. "None" means no matching file was found.
 > **Override** `yes` means the layer differs from the scenario's `Suggested Layer`/`Automation`; the reason is in §6.
 
-### 4c-1. Web (TC-137–171)
+### 4c-1. Web (TC-137–171, TC-400)
 
 | ID | Scenario | Final layer | Tool | Platform | Priority | Source | Rationale | Override | Existing coverage |
 |----|----------|-------------|------|----------|----------|--------|-----------|----------|-------------------|
@@ -237,15 +237,15 @@ Counts are recomputed from the assignment tables in §4–§4d (336 scenarios, e
 | TC-140 | Set a default address; checkout preselects it | Multi | Playwright + Playwright-API | Web | P2 | `PUT /saved-addresses/:id/default`; checkout preselect | One default rule at API; preselect needs the UI |  | None |
 | TC-141 | Delete a saved address (web removes it without a dialog) | E2E | Playwright | Web | P2 | delete control title "Delete address" | Parity record: web has no confirm dialog (mobile TC-174) |  | None |
 | TC-142 | Saved cards on the profile — list, set default, delete | Multi | Playwright + Playwright-API | Web | P1 | `SavedCardsCard`; `/api/auth/payment-methods` | Ownership and default at API (TC-192); list UI at E2E |  | None |
-| TC-143 | Card checkout with a new card reserves the amount without charging | E2E | Playwright (Stripe test mode) | Web | P0 | `card-authorization-panel`, `place-order-btn`; `/api/checkout/sessions` | Core S5 leg; Stripe Elements needs a real browser |  | Candidate: `web/buyer/card-checkout-authorization.spec.ts`, `stripe-checkout.spec.ts` (untagged) |
-| TC-144 | Card checkout with a saved card reserves the amount | E2E | Playwright (Stripe test mode) | Web | P1 | saved-card branch of `Checkout.tsx` | Saved card path differs from new card |  | Candidate: same specs (untagged) |
+| TC-143 | Card checkout with a new card reserves the amount without charging | E2E | Playwright (Stripe test mode) | Web | P0 | `card-authorization-panel`, `place-order-btn`; `/api/checkout/sessions` | Core S5 leg; Stripe Elements needs a real browser |  | Exists (tagged): `web/buyer/card-checkout-authorization.spec.ts` (test TC-143); also candidate: `stripe-checkout.spec.ts` (own id TC-STRIPE-01, untagged) |
+| TC-144 | Card checkout with a saved card reserves the amount | E2E | Playwright (Stripe test mode) | Web | P1 | saved-card branch of `Checkout.tsx` | Saved card path differs from new card |  | Exists (tagged): `web/buyer/card-checkout-authorization.spec.ts` (test TC-144) |
 | TC-145 | Checkout explains the reservation before the buyer pays | Component | Vitest + RTL | Web | P1 | `card-authorization-panel` text | Static copy; assert once in E2E TC-143, not a separate journey | yes | None (no Checkout page test) |
-| TC-146 | Declined card places no order and loses nothing | Multi | Vitest (integration) + Playwright | Web | P0 | `checkoutCompensation.integration.test.ts` | Compensation (release, stock restore) is backend logic; E2E only shows the message |  | Candidate: `checkoutCompensation.integration.test.ts` |
-| TC-147 | 3-D Secure card completes only after authentication | E2E | Playwright (Stripe test mode) | Web | P1 | Stripe 3DS challenge; `/api/checkout/sessions/:id/confirm` | Needs the Stripe challenge iframe |  | None |
-| TC-148 | Multi-seller card checkout holds each seller's amount separately | Multi | Vitest (integration) + Playwright-API + Playwright | Web | P0 | `checkoutAuthorization.integration.test.ts`, `checkoutFinalization.integration.test.ts` | Per-seller intents and all-or-nothing are revenue-critical: integration + API + one E2E |  | Candidate: the two integration files |
+| TC-146 | Declined card places no order and loses nothing | Multi | Vitest (integration) + Playwright | Web | P0 | `checkoutCompensation.integration.test.ts` | Compensation (release, stock restore) is backend logic; E2E only shows the message |  | Exists (tagged, E2E leg): `web/buyer/card-checkout-authorization.spec.ts` (test TC-146); candidate: `checkoutCompensation.integration.test.ts` |
+| TC-147 | 3-D Secure card completes only after authentication | E2E | Playwright (Stripe test mode) | Web | P1 | Stripe 3DS challenge; `/api/checkout/sessions/:id/confirm` | Needs the Stripe challenge iframe |  | Exists (tagged): `web/buyer/card-checkout-authorization.spec.ts` (test TC-147, cancel then resume) |
+| TC-148 | Multi-seller card checkout holds each seller's amount separately | Multi | Vitest (integration) + Playwright-API + Playwright | Web | P0 | `checkoutAuthorization.integration.test.ts`, `checkoutFinalization.integration.test.ts` | Per-seller intents and all-or-nothing are revenue-critical: integration + API + one E2E |  | Exists (tagged, E2E leg): `web/buyer/card-checkout-authorization.spec.ts` (test TC-148); candidate: the two integration files |
 | TC-149 | Buyer order detail shows the payment state accurately | Unit | Vitest | Web | P1 | `utils/orderPayment.ts` `paymentStatusNotice` | Pure mapping from payment state to notice text | yes | Candidate: `utils/orderPayment.test.ts` |
 | TC-150 | Short card authorization window is disclosed | Unit | Vitest | Web | P3 | `hasShortAcceptanceWindow` | Pure date rule; cannot be reproduced by hand | yes | Candidate: `utils/orderPayment.test.ts` (hasShortAcceptanceWindow cases) |
-| TC-151 | Interrupted checkout resumes without a second authorization | Unit | Vitest + Manual | Web | P2 | `utils/checkoutAttempt.ts`, `checkoutSession.ts` | Resume logic is pure; end-to-end interruption stays manual | yes | Candidate: `checkoutAttempt.test.ts`, `checkoutSession.test.ts` |
+| TC-151 | Interrupted checkout resumes without a second authorization | Unit | Vitest + Manual | Web | P2 | `utils/checkoutAttempt.ts`, `checkoutSession.ts` | Resume logic is pure; end-to-end interruption stays manual | yes | Exists (tagged, partly): `web/buyer/card-checkout-authorization.spec.ts` (test TC-147 resumes the same session); candidate: `checkoutAttempt.test.ts`, `checkoutSession.test.ts` |
 | TC-152 | Buyer cancels a pending card order — the hold is released | Multi | Vitest (integration) + Playwright-API + Playwright | Web | P0 | `orderCancellation.integration.test.ts`; `PUT /api/orders/:id/status` | Hold release + stock restore once is revenue-critical: integration + API (TC-205) + one E2E |  | Candidate: `orderCancellation.integration.test.ts` |
 | TC-153 | Buyer cancels a pending COD order | Multi | Vitest (integration) + Playwright | Web | P1 | `orderService.cod.integration.test.ts` | COD cancel shares the atomic claim; E2E shows dialog and result |  | Candidate: `orderService.cod.integration.test.ts` |
 | TC-154 | Cancel is unavailable once the seller accepts; "Keep Order" cancels nothing | Unit | Vitest + Playwright | Web | P1 | `canBuyerCancel` in `orderPayment.ts` | Button visibility is a pure function; keep one E2E for the dialog | yes | Candidate: `utils/orderPayment.test.ts` (canBuyerCancel) |
@@ -266,6 +266,7 @@ Counts are recomputed from the assignment tables in §4–§4d (336 scenarios, e
 | TC-169 | Refund is unavailable when the order is not eligible | API | Playwright-API | Web | P1 | `refund-eligibility` reasons (TC-215, TC-219) | Ineligibility is a server decision; UI text is covered by `refund.test.ts` | yes | Candidate: `refundEligibility.integration.test.ts` |
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | Web | P2 | `RefundRequestReview.tsx` groups and badge | Grouping is component logic | yes | Candidate: `RefundRequestReview.test.tsx` |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | Web | P2 | `OfflineBanner.tsx`, `useOnlineStatus` | Small component; Playwright `setOffline` optional | yes | None |
+| TC-400 | An expired checkout is not resumed and its stored attempt is cleared | E2E | Playwright (Stripe test mode) | Web | P2 | `checkoutAttempt` storage; `Checkout.tsx` resume effect; `GET /api/checkout/sessions/:id` | Edge case of the resume rule in TC-151; the page logic is one small effect, so a Vitest test of it is a candidate | | Exists (tagged): `web/buyer/card-checkout-authorization.spec.ts` (test TC-400) |
 
 ### 4c-2. Mobile (TC-172–189)
 
@@ -588,7 +589,7 @@ Rules or behaviours with no assigned or verified test. "Harness exists" means th
 | `legacy_payment_review` shown to the user | Authorize-capture open items | Component | No client shows a specific message; product gap, not only a test gap |
 | Stripe inbox retries forever (no attempt cap) | Open items §9 | Integration | Decision needed (cap or dead-letter) before a test can assert behaviour |
 | COD buyers are not told about the 24-hour deadline on mobile (web hides it for any non-manual-capture order) | Open items §9 | Component | Decide intended behaviour; TC-179 records it |
-| Test traceability for the Stripe/manual-capture specs | — | — | `card-checkout-authorization.spec.ts`, `stripe-checkout.spec.ts`, `local-payment-settlement.spec.ts`, and the Patrol `manual_capture_*` tests use their own `TC-AUTH-xx` / `TC-STRIPE-xx` ids, which have no scenario entry; `local_payment_settlement_test.dart` and `role-switch.smoke.spec.ts` have none (§10) |
+| Test traceability for the Stripe/manual-capture specs | — | — | `stripe-checkout.spec.ts`, `local-payment-settlement.spec.ts`, and the Patrol `manual_capture_*` tests use their own `TC-AUTH-xx` / `TC-STRIPE-xx` ids, which have no scenario entry; `local_payment_settlement_test.dart` and `role-switch.smoke.spec.ts` have none (§10) |
 | Patrol keys for refund screens, save-address toggle, payment-methods, offline banner | §11 | E2E Mobile | Add `ValueKey`s before any Patrol test for TC-172–175, TC-185–188 |
 
 Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker.
@@ -599,7 +600,7 @@ Closed since the last version: pure 8% tax and pricing math (candidate `checkout
 
 | Issue | Status | Action |
 |-------|--------|--------|
-| E2E is 131 of 336 scenarios (39%), above the share the pyramid allows | **Risk** | Treat the older E2E block as candidates to push down (TC-001–066 validation and display rules); no new logic-only scenario should be E2E |
+| E2E is 132 of 337 scenarios (39%), above the share the pyramid allows | **Risk** | Treat the older E2E block as candidates to push down (TC-001–066 validation and display rules); no new logic-only scenario should be E2E |
 | Money state machines (capture, release, refund, webhooks) tested only through the UI | Avoid | Integration first; one E2E per smoke flow (S5–S7) |
 | Flag-dependent scenarios run without declaring the flag | **Risk** | Every S5–S7 and TC-143–231 run states `CHECKOUT_FLOW`, `SELLER_SEES_MANUAL_CAPTURE`, `DELIVERED_REFUNDS_ENABLED` (see the scenarios master) |
 | Specs whose ids are not in the scenario docs, or that have none | Existing | Map or rename them (§10) so coverage can be traced to scenarios |
@@ -670,7 +671,7 @@ Read-only grep of `TC-` ids in the existing specs. This is a traceability map, n
 
 | File | Own ids | Likely scenarios |
 |------|---------|------------------|
-| web `buyer/card-checkout-authorization.spec.ts` | TC-AUTH-01 to 06 | TC-143, TC-144, TC-146, TC-147 (check) |
+| web `buyer/card-checkout-authorization.spec.ts` | TC-143, TC-144, TC-146, TC-147 (also TC-151), TC-148, TC-400; formerly TC-AUTH-01 to 06, renamed 2026-11-04 to follow the `TC-<NNN>` rule | TC-AUTH-01 was TC-143, 02 was TC-144, 03 was TC-148, 04 was TC-146, 05 was TC-147 and TC-151, 06 had no scenario and is the new TC-400. Run on 2026-11-04 against the running manual-capture stack: all six tests pass, 3 full runs in a row. TC-147 had failed 3 of 3 runs because a click on Stripe's 3DS button made right after it appears is ignored; the test now clicks until the result shows and cancels through the modal's own Cancel button |
 | web `buyer/stripe-checkout.spec.ts` | TC-STRIPE-01, 02, 04 | TC-143, TC-144, TC-142 (check) |
 | web `buyer/local-payment-settlement.spec.ts` | TC-AUTH-03 | S5 settlement path (check) |
 | API `stripe-webhook.api.spec.ts` | TC-229, TC-295 (also tagged TC-193); formerly titled TC-STRIPE-WH-01 and TC-STRIPE-WH-02, renamed 2026-11-02 to follow the `TC-<NNN>` rule | TC-229 was WH-01. TC-295 was WH-02 and was rewritten on 2026-10-25: it used to expect 402 for a missing payment intent, which the code never returns; it now uses a real product and asserts 426 under `manual_capture` and records the legacy result (order accepted unverified) as a known gap, TC-295 |

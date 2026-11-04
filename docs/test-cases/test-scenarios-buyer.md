@@ -93,6 +93,7 @@ Automation labels below name intended tools, not implemented or passing scripts.
 | TC-168 | Refund chips and order tabs | P1 | Playwright / Component |
 | TC-169 | Refund unavailable (COD, window, flag) | P1 | Playwright / Playwright-API |
 | TC-171 | Offline banner | P2 | Playwright |
+| TC-400 | Expired checkout is not resumed | P2 | Playwright |
 
 ### Buyer API scenarios added 2026-10-24
 
@@ -247,7 +248,7 @@ Automation labels below name intended tools, not implemented or passing scripts.
 | TC-188 | Offline banner | P2 | Manual / Widget |
 | TC-189 | Interrupted checkout resumes | P2 | Manual |
 
-**Added 2026-10-24 and 2026-10-25:** 26 web + 14 mobile + 88 API buyer-facing scenarios (overlap via parity on shared business rules)
+**Added 2026-10-24 to 2026-11-04:** 27 web + 14 mobile + 88 API buyer-facing scenarios (overlap via parity on shared business rules)
 
 Full steps and selectors: **`docs/test-cases/test-scenarios.md`**
 
