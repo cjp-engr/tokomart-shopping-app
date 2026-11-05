@@ -21,6 +21,7 @@ The features below describe the current implementation. **Implemented, tested, e
 - [Local setup](#local-setup)
 - [API documentation](#api-documentation)
 - [Checks and verification](#checks-and-verification)
+- [Automated checks (GitHub Actions)](#automated-checks-github-actions)
 - [Deployment and recovery](#deployment-and-recovery)
 - [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
@@ -111,7 +112,7 @@ The repository currently declares:
 - **Web:** React 19, TypeScript 6, Vite 8, React Router 7, Tailwind CSS 3, Context, Lucide, and Stripe.js.
 - **Mobile:** Flutter/Dart, BLoC, GoRouter, Dio, SharedPreferences, and `flutter_stripe`. The checked-in lockfile requires Flutter **3.44+** and Dart **3.13+**.
 - **Backend:** Node.js, TypeScript 5, Express 4, Mongoose 8, MongoDB, Stripe, JWT, bcryptjs, and Cloudinary/Multer uploads.
-- **Verification:** Vitest, Flutter unit/widget tests, and database integration tests. Playwright and Patrol automation are maintained separately by the owner.
+- **Verification:** Vitest, Flutter unit/widget tests, and database integration tests. Playwright and Patrol automation are maintained separately by the owner; the Playwright suites also run in GitHub Actions (see [Automated checks](#automated-checks-github-actions)).
 
 ```text
 shopping-app-automation/
@@ -119,7 +120,8 @@ shopping-app-automation/
 ├── frontend/                React web application and unit tests
 ├── frontend-mobile/         Flutter application and unit/widget tests
 ├── e2e-testing/             Owner-maintained Playwright automation
-├── docs/                    Deployment, payment, recovery, and verification guides
+├── docs/                    Deployment, payment, recovery, and verification guides, test cases and strategies, and the feature roadmap
+├── .github/                 GitHub Actions workflows and the shared E2E stack action
 ├── AGENTS.md                Repository rules for coding agents
 └── README.md
 ```
@@ -137,7 +139,7 @@ These match the [local verification setup](docs/local-payment-verification.md) a
 
 ### Prerequisites
 
-- Node.js **22.12+ on the Node 22 line** and npm, compatible with the current build/test tooling.
+- Node.js **20.19+ or 22.12+** and npm, as required by the current build/test tooling.
 - A MongoDB **replica set** for transaction-based checkout, cancellation, and refund flows. Use an existing local replica set or an Atlas deployment.
 - A Stripe test account and publishable/secret test keys for card flows.
 - Cloudinary configuration for product/avatar uploads.
@@ -282,7 +284,26 @@ The delivered-refund review on **2026-10-23**, at commit `5a4b36c`, recorded:
 
 These results apply to that reviewed revision. The README update itself does not rerun those suites. The actual Stripe test-mode check of the shipping-refund amendment, manual browser/device acceptance of the latest screens, and hosted enablement checks remain separate work. See [local verification evidence](docs/local-payment-verification.md).
 
-Playwright and Patrol files and runs are owner-maintained. They were intentionally excluded from this documentation update and the cited refund review.
+Playwright and Patrol files and runs are owner-maintained. They were intentionally excluded from the cited refund review.
+
+## Automated checks (GitHub Actions)
+
+Workflows live in `.github/workflows/`:
+
+| Workflow | Runs on | What it does |
+|---|---|---|
+| `ci.yml` | pull requests to `main`, pushes to `main` | Backend unit tests and type-check, backend integration tests on a throwaway MongoDB replica set, web checks, and Flutter analyze and tests |
+| `e2e.yml` | see below | Playwright suites against a fresh stack started inside the runner (MongoDB, backend and, for web specs, the web app) |
+| `branch-check.yml` | pull requests to `main` | Blocks specific branch names from merging |
+
+`e2e.yml` jobs:
+
+- **API specs** and **API rate-limit spec**: every pull request, every push to `main`, and nightly (02:00 Manila time).
+- **Web specs** (`web-buyer`, then `web-seller`, then `web-mixed`): pushes to `main`, the nightly run, and manual runs, not pull requests. They make real Stripe test-mode calls.
+- A manual run is available under Actions → E2E (Playwright) → Run workflow. Reports, traces, and the backend log are uploaded as artifacts for 7 days.
+- Nothing deploys: these workflows only run tests and publish reports.
+
+The web job needs these repository secrets (Settings → Secrets and variables → Actions): `STRIPE_SECRET_KEY` (a `sk_test_` key) and `STRIPE_PUBLISHABLE_KEY`. `STRIPE_WEBHOOK_SECRET` is optional. The API jobs run without them. The E2E jobs use the `ubuntu-22.04` runner because MongoDB 8.0 does not start on Linux kernels 6.19 to 7.0.13.
 
 ## Deployment and recovery
 
@@ -313,7 +334,9 @@ Use the [deployment guide](docs/deployment.md) and [payment rollout runbook](doc
 - [Legacy captured-payment reconciliation](docs/legacy-payment-reconciliation.md) — `docs/legacy-payment-reconciliation.md`
 - [Backend payment verification](docs/backend-payment-verification.md) — `docs/backend-payment-verification.md`
 - [Local verification evidence](docs/local-payment-verification.md) — `docs/local-payment-verification.md`
+- [Feature roadmap](docs/FEATURE_ROADMAP.md) — `docs/FEATURE_ROADMAP.md`. Planned features, not implemented ones.
+- [Test scenarios](docs/test-cases/test-scenarios.md) and [test strategy](docs/test-strategies/test-strategy.md) — `docs/test-cases/`, `docs/test-strategies/`. Every `TC-` case, its layer, and its automation status.
 - [Delivered-refund handoff](docs/delivered-refunds-handoff.md) — `docs/delivered-refunds-handoff.md`. Includes historical entries; use its latest updates and verify against code.
 - [Coding-agent and documentation rules](AGENTS.md) — `AGENTS.md`
 
-The feature-documentation convention is a grouped index at `docs/features.md`, linking to one file per feature under `docs/features/<area>/<feature-name>.md`. That inventory has not yet been populated; the feature summary above is an overview, not a substitute for verified per-feature documentation.
+The feature-documentation convention is a grouped index at `docs/features.md`, linking to one file per feature under `docs/features/<area>/<feature-name>.md`. That inventory is only started (it currently covers the shipping fee); the feature summary above is an overview, not a substitute for verified per-feature documentation.
