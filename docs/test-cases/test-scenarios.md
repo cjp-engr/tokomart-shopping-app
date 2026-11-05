@@ -30,7 +30,7 @@
 
 | Platform | File | Coverage |
 |----------|------|----------|
-| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400** |
+| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400, TC-500** |
 | API | [test-scenarios-api.md](test-scenarios-api.md) | TC-026–028, TC-033, TC-035–036, TC-048, TC-053–054, TC-056–058, TC-107–108, TC-110–111, TC-113–119, TC-132–136, **TC-190–311** |
 | Mobile | [test-scenarios-mobile.md](test-scenarios-mobile.md) | TC-067–097, TC-101–104, TC-600–624, **TC-172–189** |
 
@@ -101,9 +101,10 @@ Counts below are recomputed from the `### TC-` headings in the platform files on
 | **TC-301–303** | 3 | **New** Shipping fee: flat $9.99 fallback on API, web and mobile, buyer-pays with no fee, and shipping settings required on product create and update, added 2026-10-26 and 2026-10-27 |
 | **TC-304–311** | 8 | **New** Seller product create and update validation API (required and optional fields, value limits, ids, malformed JSON, empty numbers, trimmed spaces), added 2026-10-27 |
 | **TC-400** | 1 | **New** Web card checkout: an expired checkout session is not resumed and its stored attempt is cleared (it had no scenario; its test was titled `TC-AUTH-06`), added 2026-11-04 |
-| **Total** | **337** | Web 109 · Mobile 78 · API 150 (176 added between 2026-10-24 and 2026-11-04) |
+| **TC-500** | 1 | **New** Web card checkout UI state: the Stripe card field renders on the payment step (its test was titled `TC-STRIPE-04`), added 2026-11-05 |
+| **Total** | **338** | Web 110 · Mobile 78 · API 150 (177 added between 2026-10-24 and 2026-11-05) |
 
-**Automation split of the new TCs (176):** Playwright / Playwright-API 150, Patrol 15 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
+**Automation split of the new TCs (177):** Playwright / Playwright-API 151, Patrol 15 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
 
 ---
 

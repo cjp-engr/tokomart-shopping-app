@@ -44,6 +44,9 @@ export default defineConfig({
       name: 'web-buyer',
       testMatch: /tests\/web\/buyer\/.*\.spec\.ts/,
       dependencies: ['buyer-setup'],
+      // These specs share one buyer and its server-side cart, and each clears the cart before every test.
+      // Run in parallel they empty each other's carts, so only one worker may run this project at a time.
+      workers: 1,
       use: {
         baseURL: WEB_URL,
         storageState: '.auth/buyer.json',

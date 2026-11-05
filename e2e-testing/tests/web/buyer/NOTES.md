@@ -18,19 +18,23 @@ Navigates to `/login`, fills credentials, submits the form, and asserts the auth
 
 ---
 
-### TC-022, TC-023, TC-024 — `checkout.spec.ts`
-**Buyer checkout across all three payment methods (simple product)**
+### TC-022, TC-023, TC-024, TC-025, TC-029, TC-500 — `checkout.spec.ts`
+**Buyer checkout: the payment methods, multi-seller orders, address validation and the Stripe card field**
 
-Each test sets up state via API in `beforeAll` (gets buyer token, clears cart, creates a seller product), then drives the UI through the full checkout flow.
+Every test creates its own in-stock product through the API (`createCheckoutProduct`; TC-025 uses `createProductsFromTwoSellers`), clears the buyer's cart in `beforeEach`, then drives the UI. The tests run one after another (serial mode), and the `web-buyer` project is limited to one worker, because all buyer specs share one buyer and one cart. Checks that only hold for the authorization flow run only when `CHECKOUT_FLOW=manual_capture`.
 
-| TC | Payment Method | Key steps |
-|----|---------------|-----------|
-| TC-022 | Cash on Delivery | Select COD option → place order → assert order confirmation |
-| TC-023 | Saved credit card | Select credit card (saved card pre-selected) → place order |
-| TC-024 | New card entry | Select credit card → switch to new card tab → fill card number + holder → place order |
+| TC | Scenario | What the test checks |
+|----|----------|----------------------|
+| TC-022 | Cash on Delivery | Finds the product in the list, pays on delivery with a new address; the order is `pending` / `not_required` with a seller and a 24-hour deadline, is listed in the history, and the cart is empty |
+| TC-023 | Saved credit card | Pays with the saved Stripe test card; the order is `pending`, the detail page reads "Credit Card ending in 4242"; under manual capture it is also `authorized` with the "reserved" notice and the deadline |
+| TC-024 | New card entry | Types the Stripe test card into Stripe's frame; the order is `pending` and shows only the card type; the same manual-capture checks |
+| TC-025 | Multi-seller checkout (E2E leg) | A cart with two sellers paid on delivery gives one order per seller, each with 8% tax on its own subtotal |
+| TC-029 | Missing address fields | Empty fields are stopped by the browser, spaces show the app's messages; no payment step and no order |
+| TC-500 | Stripe card field | Choosing Credit Card shows the Stripe frame with its Card number input (formerly TC-STRIPE-04) |
 
-**Shared setup:** `clearBuyerCart()` + `getBuyerToken()` from `helpers/auth-state.ts`. Shipping address from `helpers/test-data.ts`.
+`TC-STRIPE-01` (successful card payment) and `TC-STRIPE-02` (declined card) were removed on 2026-11-05: they duplicated TC-024 and TC-143 and TC-146, which check more. The file they lived in, `stripe-checkout.spec.ts`, was folded into this one and deleted.
 
+**Shared code:** `helpers/checkout-flow.ts` (orders, cart count, products), and the `CheckoutPage`, `MyOrdersPage` and `OrderDetailPage` page objects.
 ---
 
 ### TC-098, TC-105, TC-106 — `variant-checkout.spec.ts`
@@ -45,19 +49,6 @@ Same structure as `checkout.spec.ts` but the product has size variants. The test
 | TC-106 | Saved credit card |
 
 **Shared setup:** `clearBuyerCart()`, `getBuyerToken()`, `loginSeller()` from `helpers/auth-state.ts`. Order total asserted via `fetchOrder()` from `helpers/product-assertions.ts`.
-
----
-
-### TC-STRIPE-01, TC-STRIPE-02, TC-STRIPE-04 — `stripe-checkout.spec.ts`
-**Card payment through the Stripe Payment Element**
-
-| TC | Scenario |
-|----|----------|
-| TC-STRIPE-01 | Successful card payment places the order |
-| TC-STRIPE-02 | Declined card shows the decline message and keeps the buyer on review |
-| TC-STRIPE-04 | The Stripe card element renders on the payment step |
-
-Uses the `CheckoutPage` page object (`fillStripeCard`) and the test cards in `helpers/checkout-flow.ts`.
 
 ---
 
@@ -85,10 +76,9 @@ Runs only when the backend and the web app use `CHECKOUT_FLOW=manual_capture`; o
 web/buyer/
 ├── NOTES.md                    ← this file
 ├── login.spec.ts               ← TC-001
-├── checkout.spec.ts            ← TC-022, TC-023, TC-024
+├── checkout.spec.ts            ← TC-022, TC-023, TC-024, TC-025 (E2E leg), TC-029, TC-500
 ├── variant-checkout.spec.ts    ← TC-098, TC-105, TC-106
-├── stripe-checkout.spec.ts     ← TC-STRIPE-01, TC-STRIPE-02, TC-STRIPE-04
-└── card-checkout-authorization.spec.ts ← TC-AUTH-01 … TC-AUTH-06 (manual_capture only)
+└── card-checkout-authorization.spec.ts ← TC-143, TC-144, TC-146, TC-147 (also TC-151), TC-148, TC-400 (manual_capture only)
 ```
 
 ## Key notes
