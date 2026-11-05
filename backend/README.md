@@ -341,8 +341,7 @@ Contract tests validate OpenAPI references, registered API route coverage, authe
 ## 📚 Documentation
 
 - **Main README**: [`../README.md`](../README.md) — Full project overview
-- **Implementation Summary**: [`../IMPLEMENTATION_SUMMARY.md`](../IMPLEMENTATION_SUMMARY.md) — Recent fixes
-- **Feature Roadmap**: [`../FEATURE_ROADMAP.md`](../FEATURE_ROADMAP.md) — Planned features
+- **Feature Roadmap**: [`../docs/FEATURE_ROADMAP.md`](../docs/FEATURE_ROADMAP.md) — Planned features
 
 ## 📜 License
 
