@@ -1,0 +1,148 @@
+name: E2E (Playwright)
+
+# API specs gate every pull request. The slower web specs (a real browser and Stripe test calls) run when something
+# merges to main and every night. Each job starts its own throwaway stack inside the runner: MongoDB, the backend
+# and, for the web specs, the web app. Nothing here touches a hosted environment or real data.
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 18 * * *' # every night, 02:00 in Manila
+  workflow_dispatch:
+
+# A newer push to the same pull request replaces the run still going; runs on main are never cancelled.
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Quiet the HTML reporter: nobody is there to open a browser
+  PLAYWRIGHT_HTML_OPEN: never
+
+jobs:
+  api:
+    name: API specs
+    # Not ubuntu-latest: MongoDB refuses to start on Linux kernels 6.19 through 7.0.13 (see ci.yml)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Start the stack (rate limits off, because the specs sign up many users)
+        uses: ./.github/actions/e2e-stack
+        with:
+          checkout-flow: manual_capture
+          stripe-secret-key: ${{ secrets.STRIPE_SECRET_KEY }}
+          stripe-webhook-secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      - name: Run the API specs (the rate-limit checks have their own job)
+        working-directory: e2e-testing
+        env:
+          CHECKOUT_FLOW: manual_capture
+        run: npx playwright test --project=api --grep-invert "@TC-11[4-9]" --reporter=github,html
+      - name: Upload the Playwright report and the backend log
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: api-report
+          path: |
+            e2e-testing/playwright-report
+            e2e-testing/test-results
+            ${{ runner.temp }}/backend.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  api-rate-limit:
+    name: API rate-limit spec
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Start the stack with small limits (the spec exhausts them, so it runs alone)
+        uses: ./.github/actions/e2e-stack
+        with:
+          checkout-flow: manual_capture
+          auth-limit: '3'
+          api-limit: '5'
+          stripe-secret-key: ${{ secrets.STRIPE_SECRET_KEY }}
+          stripe-webhook-secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      - name: Run the rate-limit spec
+        working-directory: e2e-testing
+        run: npx playwright test --project=api tests/api/rate-limit.api.spec.ts --reporter=github,html
+      - name: Upload the Playwright report and the backend log
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: api-rate-limit-report
+          path: |
+            e2e-testing/playwright-report
+            e2e-testing/test-results
+            ${{ runner.temp }}/backend.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  web:
+    name: Web specs
+    # Not on pull requests: a browser run is slower, and it makes real Stripe test-mode calls
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check that the Stripe test secrets are set
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$STRIPE_SECRET_KEY" ] || [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Add the repository secrets STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY (Stripe test mode keys) before the web specs can run."
+            exit 1
+          fi
+          case "$STRIPE_SECRET_KEY" in sk_test_*) ;; *) echo "::error::STRIPE_SECRET_KEY must be a test key (sk_test_...)."; exit 1 ;; esac
+      - name: Start the stack with the web app
+        uses: ./.github/actions/e2e-stack
+        with:
+          checkout-flow: manual_capture
+          with-web: 'true'
+          stripe-secret-key: ${{ secrets.STRIPE_SECRET_KEY }}
+          stripe-webhook-secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          stripe-publishable-key: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+      # The three web projects run one after another, never together: the buyer and mixed specs use the same
+      # accounts and carts. Each gets its own report and result folder, and a failure in one does not skip the rest.
+      - name: Run the buyer web specs
+        working-directory: e2e-testing
+        env:
+          CHECKOUT_FLOW: manual_capture
+          PLAYWRIGHT_HTML_REPORT: playwright-report/web-buyer
+        run: npx playwright test --project=web-buyer --output=test-results/web-buyer --reporter=github,html
+      - name: Run the seller web specs
+        if: ${{ !cancelled() }}
+        working-directory: e2e-testing
+        env:
+          CHECKOUT_FLOW: manual_capture
+          PLAYWRIGHT_HTML_REPORT: playwright-report/web-seller
+        run: npx playwright test --project=web-seller --output=test-results/web-seller --reporter=github,html
+      - name: Run the mixed-role web specs
+        if: ${{ !cancelled() }}
+        working-directory: e2e-testing
+        env:
+          CHECKOUT_FLOW: manual_capture
+          PLAYWRIGHT_HTML_REPORT: playwright-report/web-mixed
+        run: npx playwright test --project=web-mixed --output=test-results/web-mixed --reporter=github,html
+      - name: Upload the Playwright report, the traces and the logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: web-report
+          path: |
+            e2e-testing/playwright-report
+            e2e-testing/test-results
+            ${{ runner.temp }}/backend.log
+            ${{ runner.temp }}/web.log
+          if-no-files-found: warn
+          retention-days: 7
