@@ -759,29 +759,30 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Automation status**: In progress (see Script mapping for what the test does not assert)  
+**Script mapping**: Verified by reading and by the run of 2026-11-04: test "buyer completes checkout with Cash on Delivery" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-022`; it creates its own in-stock product through the API, finds it in the product list by name and adds it to the cart, then asserts the redirect to `/orders` and, from `GET /api/orders`, one new order with `status: pending`, `paymentStatus: not_required`, payment type cash-on-delivery, no payment intent, a persisted `sellerId` and an `acceptBy` exactly 24 hours after `placedAt`; then "Cash on Delivery" on the order detail page and an empty server cart (checked to be non-empty before checkout); does not assert that no Stripe request is made or that no checkout session is used, and was not run under the legacy flow  
+**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Last run**: 2026-11-04  
+**Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
+**Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
 **Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
-**Preconditions**: Logged in; cart with items; saved or new address  
+**Preconditions**: Logged in; an empty cart; a product the test created through the API, so it is in stock; a new shipping address is entered, the saved-address path is not tested  
 **Steps**:
-1. Proceed from cart to `/checkout`
-2. Complete shipping address
-3. Select Cash on Delivery
-4. Place order
+1. Find the product in the product list and add it to the cart
+2. Proceed from the cart to `/checkout`
+3. Enter a new shipping address
+4. Select Cash on Delivery
+5. Place order
 
 **Expected Results**:
-- Redirect to order confirmation / orders
+- Redirect to `/orders`; the new order is listed there (`order-card-{id}`)
 - Order status `pending`; payment shows "Cash on Delivery"
 - Cart cleared
-- COD always uses `POST /api/orders` (never a checkout session); order carries `paymentStatus: not_required`, a persisted `sellerId` and a 24-hour `acceptBy`, under both `CHECKOUT_FLOW` values
-- *Updated 2026-10-24:* no Stripe call is made (see TC-153, TC-159 for COD cancellation)
+- COD always uses `POST /api/orders` (never a checkout session); order carries `paymentStatus: not_required`, a persisted `sellerId` and a 24-hour `acceptBy`, under both `CHECKOUT_FLOW` values (the test asserts the order fields; that no checkout session is used is not asserted, and it has only been run under `manual_capture`)
+- *Updated 2026-10-24:* no Stripe call is made (the test asserts only that the order has no payment intent, not that no Stripe request is made; see TC-153, TC-159 for COD cancellation)
 
 **Business Rule**: §4 Payment methods, §4 Post-checkout  
-**Selectors/API**: `checkout-page`, `shipping-section`, `payment-section`, `place-order-btn`, `POST /api/orders`  
+**Selectors/API**: `checkout-page`, `shipping-section`, `payment-section`, `place-order-btn`, `orders-page`, `order-card-{id}`, `POST /api/orders`  
 **Suggested Layer**: E2E Web  
 
 ---
@@ -794,12 +795,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Automation status**: In progress (see Script mapping for what the test does not assert)  
+**Script mapping**: Verified by reading and by the run of 2026-11-04: test "buyer completes checkout with saved credit card" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-023`; it saves the Stripe test card first, then asserts the redirect and one new order with `status: pending`, card type credit-card and last four 4242, "ending in 4242" on the order detail page and an empty cart; under manual_capture it also asserts `paymentFlowVersion: manual_capture`, `paymentStatus: authorized`, the "reserved" payment notice and the acceptance deadline on the detail page; does not assert the Stripe `requires_capture` state, and the legacy-flow result (payment captured at once) is not asserted  
+**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Last run**: 2026-11-04  
+**Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
+**Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
 **Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
 **Preconditions**: User has saved card in profile  
 **Steps**:
@@ -810,9 +811,10 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Order created; card last4 shown on order detail
 - *Updated 2026-10-24:* result depends on `CHECKOUT_FLOW`. `legacy`: `POST /api/orders` with the card, payment captured at once. `manual_capture`: checkout session, hold only (`requires_capture`), order `pending` / `authorized`, see TC-144
+- The new order is listed on `/orders` (`order-card-{id}`) and the cart is cleared
 
 **Business Rule**: §4 Payment methods, §8 Saved cards  
-**Selectors/API**: `payment-section`, `place-order-btn`  
+**Selectors/API**: `payment-section`, `place-order-btn`, `orders-page`, `order-card-{id}`, `payment-status-notice`, `acceptance-deadline`  
 **Suggested Layer**: E2E Web  
 
 ---
@@ -825,26 +827,28 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Automation status**: In progress (see Script mapping for what the test does not assert)  
+**Script mapping**: Verified by reading and by the run of 2026-11-04: test "buyer completes checkout with new card entry" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-024`; it asserts the redirect and one new order with `status: pending` and card type credit-card (a card typed into Stripe's frame is stored without its last four digits, so the page shows only the card type) and an empty cart; under manual_capture it also asserts the same authorization checks as TC-023; does not assert the 16-digit card and CVV validation (Stripe's frame validates it) or the Stripe `requires_capture` state  
+**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Last run**: 2026-11-04  
+**Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
+**Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
 **Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
 **Preconditions**: Logged in; no saved card selected  
 **Steps**:
 1. Checkout; choose credit card
-2. Enter card number, holder, expiry, CVV
+2. Enter the card number, expiry and CVC in the Stripe card field (the field has no cardholder name)
 3. Place order
 
 **Expected Results**:
-- Client validation passes for 16-digit card, 3–4 digit CVV
+- Stripe's card field accepts the test card; the card number, expiry and CVC are validated inside Stripe's frame. The page's own 16-digit and CVV rules (`validatePayment` in `Checkout.tsx`) are not reached for card payments, because the Stripe card branch moves to review first (read from the code, not tested)
 - Order created successfully
 - *Updated 2026-10-24:* the card is entered in the Stripe `CardElement`; use Stripe test card `4242 4242 4242 4242`. Under `manual_capture` the card is authorized, not charged, see TC-143. Declined and 3DS cards: TC-146, TC-147
+- Observed 2026-11-04: an order paid with a new card stores no last four digits (`paymentMethod.last4` is empty), because the number is typed into Stripe's frame, so the order detail page shows only the card type. A saved card shows "ending in" its last four digits (TC-023)
+- The new order is listed on `/orders` (`order-card-{id}`) and the cart is cleared
 
-**Business Rule**: §10 Web checkout card validation  
-**Selectors/API**: `payment-section`, `place-order-btn`  
+**Business Rule**: §10 Web checkout card validation (`business-rules.md` is not in the repo, so this section could not be checked on 2026-11-04)  
+**Selectors/API**: `payment-section`, `place-order-btn`, `orders-page`, `order-card-{id}`, `payment-status-notice`, `acceptance-deadline`  
 **Suggested Layer**: E2E Web  
 
 ---
@@ -962,18 +966,19 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Role**: Buyer  
 **Platform**: Web  
 **Parity**: Both  
-**Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/api/orders.api.spec.ts`  
-**Preconditions**: Cart with items from 2 sellers  
+**Automation**: Playwright + Playwright-API  
+**Automation status**: Automated (E2E leg in `checkout.spec.ts`, API leg in `orders.api.spec.ts`)  
+**Script mapping**: Verified by reading and by the run of 2026-11-04 for the E2E leg: test "buyer checks out a cart with two sellers and gets one order per seller" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-025`; it creates one product for each of two seller accounts, adds both to the cart, pays with Cash on Delivery, and asserts the redirect, two new orders (one per product, from two different sellers) that are each `pending` / `not_required`, each with tax of 8% of its own subtotal and a total equal to subtotal + tax + shipping, subtotals of 25 and 35, both listed as `order-card-{id}`, and an empty cart; the shipping amount is not checked (the test products get random shipping settings), only that the total adds it. The API leg (test "TC-025: Multi-seller checkout creates separate orders" in `e2e-testing/tests/api/orders.api.spec.ts`) was not run in this update  
+**Latest result**: Passed (E2E leg, 3 runs in a row, under manual_capture; the API leg was not run)  
+**Last run**: 2026-11-04  
+**Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
+**Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
+**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts` (E2E leg), `e2e-testing/tests/api/orders.api.spec.ts` (API leg)  
+**Preconditions**: Two sellers, each with a product in stock (the test creates them through the API)  
 **Steps**:
-1. Complete checkout for full cart
-2. Open `/orders`
+1. Add a product from each of the 2 sellers to the cart
+2. Complete checkout for the full cart (new address, Cash on Delivery)
+3. Open `/orders`
 
 **Expected Results**:
 - Two distinct orders (`order-card-{id}` each)
@@ -993,23 +998,25 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Automation status**: Automated  
+**Script mapping**: Verified by reading and by the run of 2026-11-04: two tests in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-029`: "empty required fields are stopped by the browser before payment and no order is placed" (the address and phone inputs are required and report a missing value, the street field has the focus, the payment step and Place Order stay hidden, no order is created, the cart keeps the product) and "fields with only spaces pass the browser check but show the app's own errors" (the five required messages below, same checks after). Email is also required but the buyer's profile pre-fills it, so it is not tested  
+**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Last run**: 2026-11-04  
+**Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
+**Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
+**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
 **Preconditions**: New address form shown  
 **Steps**:
-1. Leave required fields empty (street, city, state, zip)
-2. Attempt place order
+1. Open the new address form
+2. Leave the required fields empty (street, city, state, ZIP, phone) and click Continue to Payment
+3. Repeat with spaces only in those fields
 
 **Expected Results**:
-- Validation errors; order not submitted
+- Empty fields: the browser blocks the form with its own message ("Please fill out this field"), because the inputs are HTML required fields; the app's own messages do not appear. The buyer stays on the address step, Place Order is never offered, and no order is created
+- Spaces only: the browser accepts them, so the app's own messages show: "Street address is required", "City is required", "State is required", "ZIP code is required", "Phone number is required"; same outcome (no payment step, no order)
 
 **Business Rule**: §4 Shipping address, §10 Web checkout  
-**Selectors/API**: `shipping-section`, `place-order-btn`  
+**Selectors/API**: `shipping-section`, `payment-section`, `place-order-btn`  
 **Suggested Layer**: E2E Web  
 
 ---
@@ -2527,6 +2534,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Stripe shows the PaymentIntent as `requires_capture` with nothing captured (hold only)
 - Order detail shows the "Payment reserved" notice and the seller's acceptance deadline
 - No client-supplied amount is used; the amount equals the order total
+- Overlap on purpose: TC-024 (`checkout.spec.ts`) runs the new-card checkout under either `CHECKOUT_FLOW`; this scenario is the authorization-specific case
 
 **Business Rule**: Authorize-capture §Checkout and authorization  
 **Selectors/API**: `payment-section`, `card-authorization-panel`, `place-order-btn`, `payment-status-notice`, `acceptance-deadline`, `POST /api/checkout/sessions`, `POST /api/checkout/sessions/:id/confirm`  
@@ -2557,6 +2565,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Same outcome as TC-143: `pending` / `authorized`, hold only
 - The saved card must belong to the logged-in buyer (see TC-197 for the API check)
+- Overlap on purpose: TC-023 (`checkout.spec.ts`) runs the saved-card checkout under either `CHECKOUT_FLOW`; this scenario is the authorization-specific case
 
 **Business Rule**: Authorize-capture §Checkout and authorization; §8 Saved cards  
 **Selectors/API**: `payment-section`, `place-order-btn`  

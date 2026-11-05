@@ -40,6 +40,14 @@ export class MyOrdersPage {
         await expect(this.root).toBeVisible({ timeout: 10_000 });
     }
 
+    /** The orders page is shown and every given order has its card in the list. */
+    async expectOrdersListed(orderIds: string[]): Promise<void> {
+        await this.expectLoaded();
+        for (const orderId of orderIds) {
+            await expect(this.orderCard(orderId)).toBeVisible({ timeout: 15_000 });
+        }
+    }
+
     orderCard(orderId: string): Locator {
         return this.page.getByTestId(`order-card-${orderId}`);
     }
