@@ -40,7 +40,7 @@
 
 | # | Platform | Flow | Automation |
 |---|----------|------|------------|
-| S1 | Web | Login → add to cart → checkout COD → order appears in history | Playwright — TC-001, TC-016, TC-022, TC-098 |
+| S1 | Web | Login → add to cart → checkout COD → order appears in history | Playwright — TC-001, TC-016, TC-022, TC-098 (TC-016 has no script yet; TC-022 checks that the order is listed in the history) |
 | S2 | Mobile | Login → browse → cart visible | Patrol — TC-067, TC-072, TC-073 |
 | S3 | Both | Become seller → create simple product → create variant product | Web: TC-041, TC-042, TC-064 · Mobile: TC-089, TC-090, TC-091 |
 | S4 | Both | Cart with items from 2 sellers → checkout → 2 separate orders in history | Web: TC-021, TC-025 · Mobile: TC-083 |

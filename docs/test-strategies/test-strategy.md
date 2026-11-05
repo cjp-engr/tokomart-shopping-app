@@ -59,7 +59,7 @@ Counts are recomputed from the assignment tables in §4–§4d (337 scenarios, e
 
 | ID | Scenario | Final layer | Tool | Platform | Priority | Source | Rationale |
 |----|----------|-------------|------|----------|----------|--------|-----------|
-| S1 | Login → cart → checkout COD → order history | Multi | Playwright + Playwright-API | Web | P0 | TC-001, TC-016, TC-022, TC-098; `checkout.spec.ts`, `variant-checkout.spec.ts` | P0 buyer smoke; variant path in TC-098 |
+| S1 | Login → cart → checkout COD → order history | Multi | Playwright + Playwright-API | Web | P0 | TC-001, TC-016, TC-022, TC-098; `checkout.spec.ts`, `variant-checkout.spec.ts` | P0 buyer smoke; variant path in TC-098. TC-022 checks that the order is listed in the history; TC-016 has no script yet |
 | S2 | Mobile login → browse → cart | E2E | Patrol | Mobile | P0 | TC-067, TC-072, TC-073; `login_test.dart` | Extend existing Patrol; keys partial |
 | S3 | Become seller → simple + variant listing | Multi | Playwright + Patrol | Both | P0 | Web: TC-041, TC-042, TC-064 · Mobile: TC-089, TC-090, TC-091 | Divergent wizards (6 vs 7 steps) |
 | S4 | 2-seller cart → 2 orders | Multi | Playwright-API + Playwright/Patrol | Both | P0 | API: TC-025 · Web E2E: TC-021/025 · Mobile E2E: TC-083 | API proves split; platform E2E confirms UI |
@@ -96,15 +96,15 @@ Counts are recomputed from the assignment tables in §4–§4d (337 scenarios, e
 | TC-019 | Apply valid voucher | E2E | Playwright | Web | P1 | `select-voucher-btn-{id}` | Coupon UI | |
 | TC-020 | Invalid voucher | Multi | Playwright + Playwright-API | Web | P1 | `POST /api/coupons/validate` | API for codes; E2E for error UX | |
 | TC-021 | Multi-seller cart groups | E2E | Playwright | Web | P0 | `cart-seller-group-{id}` | Structural rule | |
-| TC-022 | Checkout COD | E2E | Playwright | Web | P0 | `place-order-btn` | P0 checkout smoke | |
-| TC-023 | Checkout saved card | E2E | Playwright | Web | P1 | `payment-section` | Saved payment; result depends on `CHECKOUT_FLOW` (legacy charges, `manual_capture` holds, see TC-144) | |
-| TC-024 | Checkout new card | E2E | Playwright | Web | P1 | `payment-section` | Card validation UX; Stripe `CardElement`; under `manual_capture` see TC-143 | |
+| TC-022 | Checkout COD | E2E | Playwright | Web | P0 | `place-order-btn` | P0 checkout smoke. Reads the new order back (`pending`, `not_required`, seller, 24-hour deadline, cart cleared). The backend rule has its own row, TC-262 (API; integration candidate `orderService.cod.integration.test.ts`), so this E2E does not have to cover every COD field | |
+| TC-023 | Checkout saved card | E2E | Playwright | Web | P1 | `payment-section` | Saved payment; result depends on `CHECKOUT_FLOW` (legacy charges, `manual_capture` holds, see TC-144). Runs under either flow; the authorization checks run only under `manual_capture`, where it overlaps TC-144 on purpose (TC-023 is the flow-independent smoke, TC-144 the authorization case). The legacy flow has not been run | |
+| TC-024 | Checkout new card | E2E | Playwright | Web | P1 | `payment-section` | The new-card path places a pending order. The card is typed into Stripe's frame, which validates it, so card-number and CVV validation is not asserted, and the order keeps no last four digits. Under `manual_capture` it overlaps TC-143 on purpose | |
 | TC-098 | Checkout COD with variant product | E2E | Playwright | Web | P0 | `variant-value-*`, `variant-checkout.spec.ts` | API setup + buyer COD; order variant assert | |
-| TC-025 | Multi-seller → 2 orders | Multi | Playwright-API + Playwright | Web | P0 | `POST /api/orders` | API split + E2E history | |
+| TC-025 | Multi-seller → 2 orders | Multi | Playwright-API + Playwright | Web | P0 | `POST /api/orders` | API split (`orders.api.spec.ts`) + E2E history (`checkout.spec.ts`, Cash on Delivery, two sellers); both legs exist | |
 | TC-026 | Order total formula | API | Playwright-API | Web | P0 | `POST /api/orders`, `orderService.ts` | Pricing truth source | |
 | TC-027 | Shipping is a flat $9.99 when the seller set no shipping fee | Unit | Vitest | Web | P1 | `POST /api/orders` | Older products only: the API can no longer create a product without shipping settings, so the unit tests assert the flat $9.99 (`checkoutPricing.test.ts`) | |
 | TC-028 | A large order still pays the flat shipping fee | Unit | Vitest | Web | P1 | `POST /api/orders` | Older products only: the API can no longer create a product without shipping settings, so the unit tests assert the flat $9.99; only a seller-set `free` ships free (see TC-257) | |
-| TC-029 | Missing address blocked | E2E | Playwright | Web | P1 | `shipping-section` | Form validation | |
+| TC-029 | Missing address blocked | E2E | Playwright | Web | P1 | `shipping-section` | Empty fields are blocked by the browser's own required check; the app's messages show only for spaces. Both are tested in `checkout.spec.ts` | |
 | TC-030 | Order history tabs | E2E | Playwright | Web | P1 | `order-tab-{key}` | Status filters; tabs now include Return/Refund and All; filter logic already unit-tested (`utils/orderTabs.test.ts`), so keep one E2E | |
 | TC-031 | Confirm receipt | E2E | Playwright | Web | P1 | `confirm-received-btn` | Buyer action | |
 | TC-032 | Buyer cancel pending | Multi | Playwright + Playwright-API + Integration | Web | P1 | `PUT /api/orders/:id/status`; `orderCancellation.integration.test.ts` | E2E UX + API stock restore; pending-only, confirm dialog; card/COD detail in TC-152, TC-153 | |
@@ -454,7 +454,7 @@ Counts are recomputed from the assignment tables in §4–§4d (337 scenarios, e
 1. **API:** `health.api.spec.ts` (exists) → `orders.api.spec.ts` — TC-026, TC-053, TC-025 (API leg)
 2. **API:** `coupons.api.spec.ts` — TC-057
 3. **E2E Web:** Extend `login.spec.ts` — TC-001, TC-007, TC-055
-4. **E2E Web:** `checkout.spec.ts` — S1 / TC-022, TC-016
+4. **E2E Web:** `checkout.spec.ts` — S1 / TC-022 (TC-016, the cart edit, is not in this file and has no script)
 5. **E2E Web:** `cart.spec.ts` — TC-021, TC-018
 
 ### Phase 2 — P0 seller + catalog
@@ -470,7 +470,7 @@ Counts are recomputed from the assignment tables in §4–§4d (337 scenarios, e
 13. **API:** `coupons.api.spec.ts` — TC-020 (API leg) = TC-238; the rest of the coupon rules are TC-235 to TC-253 (Phase 9, item 48a)
 
 ### Phase 4 — P1 E2E remainder
-14. **E2E Web:** `checkout.spec.ts` — TC-023, TC-024, TC-029, TC-025 (E2E leg)
+14. **E2E Web:** `checkout.spec.ts` — TC-023, TC-024, TC-029 and the E2E leg of TC-025 (all in the file, written and run 2026-11-04); TC-025's API leg is in `orders.api.spec.ts`, and a two-seller card checkout is covered by TC-148
 15. **E2E Web:** `cart.spec.ts` — TC-019, TC-020 (E2E leg), TC-017
 16. **E2E Web:** `orders/buyer.spec.ts` — TC-030, TC-031, TC-032, TC-034, TC-039
 17. **E2E Web:** `seller/vouchers.spec.ts` — TC-050
@@ -639,7 +639,7 @@ Read-only grep of `TC-` ids in the existing specs. This is a traceability map, n
 | Playwright web | `buyer/login.spec.ts` | TC-001 |
 | | `buyer/product-browse.spec.ts` | TC-010, TC-011 |
 | | `buyer/product-detail.spec.ts` | TC-012, TC-013, TC-014 |
-| | `buyer/checkout.spec.ts` | TC-022, TC-023, TC-024 |
+| | `buyer/checkout.spec.ts` | TC-022, TC-023, TC-024, TC-025 (E2E leg), TC-029. Run on 2026-11-04 against the manual-capture stack: 3 full runs in a row, all six tests pass. The tests read the new order from `GET /api/orders` and check its status, payment state and seller, the order history list, the order detail page and the emptied cart; TC-025 checks one order per seller with 8% tax each; TC-029 covers the browser's own required check and the app's messages for spaces (see each scenario for what is still not asserted). Every test creates its own in-stock product through the API (TC-022 finds it through the product list search), so none depends on the first product in the catalog or on its stock. The legacy flow was not run |
 | | `buyer/variant-checkout.spec.ts` | TC-098, TC-105, TC-106 |
 | | `mixed/cart-isolation.spec.ts` | TC-109 |
 | | `mixed/order-isolation.spec.ts` | TC-112 |
