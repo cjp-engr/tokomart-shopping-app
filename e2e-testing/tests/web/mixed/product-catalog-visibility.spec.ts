@@ -52,6 +52,8 @@ test.describe('TC-065: Buyer sees new seller listing in public catalog', () => {
       });
 
       await test.step('Verify seller product card is visible in catalog', async () => {
+        // Search by name: the catalog is paged, so on a database with many products the new one may not be on page 1
+        await productListPage.search(productName);
         const card = productListPage.productCard(productId);
         await expect(card).toBeVisible({ timeout: 10_000 });
       });
