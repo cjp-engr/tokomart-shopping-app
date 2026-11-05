@@ -2,16 +2,16 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Web scenarios (`test-scenarios-web.md`, 109) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
-**Updated:** 2026-10-24. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.
+**Platform filter:** Web scenarios (`test-scenarios-web.md`, 110) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
+**Updated:** 2026-11-05. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.
 
 ---
 
-## Pyramid (Web scenarios, 109)
+## Pyramid (Web scenarios, 110)
 
 | Layer | Count | Tool |
 |-------|-------|------|
-| E2E Web | 73 | Playwright |
+| E2E Web | 74 | Playwright |
 | Multi (≥ 2 layers) | 17 | Playwright + API / Vitest / integration |
 | Component | 7 | Vitest + RTL |
 | Unit | 7 | Vitest |
@@ -38,7 +38,7 @@
 | S1 | Multi | Playwright + API | `checkout.spec.ts` |
 | S3 | E2E | Playwright | `seller/product-wizard.spec.ts` |
 | S4 | Multi | API + Playwright | `orders.api.spec.ts` + `checkout.spec.ts` |
-| S5 | Multi | Integration + API + Playwright | TC-143 → TC-155; candidates `card-checkout-authorization.spec.ts`, `stripe-checkout.spec.ts` |
+| S5 | Multi | Integration + API + Playwright | TC-143 → TC-155; candidate `card-checkout-authorization.spec.ts` |
 | S6 | Multi | Integration + API + Playwright | TC-152 → TC-157 |
 | S7 | Multi | Integration + API + Playwright | TC-162 → TC-164 |
 
@@ -129,7 +129,7 @@
 | TC-062 | Blocked | — | P3 |
 | TC-063 | E2E | Playwright | P2 |
 
-## Added 2026-10-24 — Web scenarios (49)
+## Added 2026-10-24 — Web scenarios (50)
 
 Layers, sources, rationale and existing-coverage candidates for every row are in **`test-strategy.md` §4c–§4d**. Included: scenarios added on 2026-10-24 and older scenarios the strategy had never assigned.
 
@@ -184,6 +184,7 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | P2 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
 | TC-400 | An expired checkout is not resumed and its stored attempt is cleared | E2E | Playwright | P2 |
+| TC-500 | The Stripe card field renders on the payment step | E2E | Playwright | P2 |
 
 ## Shared API scenarios (127 added or previously unassigned)
 

@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 
 /** The shipping fields the checkout form requires, with the message the app shows when one holds only spaces. */
 export const REQUIRED_SHIPPING_FIELDS: ReadonlyArray<{ label: RegExp; message: string }> = [
@@ -17,14 +17,11 @@ export interface ShippingAddress {
   phone: string;
 }
 
-export interface NewCardData {
-  type?: string; // 'credit-card' | 'debit-card' | 'paypal' — defaults to 'credit-card'
-  cardNumber: string;
-  cardHolder: string;
-  expiryMonth: string; // zero-padded e.g. '12'
-  expiryYear: string;  // four-digit e.g. '2028'
-  cvv: string;
-}
+// Any future expiry and any three digits are accepted by Stripe's test cards
+const STRIPE_TEST_EXPIRY = '12 / 30';
+const STRIPE_TEST_CVC = '123';
+// Stripe loads its card frame after the payment step opens
+const STRIPE_FRAME_TIMEOUT_MS = 8_000;
 
 export class CheckoutPage {
   readonly page: Page;
@@ -122,44 +119,41 @@ export class CheckoutPage {
     // First saved card is auto-selected by the UI — no further action needed
   }
 
+  /**
+   * A buyer with saved cards sees a Saved Card and a New Card choice. Picks New Card when it is offered; a buyer
+   * without saved cards goes straight to the form.
+   */
+  private async chooseNewCardIfOffered(): Promise<void> {
+    // Button accessible name is "New Card Enter a different card" — use substring match
+    const newCardBtn = this.paymentSection.getByRole('button', { name: /new card/i });
+    if (await newCardBtn.isVisible()) {
+      await newCardBtn.click();
+    }
+  }
+
   /** Use when buyer should pay with COD or enter a new card. */
   async selectPaymentMethod(method: string): Promise<void> {
-    // Button accessible name is "New Card Enter a different card" — use substring match
-    const newCardBtn = this.page.getByRole('button', { name: /new card/i });
-    if (await newCardBtn.isVisible()) {
-      await newCardBtn.click();
-    }
-    await this.page.locator('select[name="type"]').selectOption(method);
+    await this.chooseNewCardIfOffered();
+    await this.paymentSection.locator('select[name="type"]').selectOption(method);
   }
 
-  /** Use when buyer should pay with a new card and fill all card fields. */
-  async fillNewCardForm(data: NewCardData): Promise<void> {
-    // Button accessible name is "New Card Enter a different card" — use substring match
-    const newCardBtn = this.page.getByRole('button', { name: /new card/i });
-    if (await newCardBtn.isVisible()) {
-      await newCardBtn.click();
-    }
-    await this.page.locator('select[name="type"]').selectOption(data.type ?? 'credit-card');
-    await this.page.getByLabel(/card number/i).fill(data.cardNumber);
-    await this.page.getByLabel(/cardholder name/i).fill(data.cardHolder);
-    await this.page.locator('select[name="expiryMonth"]').selectOption(data.expiryMonth);
-    await this.page.locator('select[name="expiryYear"]').selectOption(data.expiryYear);
-    await this.page.getByLabel(/cvv/i).fill(data.cvv);
-  }
-
-  /**
-   * Enters a card in the Stripe Element used by the new-card form. Selects the New Card option first when
-   * the buyer has saved cards.
-   */
+  /** Enters a card in the Stripe Element used by the new-card form. */
   async fillStripeCard(cardNumber: string): Promise<void> {
-    const newCardBtn = this.page.getByRole('button', { name: /new card/i });
-    if (await newCardBtn.isVisible()) {
-      await newCardBtn.click();
-    }
-    const cardFrame = this.page.frameLocator('iframe[name*="__privateStripeFrame"]').first();
-    await cardFrame.locator('[placeholder="Card number"]').fill(cardNumber);
-    await cardFrame.locator('[placeholder="MM / YY"]').fill('12 / 30');
-    await cardFrame.locator('[placeholder="CVC"]').fill('123');
+    await this.chooseNewCardIfOffered();
+    const cardFrame = this.stripeCardFrame();
+    await cardFrame.getByPlaceholder('Card number').fill(cardNumber);
+    await cardFrame.getByPlaceholder('MM / YY').fill(STRIPE_TEST_EXPIRY);
+    await cardFrame.getByPlaceholder('CVC').fill(STRIPE_TEST_CVC);
+  }
+
+  /** Stripe serves the card inputs from its own frame, not from the checkout page. */
+  private stripeCardFrame(): FrameLocator {
+    return this.page.frameLocator('iframe[name*="__privateStripeFrame"]').first();
+  }
+
+  /** The Stripe card field is on the payment step: its frame shows a "Card number" input. */
+  async expectStripeCardFieldVisible(): Promise<void> {
+    await expect(this.stripeCardFrame().getByPlaceholder('Card number')).toBeVisible({ timeout: STRIPE_FRAME_TIMEOUT_MS });
   }
 
   async continueToReview(): Promise<void> {

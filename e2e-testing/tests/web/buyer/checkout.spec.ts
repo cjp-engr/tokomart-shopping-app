@@ -3,6 +3,7 @@
 //              TC-024 — Checkout with new card entry
 //              TC-025 — Multi-seller checkout creates separate orders (E2E leg; the API leg is in orders.api.spec.ts)
 //              TC-029 — Checkout blocked with missing address fields
+//              TC-500 — The Stripe card field renders on the payment step
 //
 // Every test creates its own in-stock product through the API, so it does not depend on which product is first in
 // the catalog or on its stock. TC-022 still finds its product through the product list, as a buyer would.
@@ -274,6 +275,28 @@ test.describe('TC-029: Checkout blocked with missing address fields', () => {
         await checkoutPage.expectStoppedBeforePayment();
         await expectNoNewOrders(request, known, [product.id]);
         expect(await fetchBuyerCartItemCount(request)).toBeGreaterThan(0);
+      });
+    });
+});
+
+test.describe('TC-500: The Stripe card field renders on the payment step', () => {
+  test('choosing Credit Card shows the Stripe card field',
+    { tag: ['@TC-500', '@buyer', '@checkout', '@stripe', '@ui-state'] },
+    async ({ request, productDetailPage, cartPage, checkoutPage }) => {
+      const product = await createCheckoutProduct(request, 'Stripe card field');
+
+      await test.step('Add the product to the cart, open checkout and reach the payment step', async () => {
+        await addProductsAndOpenCheckout({ request, productDetailPage, cartPage, checkoutPage }, [product.id]);
+        await checkoutPage.fillNewShippingAddress(DEFAULT_SHIPPING_ADDRESS);
+        await checkoutPage.continueToPayment();
+      });
+
+      await test.step('Choose Credit Card', async () => {
+        await checkoutPage.selectPaymentMethod('credit-card');
+      });
+
+      await test.step('The Stripe card field is shown with its card number input', async () => {
+        await checkoutPage.expectStripeCardFieldVisible();
       });
     });
 });

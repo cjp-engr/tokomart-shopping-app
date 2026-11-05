@@ -846,6 +846,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - *Updated 2026-10-24:* the card is entered in the Stripe `CardElement`; use Stripe test card `4242 4242 4242 4242`. Under `manual_capture` the card is authorized, not charged, see TC-143. Declined and 3DS cards: TC-146, TC-147
 - Observed 2026-11-04: an order paid with a new card stores no last four digits (`paymentMethod.last4` is empty), because the number is typed into Stripe's frame, so the order detail page shows only the card type. A saved card shows "ending in" its last four digits (TC-023)
 - The new order is listed on `/orders` (`order-card-{id}`) and the cart is cleared
+- The Stripe card field has to render first: TC-500 checks that on its own
 
 **Business Rule**: §10 Web checkout card validation (`business-rules.md` is not in the repo, so this section could not be checked on 2026-11-04)  
 **Selectors/API**: `payment-section`, `place-order-btn`, `orders-page`, `order-card-{id}`, `payment-status-notice`, `acceptance-deadline`  
@@ -2535,6 +2536,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Order detail shows the "Payment reserved" notice and the seller's acceptance deadline
 - No client-supplied amount is used; the amount equals the order total
 - Overlap on purpose: TC-024 (`checkout.spec.ts`) runs the new-card checkout under either `CHECKOUT_FLOW`; this scenario is the authorization-specific case
+- The Stripe card field has to render first: TC-500 checks that on its own
 
 **Business Rule**: Authorize-capture §Checkout and authorization  
 **Selectors/API**: `payment-section`, `card-authorization-panel`, `place-order-btn`, `payment-status-notice`, `acceptance-deadline`, `POST /api/checkout/sessions`, `POST /api/checkout/sessions/:id/confirm`  
@@ -3442,5 +3444,35 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Business Rule**: Authorize-capture §API and client contracts  
 **Selectors/API**: `card-authorization-panel`, `checkoutAttempt` in `sessionStorage`, `GET /api/checkout/sessions/:id`  
 **Suggested Layer**: E2E Web (a Vitest test of the resume effect in `Checkout.tsx` is a candidate)  
+
+---
+
+### TC-500: The Stripe card field renders on the payment step
+**Scenario status**: Active  
+**Category**: UI State  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Web  
+**Parity**: Divergent (the web page embeds Stripe's card field in a frame; mobile uses the native Stripe sheet)  
+**Automation**: Playwright  
+**Automation status**: Automated  
+**Script mapping**: Verified by reading and by the run of 2026-11-05: test "choosing Credit Card shows the Stripe card field" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-500` (formerly titled `TC-STRIPE-04`, in `stripe-checkout.spec.ts`, which was folded into this file and deleted on 2026-11-05); it creates its own product, reaches the payment step with a new address, chooses Credit Card and asserts that the Stripe frame shows a "Card number" input within 8 seconds  
+**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Last run**: 2026-11-05  
+**Run evidence**: Local run on 2026-11-05 of `checkout.spec.ts` (`npx playwright test --project=web-buyer`, one worker) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode): 3 full runs in a row passed (the buyer login and all seven tests, 8 of 8 each time); TC-500 also passed alone by its tag. No report file kept  
+**Run baseline**: Branch `test/update-stripe-checkout.spec` at `3a4282a`, with the uncommitted changes of 2026-11-05  
+**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
+**Preconditions**: Logged in; a product in the cart; checkout open; a new shipping address entered  
+**Steps**:
+1. Continue to the payment step
+2. Choose Credit Card (New Card when the buyer has saved cards)
+
+**Expected Results**:
+- The Stripe card field is shown in its own frame (`iframe[name*="__privateStripeFrame"]`) with a "Card number" input
+- The new-card checkout scenarios depend on it: TC-024 and TC-143 cannot pass unless the field renders
+
+**Business Rule**: §4 Payment methods  
+**Selectors/API**: `payment-section`, the Stripe card frame (`iframe[name*="__privateStripeFrame"]`, "Card number" input)  
+**Suggested Layer**: E2E Web  
 
 ---
