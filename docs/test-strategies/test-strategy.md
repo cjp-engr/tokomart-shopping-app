@@ -1,7 +1,7 @@
 # TokoMart Test Strategy
 
-> **Input mode:** A — from `docs/test-cases/test-scenarios.md` and its web, mobile and API files (338 scenarios: web 110, mobile 78, API 150)  
-> **Date:** 2026-08-03; first updated 2026-10-24 (code reviewed on branch `main` at `2251348`; no tests were run for that update); changed again up to **2026-11-05**: scenario ids added or renamed (TC-303 to TC-311, TC-400, TC-500) and test results recorded in each scenario's tracking fields  
+> **Input mode:** A — from `docs/test-cases/test-scenarios.md` and its web, mobile and API files (339 scenarios: web 110, mobile 79, API 150)  
+> **Date:** 2026-08-03; first updated 2026-10-24 (code reviewed on branch `main` at `2251348`; no tests were run for that update); changed again up to **2026-11-08**: scenario ids added or renamed (TC-303 to TC-311, TC-400, TC-401, TC-500), the Patrol settlement test mapped to its scenarios and test results recorded in each scenario's tracking fields  
 > **Platform scope:** Web (Playwright) + Mobile (Patrol) + API, with unit, integration, component and widget layers
 
 ---
@@ -9,7 +9,7 @@
 ## 1. Summary
 
 Test strategy for the **full scenario suite**. The 2026-10-24 update:
-- assigns a layer to the **177 scenarios added for the authorize-at-checkout, cancellation, refund, saved-address and offline features** (TC-137–311, TC-400 and TC-500, new §4c),
+- assigns a layer to the **178 scenarios added for the authorize-at-checkout, cancellation, refund, saved-address and offline features** (TC-137–311, TC-400, TC-401 and TC-500, new §4c),
 - assigns the **23 older scenarios the strategy had never listed** (TC-099–100, TC-102, TC-105–106, TC-123–136, TC-621–624; new §4d),
 - corrects the tooling status (the unit, integration, component and widget layers **now exist**, so most new rules are pushed down to them),
 - adds an **Integration** layer (backend tests against a MongoDB replica set with Stripe mocked), and an automation status map (§10).
@@ -38,7 +38,7 @@ Test strategy for the **full scenario suite**. The 2026-10-24 update:
 
 ## 2. Pyramid distribution
 
-Counts are recomputed from the assignment tables in §4–§4d (338 scenarios, each counted once by its primary layer). Run times were not measured for this update.
+Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, each counted once by its primary layer). Run times were not measured for this update.
 
 | Layer | Count | Focus | Tool |
 |-------|-------|-------|------|
@@ -47,11 +47,11 @@ Counts are recomputed from the assignment tables in §4–§4d (338 scenarios, e
 | API | 117 | Orders, coupons, auth, reviews, rate limiting, cancellation, refund and checkout-session contracts, isolation | Playwright `request` |
 | Component / widget | 13 | Refund panels, chips, tabs, notices, offline banner, seller dialogs | Vitest + RTL, `flutter_test` |
 | E2E Web | 74 | Auth, cart, checkout, seller wizard, catalog, pagination, saved addresses, Stripe checkout | Playwright `page` |
-| E2E Mobile | 59 | Auth gate, cart checkbox, checkout, 7-step wizard, seller CRUD, new settings screens | Patrol |
+| E2E Mobile | 60 | Auth gate, cart checkbox, checkout, 7-step wizard, seller CRUD, new settings screens | Patrol |
 | Multi (≥ 2 layers) | 44 | Web 17 · Mobile 8 · API 19: card authorization, capture, cancellation, refunds, multi-seller | Mixed |
 | Manual / Blocked | 9 | Manual: TC-052, TC-178, TC-189, TC-270, TC-300, TC-604, TC-605 · Blocked: TC-062, TC-603 | — |
 
-*E2E is 133 of 338 scenarios (39%) before counting the E2E legs inside the 44 Multi rows, so the pyramid is still top-heavy. The 177 scenarios added in 2026-10 and 2026-11 are better shaped: 12 E2E, 37 Multi, 91 API, 13 Component, 13 Unit, 7 Integration, 4 Manual. The older E2E-heavy block is a candidate for pushing logic down; see §8.*
+*E2E is 134 of 339 scenarios (40%) before counting the E2E legs inside the 44 Multi rows, so the pyramid is still top-heavy. The 178 scenarios added in 2026-10 and 2026-11 are better shaped: 13 E2E, 37 Multi, 91 API, 13 Component, 13 Unit, 7 Integration, 4 Manual. The older E2E-heavy block is a candidate for pushing logic down; see §8.*
 
 ---
 
@@ -184,12 +184,12 @@ Counts are recomputed from the assignment tables in §4–§4d (338 scenarios, e
 | TC-081 | Per-seller delivery on cart | E2E | Patrol | Mobile | P0 | `extra['deliverySelections']` | Multi-seller cart | |
 | TC-082 | Voucher via route extra | E2E | Patrol | Mobile | P1 | `extra['voucherSelections']` | Coupon UI path | |
 | TC-095 | COD checkout complete | E2E | Patrol | Mobile | P0 | `CheckoutScreen` | P0 mobile checkout smoke | |
-| TC-096 | Checkout with saved credit card | E2E | Patrol | Mobile | P1 | `keys.orders.paymentOption` | Saved card path; under `manual_capture` it holds, not charges (TC-176) | |
-| TC-097 | Checkout with new card entry | E2E | Patrol | Mobile | P1 | `keys.orders.checkoutCardNumberField` | New card path; authorization disclosure shown (TC-176) | |
+| TC-096 | Checkout with saved credit card | E2E | Patrol | Mobile | P1 | `keys.orders.paymentSavedCardsTab`, `keys.orders.savedPaymentCard(id)`, `keys.orders.paymentSubmitButton` | Saved card path; under `manual_capture` it holds, not charges. Updated 2026-11-08 to the payment screen; passed (opt-in local, `simple_saved_credit_checkout_test.dart`); replaces the separate TC-176 saved-card test | |
+| TC-097 | Checkout with new card entry | E2E | Patrol | Mobile | P1 | Native Stripe card sheet, `keys.orders.paymentSubmitButton` (the unused `checkoutCardNumberField` and `checkoutCardHolderField` keys were removed from the app on 2026-11-08) | New card path; authorization disclosure shown. Updated 2026-11-08 to the native sheet; passed (opt-in local, `simple_new_credit_checkout_test.dart`); replaces the separate TC-176 new-card test | |
 | TC-101 | COD checkout with variant product | E2E | Patrol | Mobile | P1 | `keys.products.variantValue` | Variant + COD | |
-| TC-103 | Checkout new CC — variant product | E2E | Patrol | Mobile | P1 | `keys.orders.checkoutCardNumberField` | Variant + new card | |
-| TC-104 | Checkout saved CC — variant product | E2E | Patrol | Mobile | P1 | `keys.orders.paymentOption` | Variant + saved card | |
-| TC-083 | Multi-seller → 2 orders | Multi | Patrol + Playwright-API | Mobile | P0 | `POST /api/orders` + checkout UI | S4 mobile leg; API shared with TC-025 | |
+| TC-103 | Checkout new CC — variant product | E2E | Patrol | Mobile | P1 | Native Stripe card sheet, `keys.orders.paymentSubmitButton` | Variant + new card. Updated 2026-11-08; passed (opt-in local, `variant_new_credit_checkout_test.dart`), including `Size: M` on the order item | |
+| TC-104 | Checkout saved CC — variant product | E2E | Patrol | Mobile | P1 | `keys.orders.paymentSavedCardsTab`, `keys.orders.savedPaymentCard(id)`, `keys.orders.paymentSubmitButton` | Variant + saved card. Updated 2026-11-08; passed (opt-in local, `variant_saved_credit_checkout_test.dart`), including `Size: M` on the order item | |
+| TC-083 | Multi-seller → 2 orders | Multi | Patrol + Playwright-API | Mobile | P0 | `POST /api/orders` + checkout UI | S4 mobile leg; API shared with TC-025. Card leg: `multi_seller_card_checkout_test.dart` (opt-in local, passed 2026-11-08, one hold per seller); COD leg not mapped | |
 | TC-084 | Order history + detail | E2E | Patrol | Mobile | P1 | `/orders`, `/orders/:id` | Buyer orders — **keys missing**; tabs now include Return/Refund (unit/widget tests exist: TC-187) | |
 | TC-085 | Confirm receipt | E2E | Patrol | Mobile | P1 | `PUT /api/orders/:id/confirm-received` | Buyer action — **keys missing**; also starts the refund window (TC-227) | |
 | TC-612 | Invalid login error | E2E | Patrol | Mobile | P1 | `auth_loginButton` | Error display | |
@@ -277,13 +277,13 @@ Counts are recomputed from the assignment tables in §4–§4d (338 scenarios, e
 | TC-173 | Edit a saved address (mobile) | E2E | Patrol | Mobile | P1 | address bottom sheet (keys missing) | Sheet is private to `profile_screen.dart` |  | None |
 | TC-174 | Deleting a saved address asks for confirmation (mobile) | E2E | Patrol | Mobile | P2 | delete confirm dialog (key missing) | Parity record vs web TC-141 |  | None |
 | TC-175 | Payment Methods screen — list, set default, delete a card (mobile) | E2E | Patrol | Mobile | P1 | `payment_methods_screen.dart` | Needs real saved cards; no widget test exists |  | None |
-| TC-176 | Card checkout reserves the amount and explains it (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `payment_bloc_checkout_session_test.dart`; `keys.orders.paymentSubmitButton` | Session payload and bloc are unit-testable; one Patrol per card mode |  | Candidate: `payment_bloc_checkout_session_test.dart`, `checkout_session_payload_test.dart`, Patrol `manual_capture_*_card_verification_test.dart` (untagged) |
+| TC-176 | Card checkout reserves the amount and explains it (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `payment_bloc_checkout_session_test.dart`; `keys.orders.paymentSubmitButton` | Session payload and bloc are unit-testable; one Patrol per card mode |  | Partial (opt-in local, passed 2026-11-08): covered by the Patrol tests TC-097 (new card), TC-096 (saved card) and TC-083 (one hold per seller); the separate TC-176 test files were removed as duplicates. Candidate: `payment_bloc_checkout_session_test.dart`, `checkout_session_payload_test.dart` |
 | TC-177 | Declined card places no order (mobile) | Component | flutter_test | Mobile | P1 | `payment_bloc.dart` error state | Decline handling is bloc logic; no E2E needed beyond TC-146 | yes | Candidate: `payment_bloc_test.dart` |
 | TC-178 | 3-D Secure card on mobile | Manual | Manual | Mobile | P1 | Stripe native 3DS sheet | Open item M4: no Patrol flow; native sheet |  | None |
-| TC-179 | Buyer order detail shows payment notices (mobile) | Component | flutter_test | Mobile | P1 | `order_payment_notice.dart`, `order_payment_notice_card.dart` | Notice mapping is pure | yes | Candidate: `order_payment_notice_test.dart`, `order_payment_notice_card_test.dart`, `cancelled_by_seller_notice_test.dart` |
-| TC-180 | Buyer cancels a pending order (mobile) | Multi | Playwright-API + Patrol | Mobile | P0 | `orders_cancelOrderButton` (exists); TC-205 | API proves release/restore; Patrol proves the dialog |  | None (key exists) |
+| TC-179 | Buyer order detail shows payment notices (mobile) | Component | flutter_test | Mobile | P1 | `order_payment_notice.dart`, `order_payment_notice_card.dart` | Notice mapping is pure | yes | Candidate: `order_payment_notice_test.dart`, `order_payment_notice_card_test.dart`, `cancelled_by_seller_notice_test.dart`. Patrol `local_charged_payment_notice_test.dart` (opt-in local, id in the test title) reads 1 of the 9 titles |
+| TC-180 | Buyer cancels a pending order (mobile) | Multi | Playwright-API + Patrol | Mobile | P0 | `orders_cancelOrderButton` (exists); TC-205 | API proves release/restore; Patrol proves the dialog |  | Partial (opt-in local, id in the test title): `local_buyer_cancels_order_test.dart` cancels a card order and reads "Reservation released"; "Keep order", the reason and COD are not covered |
 | TC-181 | No cancel after the seller accepts (mobile) | Component | flutter_test | Mobile | P2 | `OrderEntity` cancel eligibility | Visibility rule; no separate journey | yes | Candidate: `order_model_payment_test.dart` (verify) |
-| TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `seller_acceptOrderButton_<id>`, `seller_acceptDeadlineText_<id>` | Widget tests cover states; one Patrol is the S5 mobile leg |  | Candidate: `seller_dashboard_accept_test.dart`, `seller_acceptance_test.dart` |
+| TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `seller_acceptOrderButton_<id>`, `seller_acceptDeadlineText_<id>` | Widget tests cover states; one Patrol is the S5 mobile leg |  | Partial (opt-in local, id in the test title): `local_seller_accepts_order_test.dart` accepts and waits for capture, without the deadline or charging-state checks. Candidate: `seller_dashboard_accept_test.dart`, `seller_acceptance_test.dart` |
 | TC-183 | Seller cancels a pending order with a required reason (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `seller_cancelOrderButton_<id>`, `seller_cancelReasonField` | Dialog validation is widget-level; one Patrol is the S6 mobile leg |  | Candidate: `seller_dashboard_cancel_test.dart`, `seller_cancellation_test.dart`, `seller_bloc_cancel_test.dart` |
 | TC-184 | Cancel is hidden when the seller may not cancel (mobile) | Component | flutter_test | Mobile | P2 | `SellerOrderData.canCancel` | Pure visibility rule | yes | Candidate: `seller_cancellation_test.dart` |
 | TC-185 | Buyer requests a refund for a delivered order (mobile) | Multi | flutter_test + Patrol | Mobile | P0 | `refunds/presentation/refund_request_panel.dart` (keys missing) | Form states are widget-level; one Patrol is the S7 mobile leg |  | Candidate: `refund_request_form_test.dart`, `refund_widgets_test.dart`, `refund_bloc_test.dart` |
@@ -291,6 +291,7 @@ Counts are recomputed from the assignment tables in §4–§4d (338 scenarios, e
 | TC-187 | Return/Refund tab and Complete tab behaviour (mobile) | Component | flutter_test | Mobile | P1 | `ordersForTab`, `orders_screen.dart` tabs | Tab filter is pure | yes | Candidate: `order_tabs_test.dart`, `orders_screen_tabs_test.dart` |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | Mobile | P2 | `ConnectivityCubit`, `offline_banner.dart` | Cubit and banner are unit-testable; airplane-mode check stays manual | yes | None |
 | TC-189 | Interrupted card checkout resumes (mobile) | Manual | Manual | Mobile | P2 | `checkout_attempt_store.dart` | Kill/restart timing; store logic is covered indirectly |  | Candidate: `payment_bloc_checkout_session_test.dart` (indirect) |
+| TC-401 | An order the seller never accepted shows "Reservation released" (mobile) | E2E | Patrol | Mobile | P2 | `orders_paymentNoticeTitle_<title>`, `orders_orderCard_<id>`; the rule itself is TC-203 | The deadline rule is TC-203 and its integration tests; this is only the buyer's view of the result. It needs an order past its deadline, so it stays an opt-in local run |  | Partial (opt-in local, id in the test title): `local_expired_order_notice_test.dart` |
 
 ### 4c-3. API (TC-190–311)
 
@@ -594,7 +595,7 @@ Rules or behaviours with no assigned or verified test. "Harness exists" means th
 | `legacy_payment_review` shown to the user | Authorize-capture open items | Component | No client shows a specific message; product gap, not only a test gap |
 | Stripe inbox retries forever (no attempt cap) | Open items §9 | Integration | Decision needed (cap or dead-letter) before a test can assert behaviour |
 | COD buyers are not told about the 24-hour deadline on mobile (web hides it for any non-manual-capture order) | Open items §9 | Component | Decide intended behaviour; TC-179 records it |
-| Test traceability for the Stripe/manual-capture specs | — | — | `local-payment-settlement.spec.ts` and the Patrol `manual_capture_*` tests use their own `TC-AUTH-xx` ids, which have no scenario entry; `local_payment_settlement_test.dart` and `role-switch.smoke.spec.ts` have none (§10) |
+| Test traceability for the Stripe/manual-capture specs | — | — | `local-payment-settlement.spec.ts` still uses `TC-AUTH-03`, which has no scenario entry, and `role-switch.smoke.spec.ts` has no id (§10); the Patrol local files (the four `local_*` tests split from `local_payment_settlement_test.dart`, and the card checkout tests TC-096, TC-097, TC-103, TC-104 and TC-083) carry scenario ids in their titles since 2026-11-08 |
 | Patrol keys for refund screens, save-address toggle, payment-methods, offline banner | §11 | E2E Mobile | Add `ValueKey`s before any Patrol test for TC-172–175, TC-185–188 |
 
 Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker.
@@ -605,7 +606,7 @@ Closed since the last version: pure 8% tax and pricing math (candidate `checkout
 
 | Issue | Status | Action |
 |-------|--------|--------|
-| E2E is 133 of 338 scenarios (39%), above the share the pyramid allows | **Risk** | Treat the older E2E block as candidates to push down (TC-001–066 validation and display rules); no new logic-only scenario should be E2E |
+| E2E is 134 of 339 scenarios (40%), above the share the pyramid allows | **Risk** | Treat the older E2E block as candidates to push down (TC-001–066 validation and display rules); no new logic-only scenario should be E2E |
 | Money state machines (capture, release, refund, webhooks) tested only through the UI | Avoid | Integration first; one E2E per smoke flow (S5–S7) |
 | Flag-dependent scenarios run without declaring the flag | **Risk** | Every S5–S7 and TC-143–231 run states `CHECKOUT_FLOW`, `SELLER_SEES_MANUAL_CAPTURE`, `DELIVERED_REFUNDS_ENABLED` (see the scenarios master) |
 | Specs whose ids are not in the scenario docs, or that have none | Existing | Map or rename them (§10) so coverage can be traced to scenarios |
@@ -681,10 +682,8 @@ Read-only grep of `TC-` ids in the existing specs. This is a traceability map, n
 | web `buyer/checkout.spec.ts` (was `buyer/stripe-checkout.spec.ts`, folded in and deleted 2026-11-05) | TC-500; formerly TC-STRIPE-04. TC-STRIPE-01 and TC-STRIPE-02 were removed on 2026-11-05 | TC-STRIPE-01 duplicated TC-024 and TC-143, and TC-STRIPE-02 duplicated TC-146 (both are covered by stronger tests); TC-STRIPE-04 had no scenario and is the new TC-500 |
 | web `buyer/local-payment-settlement.spec.ts` | TC-AUTH-03 | S5 settlement path (check) |
 | API `stripe-webhook.api.spec.ts` | TC-229, TC-295 (also tagged TC-193); formerly titled TC-STRIPE-WH-01 and TC-STRIPE-WH-02, renamed 2026-11-02 to follow the `TC-<NNN>` rule | TC-229 was WH-01. TC-295 was WH-02 and was rewritten on 2026-10-25: it used to expect 402 for a missing payment intent, which the code never returns; it now uses a real product and asserts 426 under `manual_capture` and records the legacy result (order accepted unverified) as a known gap, TC-295 |
-| Patrol `2_buyer/manual_capture_new_card_verification_test.dart` | TC-AUTH-01 | TC-176 (check) |
-| Patrol `2_buyer/manual_capture_saved_card_verification_test.dart` | TC-AUTH-02, 03 | TC-176 (check) |
 
-**No ids at all:** web `mixed/role-switch.smoke.spec.ts`; Patrol `2_buyer/local_payment_settlement_test.dart`. Recommended fix (owner): either add scenarios for the remaining `TC-AUTH-xx` ids, or rename them to the scenario ids above.
+**No ids at all:** web `mixed/role-switch.smoke.spec.ts`. The Patrol settlement test was split on 2026-11-08 into four one-test files whose titles carry scenario ids (TC-182, TC-180, TC-179, TC-401). Recommended fix (owner): either add scenarios for the remaining `TC-AUTH-xx` ids or rename them to the scenario ids above.
 
 **Not yet automated at E2E or API:** all of TC-137–231 except TC-143, TC-144, TC-146, TC-147, TC-148 and TC-151 (`card-checkout-authorization.spec.ts`) and TC-193 and TC-229 (`stripe-webhook.api.spec.ts`), plus the pagination, mobile browse/cart/wishlist and most P1 mobile scenarios listed in §4b.
 

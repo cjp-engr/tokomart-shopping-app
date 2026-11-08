@@ -101,10 +101,11 @@ Counts below are recomputed from the `### TC-` headings in the platform files on
 | **TC-301–303** | 3 | **New** Shipping fee: flat $9.99 fallback on API, web and mobile, buyer-pays with no fee, and shipping settings required on product create and update, added 2026-10-26 and 2026-10-27 |
 | **TC-304–311** | 8 | **New** Seller product create and update validation API (required and optional fields, value limits, ids, malformed JSON, empty numbers, trimmed spaces), added 2026-10-27 |
 | **TC-400** | 1 | **New** Web card checkout: an expired checkout session is not resumed and its stored attempt is cleared (it had no scenario; its test was titled `TC-AUTH-06`), added 2026-11-04 |
+| **TC-401** | 1 | **New** Mobile order detail: an order the seller never accepted shows "Reservation released" (its test had no id), added 2026-11-08 |
 | **TC-500** | 1 | **New** Web card checkout UI state: the Stripe card field renders on the payment step (its test was titled `TC-STRIPE-04`), added 2026-11-05 |
-| **Total** | **338** | Web 110 · Mobile 78 · API 150 (177 added between 2026-10-24 and 2026-11-05) |
+| **Total** | **339** | Web 110 · Mobile 79 · API 150 (178 added between 2026-10-24 and 2026-11-08) |
 
-**Automation split of the new TCs (177):** Playwright / Playwright-API 151, Patrol 15 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
+**Automation split of the new TCs (178):** Playwright / Playwright-API 151, Patrol 16 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
 
 ---
 

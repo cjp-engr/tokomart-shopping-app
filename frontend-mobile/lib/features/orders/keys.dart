@@ -6,8 +6,6 @@ class _OrdersKey extends ValueKey<String> {
 
 class OrdersKeys {
   final cancelOrderButton = const _OrdersKey('cancelOrderButton');
-  final checkoutCardHolderField = const _OrdersKey('checkoutCardHolderField');
-  final checkoutCardNumberField = const _OrdersKey('checkoutCardNumberField');
   final checkoutCityField = const _OrdersKey('checkoutCityField');
   final checkoutNewAddressOption = const _OrdersKey('checkoutNewAddressOption');
   final checkoutStateField = const _OrdersKey('checkoutStateField');

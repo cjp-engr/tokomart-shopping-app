@@ -36,4 +36,9 @@ final class Products extends Module {
   Future<void> navigateToCart() async {
     await $(keys.products.productDetailCartIconButton).tap();
   }
+
+  Future<void> openCartFromHome() async {
+    $.log('Opening the cart from the home screen');
+    await $(keys.products.cartIconButton).tap();
+  }
 }

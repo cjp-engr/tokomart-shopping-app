@@ -160,6 +160,7 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-187 | Return/Refund tab and Complete tab behaviour (mobile) | Component | flutter_test | P1 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
 | TC-189 | Interrupted card checkout resumes (mobile) | Manual | Manual | P2 |
+| TC-401 | An order the seller never accepted shows "Reservation released" (mobile) | E2E | Patrol | P2 |
 | TC-190 | Saved address create, update, default and delete | API | Playwright-API | P1 |
 | TC-191 | Saved address requires street and city | API | Playwright-API | P2 |
 | TC-192 | Saved addresses and cards are scoped to their owner | API | Playwright-API | P0 |
