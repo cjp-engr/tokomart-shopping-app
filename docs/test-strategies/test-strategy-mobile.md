@@ -2,16 +2,16 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Mobile (78 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
-**Updated:** 2026-10-24
+**Platform filter:** Mobile (79 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
+**Updated:** 2026-10-24; TC-401 added 2026-11-08
 
 ---
 
-## Pyramid (Mobile, 78)
+## Pyramid (Mobile, 79)
 
 | Layer | Count | Focus | Tool |
 |-------|-------|-------|------|
-| E2E Mobile | 59 | Auth, cart checkbox, checkout, wizard, orders, seller CRUD, settings screens | Patrol |
+| E2E Mobile | 60 | Auth, cart checkbox, checkout, wizard, orders, seller CRUD, settings screens | Patrol |
 | Multi (widget + Patrol, or API + Patrol) | 8 | TC-083, TC-611 (older); TC-176, 180, 182, 183, 185, 186 (new S5–S7 legs) | `flutter_test` + Patrol |
 | Component / widget | 6 | TC-177, 179, 181, 184, 187, 188 | `flutter_test` |
 | Manual | 4 | TC-178, TC-189, TC-604, TC-605 | Manual |
@@ -28,7 +28,7 @@
 | S2 | Login → browse → cart | E2E | Patrol | `patrol_test/login_test.dart` | **Partial** — login only (TC-067) |
 | S3 | Become seller → simple + variant listing | E2E | Patrol | `seller/product_wizard_test.dart` | Blocked on keys |
 | S4 | 2-seller cart → 2 orders | Multi | Patrol + API | `multi_seller_checkout_test.dart` + `orders.api.spec.ts` | Blocked on keys |
-| S5 | Card checkout reserves → seller accepts → captured | Multi | `flutter_test` + Patrol | TC-176, TC-182 | Keys exist (`orders_*`, `seller_acceptOrderButton_<id>`); candidates: `manual_capture_*_card_verification_test.dart` |
+| S5 | Card checkout reserves → seller accepts → captured | Multi | `flutter_test` + Patrol | TC-176, TC-182 | Keys exist (`orders_*`, `seller_acceptOrderButton_<id>`); Patrol: TC-096 and TC-097 card checkout tests (the TC-176 legs, partial) and the TC-083 multi-seller test |
 | S6 | Pending order cancelled by buyer and by seller | Multi | `flutter_test` + Patrol | TC-180, TC-183 | Keys exist (`orders_cancelOrderButton`, `seller_cancelOrderButton_<id>`) |
 | S7 | Delivered order → refund requested → approved | Multi | `flutter_test` + Patrol | TC-185, TC-186 | **Keys missing** for the refund screens |
 
@@ -210,6 +210,7 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-187 | Return/Refund tab and Complete tab behaviour (mobile) | Component | flutter_test | P1 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
 | TC-189 | Interrupted card checkout resumes (mobile) | Manual | Manual | P2 |
+| TC-401 | An order the seller never accepted shows "Reservation released" (mobile) | E2E | Patrol | P2 |
 | TC-621 | Initial product list loads first 20 products | E2E | Patrol | P1 |
 | TC-622 | Scrolling to the bottom loads more products | E2E | Patrol | P1 |
 | TC-623 | Loading spinner visible while fetching more products | E2E | Patrol | P1 |

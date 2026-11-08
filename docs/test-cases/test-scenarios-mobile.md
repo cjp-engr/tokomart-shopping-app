@@ -617,23 +617,24 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Script mapping**: Verified by reading and by the run of 2026-11-08, card leg only (the COD leg is not mapped): test "TC-083: buyer completes multi-seller checkout with saved credit card" in `frontend-mobile/patrol_test/2_buyer/multi_seller_card_checkout_test.dart`; the test creates a second seller's product with an image through the API (seller `s1@ex.com`), prepares a two-product cart through the API, the buyer checks out with the saved card in the app, and the API confirms exactly two new orders, both `authorized` under `manual_capture`; the second product is deleted at the end; does not check each order's amount or Stripe intent, or the independent shipping and voucher per seller  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 39 s. The first attempt failed because the fixture product had no image (an order item requires one), so the checkout session was refused with a 400 and no order was created; the product client now sends an image. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
+**Test File**: `frontend-mobile/patrol_test/2_buyer/multi_seller_card_checkout_test.dart` (card leg; partial)  
 **Preconditions**: Cart with items from 2 sellers; all selected  
 **Steps**:
 1. Checkout with both seller groups selected
-2. Complete payment (COD)
+2. Complete payment (COD, or a saved card under the manual-capture flow)
 
 **Expected Results**:
 - Two distinct orders in history (one per seller)
 - Independent shipping/voucher per seller group
+- With a card under the manual-capture flow: each order is `pending` / `authorized` with its own Stripe hold for that seller's total
 
 **Business Rule**: §6 Multi-seller split  
-**Selectors/API**: `POST /api/orders` (batch)  
+**Selectors/API**: `POST /api/orders` (batch, COD), `POST /api/checkout/sessions` (card, one hold per seller)  
 **Suggested Layer**: E2E Mobile  
 
 ---
@@ -678,11 +679,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-023)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-096: buyer completes checkout with saved credit card" in `frontend-mobile/patrol_test/2_buyer/simple_saved_credit_checkout_test.dart` (updated on 2026-11-08 to the current payment screen; before that it never submitted the payment and could not pass); the buyer logs in, the test clears the cart through the API, adds the product in the app, checks out with a new address, chooses Credit Card and places the order, then picks the buyer's saved card (the test saves Stripe's test card `tok_visa` through the API when the buyer has none) and submits; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`; does not read the authorization disclosure or the "Payment reserved" notice  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 38 s. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
 **Test File**: `frontend-mobile/patrol_test/2_buyer/simple_saved_credit_checkout_test.dart`  
 **Preconditions**: Buyer logged in (`b@test.com`); ≥ 1 saved card on profile (`GET /api/auth/payment-methods`); cart with checked items; shipping address saved or entered on checkout  
 **Steps**:
@@ -713,11 +714,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-024)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-097: buyer completes checkout with new credit card" in `frontend-mobile/patrol_test/2_buyer/simple_new_credit_checkout_test.dart` (updated on 2026-11-08; before that it typed into `checkoutCardNumberField`, a key no widget had (the key was removed from the app on 2026-11-08), and failed); the buyer logs in, the test clears the cart through the API, adds the product in the app, checks out with a new address, chooses Credit Card and places the order, then types Stripe's test card into the native card sheet and submits; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`; does not read the disclosure or the notice  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 42 s (the first old version failed at the card number field on the same day). The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
 **Test File**: `frontend-mobile/patrol_test/2_buyer/simple_new_credit_checkout_test.dart`  
 **Preconditions**: Buyer logged in; cart with checked items; no saved card selected (tap **+ New Card** if saved cards exist)  
 **Steps**:
@@ -813,11 +814,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-024 + TC-098 combined)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-103: buyer completes new credit checkout with variant product" in `frontend-mobile/patrol_test/2_buyer/variant_new_credit_checkout_test.dart` (updated on 2026-11-08); the buyer adds "E2E Test Variant Tee" in size M, then follows the new-card steps of TC-097; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`, and that the order item carries `Size: M`  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 37 s. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
 **Test File**: `frontend-mobile/patrol_test/2_buyer/variant_new_credit_checkout_test.dart`  
 **Preconditions**: Buyer logged in (`b@test.com`); variant product in catalog (from TC-091 or seeded `E2E Test Variant Tee`); cart empty; no saved card selected  
 **Steps**:
@@ -848,11 +849,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-023 + TC-098 combined)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
+**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-104: buyer completes saved credit checkout with variant product" in `frontend-mobile/patrol_test/2_buyer/variant_saved_credit_checkout_test.dart` (updated on 2026-11-08); the buyer adds "E2E Test Variant Tee" in size M, then follows the saved-card steps of TC-096; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`, and that the order item carries `Size: M`  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 38 s. Later the same day, run as the fifth test of a combined run (tags tc-083, tc-096, tc-097, tc-103, tc-104 in one build) it failed: after Submit the orders screen did not appear within 90 s and no order was created. Run alone again by tag it passed 1 of 1, 40 s. The cause of the combined-run failure is not known (it may depend on running after other card tests in one process). The Patrol log is not kept and the Stripe PaymentIntent was not inspected.    
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
 **Test File**: `frontend-mobile/patrol_test/2_buyer/variant_saved_credit_checkout_test.dart`  
 **Preconditions**: Buyer logged in (`b@test.com`); ≥ 1 saved card on profile (`GET /api/auth/payment-methods`); variant product in catalog (from TC-091 or seeded `E2E Test Variant Tee`); cart empty  
 **Steps**:
@@ -1988,12 +1989,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-143, TC-144, TC-145)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Script mapping**: Verified by reading and by the runs of 2026-11-08: the card legs are the Patrol tests TC-097 (new card, native Stripe sheet; `frontend-mobile/patrol_test/2_buyer/simple_new_credit_checkout_test.dart`) and TC-096 (saved card; `frontend-mobile/patrol_test/2_buyer/simple_saved_credit_checkout_test.dart`), and the one-hold-per-seller bullet is TC-083 (`frontend-mobile/patrol_test/2_buyer/multi_seller_card_checkout_test.dart`). The two files that held TC-176 on its own (`manual_capture_new_card_verification_test.dart` and `manual_capture_saved_card_verification_test.dart`) were removed on 2026-11-08 as duplicates of those tests. Together they check that the orders are `authorized` under `manual_capture`; none reads the disclosure text or the "Payment reserved" notice, and none checks the Stripe `requires_capture` state  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. see TC-096 (38 s), TC-097 (42 s) and TC-083 (39 s), each passed 1 of 1. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
+**Test File**: `frontend-mobile/patrol_test/2_buyer/simple_new_credit_checkout_test.dart`, `frontend-mobile/patrol_test/2_buyer/simple_saved_credit_checkout_test.dart` and `frontend-mobile/patrol_test/2_buyer/multi_seller_card_checkout_test.dart` (partial)  
 **Preconditions**: Manual-capture flow; cart with checked items; Stripe test mode  
 **Steps**:
 1. Cart → checkout; fill/confirm the address
@@ -2079,12 +2080,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-149)  
 **Automation**: Patrol / Widget test  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Script mapping**: Verified by reading on 2026-11-08 (not run): test "TC-179: Local manual capture: buyer sees payment charged on an accepted order" in `frontend-mobile/patrol_test/2_buyer/local_charged_payment_notice_test.dart` (split on 2026-11-08 from `local_payment_settlement_test.dart`) reads 1 of the 9 notice titles, "Payment charged", on a card order that the test first creates through the checkout session API and has the seller accept through the API (`LOCAL_ACCEPT_ORDER_ID` uses an already accepted order instead). "Reservation released" is also read by the TC-180 and TC-401 tests. The other seven titles and the "Cancelled by the seller" notice are not checked, so the widget tests named in the strategy are still needed  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag with no order id. The test created order 6af08226b4412909a4eacf45 through the API, the seller accepted it through the API (`PUT /seller/orders/:id/status`, capture confirmed), and the buyer saw the notice "Payment charged": passed 1 of 1, 33 s. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
+**Test File**: `frontend-mobile/patrol_test/2_buyer/local_charged_payment_notice_test.dart` (partial)  
 **Preconditions**: Orders in `authorized`, `capture_pending`, `captured`, `release_pending`, `released`, `refund_pending`, `refunded`, `partially_refunded` and `failed` payment states  
 **Steps**:
 1. Open each order's detail screen
@@ -2140,12 +2141,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-152, TC-153)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Script mapping**: Verified by reading on 2026-11-08 (not run): test "TC-180: Local manual capture: buyer cancels and sees the reservation released" in `frontend-mobile/patrol_test/2_buyer/local_buyer_cancels_order_test.dart` (split on 2026-11-08 from `local_payment_settlement_test.dart`); the buyer opens a card order that the test first creates through the checkout session API (`LOCAL_CANCEL_ORDER_ID` cancels a given order instead), taps Cancel, confirms the dialog and asserts the notice title "Reservation released"; does not choose "Keep order" first, enter a reason, check the Cancelled tab, restored stock or the "Releasing reservation" step, and covers no COD order. Needs `LOCAL_PAYMENT_VERIFICATION=true` only  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag with no order id. The test created order 6af081d9b4412909a4eacec1 through the API, the buyer cancelled it, and the notice "Reservation released" appeared: passed 1 of 1, 31 s. The seller API afterwards showed that order `cancelled` with `paymentStatus: released`. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
+**Test File**: `frontend-mobile/patrol_test/2_buyer/local_buyer_cancels_order_test.dart` (partial)  
 **Preconditions**: A `pending` order (run once with a card hold, once with COD)  
 **Steps**:
 1. Orders → Pending tab → open the order
@@ -2200,12 +2201,12 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Parity**: Both (web TC-155, TC-156)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Script mapping**: Verified by reading on 2026-11-08 (not run): test "TC-182: Local manual capture: seller accepts Android checkout" in `frontend-mobile/patrol_test/1_seller/local_seller_accepts_order_test.dart` (split on 2026-11-08 from `local_payment_settlement_test.dart`; one test per file, module methods only); the seller logs in, opens the Orders tab and taps Accept on a pending card order that the test first creates through the checkout session API (buyer login, session for the fixture product, Stripe test card `tok_visa`, session confirm; `LOCAL_ACCEPT_ORDER_ID` accepts a given order instead), then the buyer's API session polls for up to 30 seconds until the order is `preparing` with `paymentStatus: captured`; does not assert the deadline text or the "charging" state, or that the captured amount equals the held amount. The "Payment charged" notice is checked by the TC-179 test. Needs `LOCAL_PAYMENT_VERIFICATION=true`  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Five local runs on 2026-11-08 on `emulator-5554`, each against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), with Patrol CLI 4.7.0. Runs 1 to 4 each used a fresh fixture order created by the new-card test (`manual_capture_new_card_verification_test.dart`, passed 1 of 1 each time), then `local_seller_accepts_order_test.dart` with `LOCAL_ACCEPT_ORDER_ID` set to that order and the seller `x@x.com`. Run 1 (`patrol` 4.10.0): passed 1 of 1, 31 s. Run 2 (`patrol` 4.11.0, `patrol_log` 0.10.2): passed 1 of 1, 33 s. Run 3 (after the method renames and `$.log` lines): passed 1 of 1, 36 s, with the step lines in the output. Run 4 (same code, selected only by `--tags tc-182` with no `--target`): passed 1 of 1, 27 s. After every run the seller API showed that order `preparing` with `paymentStatus: captured`. Run 5 (the order is now created by the test itself through the API, selected only by `--tags tc-182`, no order id): passed 1 of 1, 32 s; the log shows "Created pending card order 6af07ffdb8626f542ddf92bb" and the seller API showed that order `preparing`. A first attempt the same day failed to install the app (`INSTALL_FAILED_INSUFFICIENT_STORAGE`, emulator 90% full) before any test ran. The Patrol logs are not kept and the Stripe PaymentIntent was not inspected    
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08 (run 2 also with `pubspec.yaml` at `patrol: ^4.11.0`)  
+**Test File**: `frontend-mobile/patrol_test/1_seller/local_seller_accepts_order_test.dart` (partial)  
 **Preconditions**: Manual-capture flow; `SELLER_SEES_MANUAL_CAPTURE=true`; a `pending` / `authorized` card order for this seller  
 **Steps**:
 1. Seller dashboard → Orders; read the deadline text
@@ -2278,6 +2279,37 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Business Rule**: Seller pending cancellation spec; `SellerOrderData.canCancel`  
 **Selectors/API**: `seller_cancelOrderButton_<id>` (absent)  
 **Suggested Layer**: Widget / E2E Mobile  
+
+---
+
+### TC-401: An order the seller never accepted shows "Reservation released" (mobile)
+**Scenario status**: Active  
+**Category**: Edge Case  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Mobile  
+**Parity**: Both (the rule is proven by API TC-203; no web UI scenario exists yet)  
+**Automation**: Patrol (opt-in local run)  
+**Automation status**: Needs review  
+**Script mapping**: Verified by reading on 2026-11-08 (not run): test "TC-401: Local manual capture: buyer sees the reservation released on an expired order" in `frontend-mobile/patrol_test/2_buyer/local_expired_order_notice_test.dart` (split on 2026-11-08 from `local_payment_settlement_test.dart`); the buyer opens the order given by `LOCAL_EXPIRED_ORDER_ID` and asserts the notice title "Reservation released"; does not check the order's status or the Cancelled tab, or that no charge was made. Its title shows the final state only; the expired order is prepared beforehand by `backend/scripts/local-expired-order-fixture.mjs`, which creates an order through the API, moves its deadline into the past and waits for the scanner (its output gives `LOCAL_EXPIRED_ORDER_ID`)  
+**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Last run**: 2026-11-08  
+**Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode). The fixture script created order 6af08341b4412909a4ead049, moved its `acceptBy` into the past, and the running backend's scanner cancelled it (`cancelled` / `released`, confirmed by the script). Then `--tags tc-401` with `LOCAL_EXPIRED_ORDER_ID` set to that order: passed 1 of 1, 35 s; the buyer opened the order and saw "Reservation released". The Patrol log is not kept and the Stripe PaymentIntent was not inspected  
+**Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
+**Test File**: `frontend-mobile/patrol_test/2_buyer/local_expired_order_notice_test.dart` (partial)  
+**Preconditions**: Manual-capture flow; a card order that the seller never accepted and whose acceptance deadline has passed, after the automatic cancellation ran (a fresh fixture each time; see `docs/local-payment-verification.md`)  
+**Steps**:
+1. Log in as the buyer and open Orders
+2. Open the expired order
+
+**Expected Results**:
+- The order is cancelled and its payment notice reads "Reservation released"
+- No money was charged; the hold was released
+- The order is not listed under Pending
+
+**Business Rule**: Authorize-capture §Seller acceptance (deadline) and Recovery  
+**Selectors/API**: `orders_ordersNavTab`, `orders_orderCard_<id>`, `orders_paymentNoticeTitle_<title>`  
+**Suggested Layer**: E2E Mobile  
 
 ---
 

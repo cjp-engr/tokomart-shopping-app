@@ -248,8 +248,9 @@ Automation labels below name intended tools, not implemented or passing scripts.
 | TC-187 | Return/Refund and Complete tabs | P1 | Patrol / Widget |
 | TC-188 | Offline banner | P2 | Manual / Widget |
 | TC-189 | Interrupted checkout resumes | P2 | Manual |
+| TC-401 | Unaccepted order shows "Reservation released" | P2 | Patrol |
 
-**Added 2026-10-24 to 2026-11-05:** 28 web + 14 mobile + 88 API buyer-facing scenarios (overlap via parity on shared business rules)
+**Added 2026-10-24 to 2026-11-05:** 28 web + 15 mobile + 88 API buyer-facing scenarios (overlap via parity on shared business rules)
 
 Full steps and selectors: **`docs/test-cases/test-scenarios.md`**
 
