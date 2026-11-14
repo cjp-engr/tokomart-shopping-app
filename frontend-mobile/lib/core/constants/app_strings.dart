@@ -184,6 +184,10 @@ class AppStrings {
   static const String street = 'Street';
   static const String savedAddresses = 'Saved Addresses';
   static const String noSavedAddresses = 'No saved addresses';
+  static const String savedPaymentMethods = 'Saved Payment Methods';
+  static const String noSavedCards = 'No saved cards';
+  static const String deleteCard = 'Delete';
+  static const String failedToDeleteCard = 'Failed to delete payment method. Please try again.';
   static const String setAsDefault = 'Set as default';
   static const String deleteAddress = 'Delete address';
   static const String addAddress = 'Add Address';
@@ -208,6 +212,8 @@ class AppStrings {
   static const String noOrdersForProducts = 'No orders yet for your products.';
   static const String noOrdersWithStatus = 'No orders with this status.';
   static const String prepare = 'Prepare';
+  static const String acceptAndStartPreparing = 'Accept & start preparing';
+  static const String chargingPayment = 'Charging payment…';
   static const String markToShip = 'Mark to Ship';
   static const String markShipped = 'Mark Shipped';
   static const String deleteProduct = 'Delete Product';
@@ -218,6 +224,9 @@ class AppStrings {
   static const String cancelReasonHint =
       'e.g. Out of stock, unable to fulfill…';
   static const String cancelReasonHelper = 'Optional — shown to the buyer';
+  static const String sellerCancelReasonSubtitle =
+      'The buyer will see this reason. A reason is required.';
+  static const String sellerCancelReasonHelper = 'Required — shown to the buyer';
   static const String noVouchersYet = 'No vouchers yet';
   static const String tapToCreateVoucher = 'Tap + to create your first voucher';
   static const String expired = 'Expired';
@@ -345,6 +354,21 @@ class AppStrings {
   // ── Common ────────────────────────────────────────────────────────────────
   static const String browseProducts = 'Browse Products';
   static const String addToCartAction = 'Add to Cart';
+
+  // ── Payment Methods ──────────────────────────────────────────────────────
+  static const String paymentMethods = 'Payment Methods';
+  static const String noSavedCardsDescription =
+      'Add a payment method to speed up checkout';
+  static const String cardDeletedSuccess = 'Card deleted successfully';
+  static const String failedToLoadPaymentMethods =
+      'Failed to load payment methods';
+  static const String cardExpiry = 'Expires';
+  static const String deleteCardConfirmation =
+      'Are you sure you want to delete this card?';
+  static const String deleteAddressConfirmation =
+      'Are you sure you want to delete this address?';
+  static const String deleteFunctionalityUnavailable =
+      'Delete functionality will be available soon';
 
   // ── Errors ────────────────────────────────────────────────────────────────
   static const String genericError = 'Something went wrong. Please try again.';

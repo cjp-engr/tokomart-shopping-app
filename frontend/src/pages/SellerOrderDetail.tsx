@@ -1,12 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import type { Order } from '../types/order';
+import type { RefundRequest } from '../types/refund';
+import { canSellerCancel } from '../utils/orderPayment';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getStatusConfig, formatPaymentMethodType, formatDeliveryOption } from '../utils/orderUtils';
-import sellerService from '../services/sellerService';
+import sellerService, { SellerOrderError } from '../services/sellerService';
+import { refundService } from '../services/refundService';
+import { netOrderRevenue, refundMoney } from '../utils/refund';
+import { OrderRefundBadge } from '../components/orders/OrderRefundBadge';
+import { OrderRefundsSection } from '../components/orders/OrderRefundsSection';
+import { RefundItemMark } from '../components/orders/RefundItemMark';
+import {
+  acceptanceDeadlineText, acceptanceErrorMessage, canAcceptOrder, cancelReasonError, cancellationErrorMessage,
+  cancellationOutcomeMessage, CAPTURE_POLL_INTERVAL_MS, isCapturePending, isStaleCancellation, MAX_CANCEL_REASON_LENGTH,
+} from '../utils/sellerAcceptance';
 import {
   ArrowLeft,
   Package,
@@ -18,6 +30,7 @@ import {
   XCircle,
   ImageOff,
   DollarSign,
+  Info,
 } from 'lucide-react';
 
 type SellerOrder = Order & {
@@ -36,6 +49,9 @@ const ImgWithFallback: React.FC<{ src: string; alt: string; className?: string }
   return <img src={src} alt={alt} className={className} onError={() => setFailed(true)} />;
 };
 
+interface CancelDialogState { open: boolean; reason: string; loading: boolean; error: string | null }
+const CLOSED_CANCEL_DIALOG: CancelDialogState = { open: false, reason: '', loading: false, error: null };
+
 export const SellerOrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,11 +61,22 @@ export const SellerOrderDetail: React.FC = () => {
   const [order, setOrder] = useState<SellerOrder | null>(initialOrder);
   const [loadingOrder, setLoadingOrder] = useState(!initialOrder);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showShipDialog, setShowShipDialog] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; reason: string; loading: boolean }>({
-    open: false, reason: '', loading: false,
-  });
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
+  const acceptInFlight = useRef(false);
+  const [now, setNow] = useState(() => new Date());
+  const [cancelDialog, setCancelDialog] = useState<CancelDialogState>(CLOSED_CANCEL_DIALOG);
   const [currentStatus, setCurrentStatus] = useState(initialOrder?.status ?? '');
+  // The order's refund requests in every state, for the refunds section; a failed load just leaves it out.
+  const [refunds, setRefunds] = useState<RefundRequest[]>([]);
+  const refundedAmountMinor = order?.refundedAmountMinor ?? 0;
+  useEffect(() => {
+    if (!orderIdParam) return;
+    let cancelled = false;
+    refundService.sellerOrderRefunds(orderIdParam).then(list => { if (!cancelled) setRefunds(list); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [orderIdParam, refundedAmountMinor]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +98,47 @@ export const SellerOrderDetail: React.FC = () => {
     if (orderIdParam) load();
     return () => { cancelled = true; };
   }, [orderIdParam]);
+
+  // Keep the acceptance deadline current so an expired order stops offering the accept button
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Background refresh (no spinner); a failed fetch keeps the order currently shown.
+  // Drops the "being charged" notice once the order is no longer waiting on its capture.
+  const reloadOrder = async () => {
+    try {
+      const orders = await sellerService.getOrders() as SellerOrder[];
+      const match = orders.find(o => o.id === orderIdParam);
+      if (match) {
+        setOrder(match);
+        setCurrentStatus(match.status);
+        setNow(new Date());
+        if (!isCapturePending(match)) setStatusNotice(null);
+      }
+    } catch {
+      // keep the order currently shown
+    }
+  };
+
+  // While the capture is resolving, refresh every few seconds until it is no longer pending
+  const capturePollingNeeded = order ? isCapturePending(order) : false;
+  const pollInFlight = useRef(false);
+  useEffect(() => {
+    if (!capturePollingNeeded) return;
+    const timer = setInterval(async () => {
+      if (pollInFlight.current) return;
+      pollInFlight.current = true;
+      try {
+        await reloadOrder();
+      } finally {
+        pollInFlight.current = false;
+      }
+    }, CAPTURE_POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capturePollingNeeded]);
 
   if (loadingOrder && !order) {
     return (
@@ -97,13 +165,16 @@ export const SellerOrderDetail: React.FC = () => {
   const StatusIcon = statusConfig.icon;
   const isCancelled = currentStatus === 'cancelled';
 
-  const canAccept    = currentStatus === 'pending';
+  const capturePending = isCapturePending(order);
+  const canAccept    = currentStatus === 'pending' && (canAcceptOrder(order, now) || capturePending);
+  const deadlineText = currentStatus === 'pending' ? acceptanceDeadlineText(order, now) : null;
   const canToShip    = currentStatus === 'preparing';
   const canToReceive = currentStatus === 'processing';
-  const canCancel    = ['pending', 'preparing', 'processing', 'shipped'].includes(currentStatus);
+  const canCancel    = canSellerCancel({ ...order, status: currentStatus });
 
   const handleStatusUpdate = async (status: 'preparing' | 'processing' | 'shipped' | 'delivered' | 'cancelled', cancelReason?: string) => {
     setStatusError(null);
+    setStatusNotice(null);
     setStatusLoading(true);
     try {
       await sellerService.updateOrderStatus(order.id, status, cancelReason);
@@ -115,13 +186,64 @@ export const SellerOrderDetail: React.FC = () => {
     }
   };
 
-  const confirmCancel = async () => {
-    setCancelDialog(d => ({ ...d, loading: true }));
+  // Accepting a card order charges the buyer, so it must not run twice and may finish asynchronously
+  const handleAccept = async () => {
+    if (acceptInFlight.current) return;
+    acceptInFlight.current = true;
+    setStatusError(null);
+    setStatusNotice(null);
+    setStatusLoading(true);
     try {
-      await handleStatusUpdate('cancelled', cancelDialog.reason || undefined);
-      setCancelDialog({ open: false, reason: '', loading: false });
-    } catch {
-      setCancelDialog(d => ({ ...d, loading: false }));
+      const { outcome } = await sellerService.updateOrderStatus(order.id, 'preparing');
+      if (outcome === 'completed') {
+        setCurrentStatus('preparing');
+      } else {
+        setStatusNotice('Payment is being charged. This order will move to preparing when it finishes.');
+        await reloadOrder();
+      }
+    } catch (err) {
+      if (err instanceof SellerOrderError) {
+        setStatusError(acceptanceErrorMessage(err.code));
+        await reloadOrder();
+      } else {
+        setStatusError(err instanceof Error ? err.message : 'Failed to update status');
+      }
+    } finally {
+      acceptInFlight.current = false;
+      setStatusLoading(false);
+    }
+  };
+
+  // The server decides: the reason is required and the order may have been accepted or be capturing meanwhile
+  const confirmCancel = async () => {
+    if (cancelDialog.loading || statusLoading) return;
+    const reasonError = cancelReasonError(cancelDialog.reason);
+    if (reasonError) {
+      setCancelDialog(d => ({ ...d, error: reasonError }));
+      return;
+    }
+    setCancelDialog(d => ({ ...d, loading: true, error: null }));
+    setStatusError(null);
+    setStatusNotice(null);
+    try {
+      const { paymentOperation } = await sellerService.updateOrderStatus(order.id, 'cancelled', cancelDialog.reason);
+      setCancelDialog(CLOSED_CANCEL_DIALOG);
+      setCurrentStatus('cancelled');
+      await reloadOrder();
+      setStatusNotice(cancellationOutcomeMessage(paymentOperation));
+    } catch (err) {
+      const code = err instanceof SellerOrderError ? err.code : undefined;
+      const message = err instanceof SellerOrderError
+        ? cancellationErrorMessage(code)
+        : (err instanceof Error ? err.message : 'Could not cancel the order. Please try again.');
+      if (isStaleCancellation(code)) {
+        // The order moved on (accepted, being charged, or not this seller's): show its real state.
+        setCancelDialog(CLOSED_CANCEL_DIALOG);
+        setStatusError(message);
+        await reloadOrder();
+      } else {
+        setCancelDialog(d => ({ ...d, loading: false, error: message }));
+      }
     }
   };
 
@@ -149,10 +271,13 @@ export const SellerOrderDetail: React.FC = () => {
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatDate(order.createdAt)}</p>
         </div>
-        <Badge variant={statusConfig.variant} className="flex items-center gap-1.5 px-3 py-1.5 text-sm" data-testid="seller-order-status-badge">
-          <StatusIcon className="w-4 h-4" />
-          {statusConfig.label}
-        </Badge>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <OrderRefundBadge order={order} />
+          <Badge variant={statusConfig.variant} className="flex items-center gap-1.5 px-3 py-1.5 text-sm" data-testid="seller-order-status-badge">
+            <StatusIcon className="w-4 h-4" />
+            {statusConfig.label}
+          </Badge>
+        </div>
       </div>
 
       {/* Status error */}
@@ -160,6 +285,13 @@ export const SellerOrderDetail: React.FC = () => {
         <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
           <XCircle className="w-4 h-4 flex-shrink-0" />
           {statusError}
+        </div>
+      )}
+
+      {statusNotice && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300" data-testid="seller-status-notice">
+          <Info className="w-4 h-4 flex-shrink-0" />
+          {statusNotice}
         </div>
       )}
 
@@ -189,7 +321,7 @@ export const SellerOrderDetail: React.FC = () => {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Items Ordered</h2>
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
-          {order.items.map(({ product, quantity, selectedVariant }) => {
+          {order.items.map(({ lineId, product, quantity, selectedVariant }) => {
             const rawPrice = selectedVariant?.price ?? product.price;
             const discountPercent =
               selectedVariant?.discount ?? product.discount ?? 0;
@@ -219,6 +351,7 @@ export const SellerOrderDetail: React.FC = () => {
                     </p>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">x{quantity}</p>
+                  <RefundItemMark marks={order.refundedItems} lineId={lineId} quantity={quantity} />
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
@@ -295,8 +428,22 @@ export const SellerOrderDetail: React.FC = () => {
             <span>Total</span>
             <span className="tabular-nums">{formatCurrency(order.total)}</span>
           </div>
+          {refundedAmountMinor > 0 && (
+            <>
+              <div className="flex justify-between text-green-700 dark:text-green-400">
+                <span>Refunded</span>
+                <span className="tabular-nums">−{refundMoney(refundedAmountMinor, order.currency ?? 'usd')}</span>
+              </div>
+              <div className="flex justify-between font-bold text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <span>Net after refunds</span>
+                <span className="tabular-nums">{formatCurrency(netOrderRevenue(order))}</span>
+              </div>
+            </>
+          )}
         </div>
       </Card>
+
+      <OrderRefundsSection requests={refunds} />
 
       {/* Shipping address */}
       <Card>
@@ -360,12 +507,18 @@ export const SellerOrderDetail: React.FC = () => {
       )}
 
       {/* Actions */}
+      {deadlineText && (
+        <p className="text-sm text-gray-500 dark:text-gray-400" data-testid="seller-order-accept-deadline">{deadlineText}</p>
+      )}
       {(canAccept || canToShip || canToReceive || canCancel) && (
-        <div className="flex flex-wrap gap-3 pb-8">
+        <div className="flex flex-wrap items-center gap-3 pb-8">
           {canAccept && (
-            <Button loading={statusLoading} onClick={() => handleStatusUpdate('preparing')} data-testid="seller-order-action-btn" aria-label="Prepare order">
-              <ClipboardList className="w-4 h-4 mr-1.5" /> Prepare
+            <Button loading={statusLoading || capturePending} onClick={handleAccept} data-testid="seller-order-action-btn" aria-label="Prepare order">
+              <ClipboardList className="w-4 h-4 mr-1.5" /> Accept &amp; start preparing
             </Button>
+          )}
+          {capturePending && (
+            <span className="text-sm text-blue-600 dark:text-blue-400" data-testid="seller-order-charging">Charging payment…</span>
           )}
           {canToShip && (
             <Button loading={statusLoading} onClick={() => handleStatusUpdate('processing')} data-testid="seller-order-action-btn" aria-label="Mark order to ship">
@@ -373,14 +526,14 @@ export const SellerOrderDetail: React.FC = () => {
             </Button>
           )}
           {canToReceive && (
-            <Button loading={statusLoading} onClick={() => handleStatusUpdate('shipped')} data-testid="seller-order-action-btn" aria-label="Mark order shipped">
+            <Button loading={statusLoading} onClick={() => setShowShipDialog(true)} data-testid="seller-order-action-btn" aria-label="Mark order shipped">
               <Truck className="w-4 h-4 mr-1.5" /> Mark Shipped
             </Button>
           )}
           {canCancel && (
             <Button
               variant="outline"
-              onClick={() => setCancelDialog({ open: true, reason: '', loading: false })}
+              onClick={() => setCancelDialog({ ...CLOSED_CANCEL_DIALOG, open: true })}
               className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
               data-testid="seller-cancel-order-btn"
               aria-label="Cancel order"
@@ -396,32 +549,54 @@ export const SellerOrderDetail: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black px-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Cancel Order</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Provide a reason for cancellation (optional).
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">The buyer will see this reason. A reason is required.</p>
+            <label htmlFor="seller-cancel-reason" className="sr-only">Cancellation reason (required)</label>
             <textarea
+              id="seller-cancel-reason"
+              data-testid="seller-cancel-reason"
               value={cancelDialog.reason}
-              onChange={e => setCancelDialog(d => ({ ...d, reason: e.target.value }))}
+              onChange={e => setCancelDialog(d => ({ ...d, reason: e.target.value, error: null }))}
               placeholder="e.g. Out of stock, unable to fulfil..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-red-400 mb-4"
+              maxLength={MAX_CANCEL_REASON_LENGTH}
+              aria-required="true"
+              aria-invalid={cancelDialog.error ? true : undefined}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-red-400"
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-right mb-3">{cancelDialog.reason.length}/{MAX_CANCEL_REASON_LENGTH}</p>
+            {cancelDialog.error && (
+              <p role="alert" data-testid="seller-cancel-error" className="text-sm text-red-600 dark:text-red-400 mb-3">{cancelDialog.error}</p>
+            )}
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCancelDialog({ open: false, reason: '', loading: false })}
+                onClick={() => setCancelDialog(CLOSED_CANCEL_DIALOG)}
                 disabled={cancelDialog.loading}
               >
                 Keep Order
               </Button>
-              <Button variant="danger" size="sm" loading={cancelDialog.loading} onClick={confirmCancel}>
+              <Button variant="danger" size="sm" loading={cancelDialog.loading} disabled={cancelDialog.loading || cancelReasonError(cancelDialog.reason) !== null} onClick={confirmCancel} data-testid="seller-cancel-confirm">
                 <XCircle className="w-4 h-4 mr-1" /> Confirm Cancel
               </Button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showShipDialog}
+        title="Mark as Shipped"
+        message="Confirm that this order has been shipped to the buyer?"
+        confirmLabel="Mark Shipped"
+        cancelLabel="Not yet"
+        variant="warning"
+        onConfirm={() => {
+          setShowShipDialog(false);
+          handleStatusUpdate('shipped');
+        }}
+        onCancel={() => setShowShipDialog(false)}
+      />
     </div>
   );
 };

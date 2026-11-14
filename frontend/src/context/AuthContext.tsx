@@ -15,10 +15,13 @@ interface AuthContextType extends AuthState {
   updateAddress: (id: string, addr: Omit<SavedAddress, '_id' | 'isDefault'>) => Promise<void>;
   deleteAddress: (id: string) => Promise<void>;
   setDefaultAddress: (id: string) => Promise<void>;
+  deletePaymentMethod: (id: string) => Promise<void>;
+  setDefaultPaymentMethod: (id: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components -- context hook is colocated with its provider
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -54,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
-      } catch (error) {
+      } catch {
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -68,34 +71,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
-    try {
-      const { user, token } = await authService.login(credentials);
-      setAuthState({
-        user,
-        token,
-        isAuthenticated: true,
-        isLoading: false
-      });
-      // Token is now in localStorage — tell CartContext to load this user's cart
-      window.dispatchEvent(new Event('cart:load'));
-    } catch (error) {
-      throw error;
-    }
+    const { user, token } = await authService.login(credentials);
+    setAuthState({
+      user,
+      token,
+      isAuthenticated: true,
+      isLoading: false
+    });
+    // Token is now in localStorage — tell CartContext to load this user's cart
+    window.dispatchEvent(new Event('cart:load'));
   };
 
   const signup = async (data: SignupData) => {
-    try {
-      const { user, token } = await authService.signup(data);
-      setAuthState({
-        user,
-        token,
-        isAuthenticated: true,
-        isLoading: false
-      });
-      window.dispatchEvent(new Event('cart:load'));
-    } catch (error) {
-      throw error;
-    }
+    const { user, token } = await authService.signup(data);
+    setAuthState({
+      user,
+      token,
+      isAuthenticated: true,
+      isLoading: false
+    });
+    window.dispatchEvent(new Event('cart:load'));
   };
 
   const logout = () => {
@@ -114,15 +109,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('No user logged in');
     }
 
-    try {
-      const updatedUser = await authService.updateProfile(authState.user.id, updates);
-      setAuthState(prev => ({
-        ...prev,
-        user: updatedUser
-      }));
-    } catch (error) {
-      throw error;
-    }
+    const updatedUser = await authService.updateProfile(authState.user.id, updates);
+    setAuthState(prev => ({
+      ...prev,
+      user: updatedUser
+    }));
   };
 
   const uploadAvatar = async (file: File) => {
@@ -166,8 +157,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState(prev => ({ ...prev, user: prev.user ? { ...prev.user, savedAddresses: data.savedAddresses } : prev.user }));
   };
 
+  const deletePaymentMethod = async (id: string) => {
+    if (!authState.user) throw new Error('No user logged in');
+    const res = await fetch(API_ENDPOINTS.PAYMENT_METHOD(id), { method: 'DELETE', headers: getAuthHeaders() });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    setAuthState(prev => ({ ...prev, user: prev.user ? { ...prev.user, savedCards: data.paymentMethods } : prev.user }));
+  };
+
+  const setDefaultPaymentMethod = async (id: string) => {
+    if (!authState.user) throw new Error('No user logged in');
+    const res = await fetch(API_ENDPOINTS.PAYMENT_METHOD_DEFAULT(id), { method: 'PATCH', headers: getAuthHeaders() });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    setAuthState(prev => ({ ...prev, user: prev.user ? { ...prev.user, savedCards: data.paymentMethods } : prev.user }));
+  };
+
   return (
-    <AuthContext.Provider value={{ ...authState, login, signup, logout, updateProfile, uploadAvatar, addAddress, updateAddress, deleteAddress, setDefaultAddress }}>
+    <AuthContext.Provider value={{ ...authState, login, signup, logout, updateProfile, uploadAvatar, addAddress, updateAddress, deleteAddress, setDefaultAddress, deletePaymentMethod, setDefaultPaymentMethod }}>
       {children}
     </AuthContext.Provider>
   );

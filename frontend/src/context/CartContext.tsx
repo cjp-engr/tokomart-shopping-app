@@ -19,6 +19,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components -- context hook is colocated with its provider
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -31,6 +32,7 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- pure helper used alongside the cart provider
 export const buildCartKey = (productId: string, variantKey?: string): string =>
   variantKey ? `${productId}|${variantKey}` : productId;
 
@@ -94,8 +96,10 @@ const loadFromBackend = async (): Promise<CartItem[] | null> => {
     for (const seller of data.sellers ?? []) {
       const sellerIdStr =
         seller.sellerId?._id?.toString() ?? seller.sellerId?.toString() ?? '__unknown__';
-      const sellerName = seller.sellerId?.firstName
-        ? `${seller.sellerId.firstName} ${seller.sellerId.lastName ?? ''}`.trim()
+      // seller.sellerId is a raw ObjectId string (not populated); read name from the product's populated sellerId
+      const populatedSeller = seller.items?.[0]?.product?.sellerId;
+      const sellerName = populatedSeller?.firstName
+        ? `${populatedSeller.firstName} ${populatedSeller.lastName ?? ''}`.trim()
         : '';
 
       for (const entry of seller.items ?? []) {
@@ -147,6 +151,10 @@ const loadFromBackend = async (): Promise<CartItem[] | null> => {
             sellerId: sellerIdStr,
             sellerName,
             createdAt: p.createdAt ?? '',
+            discount: p.discount,
+            shippingOptions: p.shippingOptions,
+            shippingFee: p.shippingFee,
+            shippingFeeAmounts: p.shippingFeeAmounts,
           },
           quantity: entry.quantity,
           selectedVariant,
@@ -307,12 +315,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             if (!r.ok) return { id: item.product.id, remove: true };
             const data = await r.json();
             const p = data.product ?? data;
-            const variantKey = item.selectedVariant?.key;
-            const stock = variantKey
-              ? (p.variants?.find((v: { key?: string; _id?: string; stock?: number }) =>
-                  v.key === variantKey || v._id === variantKey)?.stock ?? 0)
+            const variantId = item.selectedVariant?._id;
+            const stock = variantId
+              ? (p.variants?.find((v: { _id?: string; stock?: number }) =>
+                  v._id?.toString() === variantId.toString())?.stock ?? 0)
               : (p.stock ?? 0);
-            return { id: item.product.id, variantKey, remove: stock <= 0 };
+            return { id: item.product.id, variantKey: item.selectedVariant?.key, remove: stock <= 0 };
           })
           .catch(() => ({ id: item.product.id, variantKey: undefined, remove: true }))
       )

@@ -9,6 +9,7 @@ final class Auth extends Module {
     required String email,
     required String password,
   }) async {
+    $.log('Logging in as $email');
     await $.platform.mobile.grantPermissionWhenInUse();
 
     await $(keys.auth.loginEmailField).enterText(email);

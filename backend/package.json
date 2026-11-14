@@ -7,8 +7,13 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:contracts": "vitest run src/config/__tests__/swagger.test.ts src/config/__tests__/swaggerUi.test.ts",
     "start": "node dist/server.js",
-    "seed": "tsx src/utils/seed.ts"
+    "seed": "tsx src/utils/seed.ts",
+    "migrate:check-intents": "tsx src/utils/migrations/checkDuplicatePaymentIntents.ts",
+    "migrate:legacy-payments": "tsx src/utils/migrations/reconcileLegacyPayments.ts"
   },
   "keywords": [
     "ecommerce",
@@ -20,6 +25,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/multer": "^2.1.0",
+    "@types/stripe": "^8.0.416",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
@@ -32,16 +38,24 @@
     "mongoose": "^8.0.0",
     "morgan": "^1.10.0",
     "multer": "^2.2.0",
-    "multer-storage-cloudinary": "^4.0.0"
+    "multer-storage-cloudinary": "^4.0.0",
+    "stripe": "^22.6.2",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.3.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   }
 }

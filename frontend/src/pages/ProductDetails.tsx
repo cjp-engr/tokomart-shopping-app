@@ -169,6 +169,8 @@ export const ProductDetails: React.FC = () => {
 
   useEffect(() => {
     if (product?.sellerId && user) {
+      // The fetch sets its loading flag before awaiting the request
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSellerProfile(product.sellerId);
     }
   }, [product?.sellerId, user, fetchSellerProfile]);
@@ -191,7 +193,11 @@ export const ProductDetails: React.FC = () => {
     fetchReviews();
   }, [id, reviewPage]);
 
-  useEffect(() => { setSelectedImage(0); }, [selectedVariant]);
+  const [prevSelectedVariant, setPrevSelectedVariant] = useState(selectedVariant);
+  if (selectedVariant !== prevSelectedVariant) {
+    setPrevSelectedVariant(selectedVariant);
+    setSelectedImage(0);
+  }
 
   const handleAddToCart = () => {
     if (product && product.sellerId !== user?.id) {
@@ -610,8 +616,8 @@ export const ProductDetails: React.FC = () => {
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {product.shippingFee === 'free'
                       ? 'Free shipping'
-                      : product.shippingFeeAmount
-                        ? `Shipping fee: ${formatCurrency(product.shippingFeeAmount)}`
+                      : product.shippingFeeAmounts && Object.keys(product.shippingFeeAmounts).length > 0
+                        ? `Shipping fee: ${Object.entries(product.shippingFeeAmounts).map(([opt, amt]) => `${opt} ${formatCurrency(amt)}`).join(', ')}`
                         : 'Buyer pays shipping'}
                   </p>
                 </div>
@@ -758,7 +764,7 @@ export const ProductDetails: React.FC = () => {
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-primary-100 dark:ring-primary-900"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-950 flex items-center justify-center flex-shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
+              <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-500/15 flex items-center justify-center flex-shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
                 <span className="text-base font-bold text-primary-600">
                   {sellerProfile.firstName[0]}{sellerProfile.lastName[0]}
                 </span>

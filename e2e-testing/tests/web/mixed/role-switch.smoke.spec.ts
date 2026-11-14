@@ -2,9 +2,10 @@
 // Not a business-flow test — delete or replace once real mixed tests exist.
 //
 // Note: role assertions use email (immutable) rather than role field —
-// the buyer account (b1@test.com) may be promoted to seller by other
+// the buyer account (BUYER_EMAIL) may be promoted to seller by other
 // tests and cannot be demoted, so role field is not a reliable assertion.
 
+import { BUYER_EMAIL, SELLER_EMAIL } from '../../../helpers/api-client';
 import { test, expect } from '../../../fixtures/base-fixture';
 
 test(
@@ -19,7 +20,7 @@ test(
         localStorage.getItem('shopping_app_user_data'),
       );
       const buyer = JSON.parse(buyerData!);
-      expect(buyer.email).toBe('b1@test.com');
+      expect(buyer.email).toBe(BUYER_EMAIL);
     });
 
     await test.step('Apply seller auth and verify seller email in localStorage', async () => {
@@ -29,7 +30,8 @@ test(
         localStorage.getItem('shopping_app_user_data'),
       );
       const seller = JSON.parse(sellerData!);
-      expect(seller.email).toBe('s1@ex.com');
+      // the seller auth state is written by seller-setup, which logs in as SELLER_EMAIL
+      expect(seller.email).toBe(SELLER_EMAIL);
     });
   },
 );

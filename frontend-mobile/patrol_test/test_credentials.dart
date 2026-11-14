@@ -7,7 +7,7 @@ class TestCredentials {
 
   static const sellerEmail = String.fromEnvironment(
     'SELLER_EMAIL',
-    defaultValue: 's1@ex.com',
+    defaultValue: 'x@x.com',
   );
 
   static const password = String.fromEnvironment(

@@ -32,8 +32,8 @@ export default function UserProfile() {
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       setProfile(data.user);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load profile');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,10 @@ export default function UserProfile() {
     }
   }, [id]);
 
+  // Data loads set their loading flags before awaiting the request
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchTab(activeTab); }, [fetchTab, activeTab]);
 
   const handleFollow = async () => {
@@ -138,7 +141,7 @@ export default function UserProfile() {
                 className="w-20 h-20 rounded-full object-cover ring-2 ring-primary-100 dark:ring-primary-900"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-primary-50 dark:bg-primary-950 flex items-center justify-center ring-2 ring-primary-100 dark:ring-primary-900">
+              <div className="w-20 h-20 rounded-full bg-primary-50 dark:bg-primary-500/15 flex items-center justify-center ring-2 ring-primary-100 dark:ring-primary-900">
                 <span className="text-2xl font-bold text-primary-600">
                   {profile.firstName[0]}{profile.lastName[0]}
                 </span>
@@ -286,7 +289,7 @@ function UserRow({
             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-950 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-500/15 flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-bold text-primary-600">
               {user.firstName[0]}{user.lastName[0]}
             </span>

@@ -1,10 +1,146 @@
 import type { Order, CheckoutData, OrderStatus } from '../types/order';
-import type { Cart } from '../types/cart';
+import type { Cart, CartItem, SelectedVariant } from '../types/cart';
+import type { Product } from '../types/product';
+import type { CheckoutSession, CheckoutSessionCreateInput } from '../types/checkout';
 import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
 import { resolveSelectedDeliveryOption } from '../utils/orderUtils';
+import { CheckoutApiError } from './checkoutApiError';
+
+interface RawSeller {
+  _id?: string;
+  id?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+type RawSellerRef = string | RawSeller | null;
+
+interface RawItemProduct {
+  _id?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  image?: string;
+  images?: string[];
+  stock?: number;
+  rating?: number;
+  reviews?: number;
+  tags?: string[];
+  specifications?: Record<string, string>;
+  createdAt?: string;
+  sellerId?: RawSellerRef;
+  seller?: RawSellerRef;
+  createdBy?: RawSellerRef;
+}
+
+interface RawItem {
+  _id?: string;
+  product?: RawItemProduct | string;
+  productName?: string;
+  productImage?: string;
+  productPrice?: number;
+  variantId?: string;
+  variantSku?: string;
+  variantDiscount?: number;
+  discountPercent?: number;
+  selectedAttributes?: Record<string, unknown>;
+  quantity: number;
+}
+
+interface RawOrder extends Omit<Order, 'id' | 'items'> {
+  paymentError?: { code?: string };
+  _id?: string;
+  id?: string;
+  items: RawItem[];
+  deliverySelections?: unknown;
+}
+
+interface PaymentMethodLike {
+  id: string;
+  card?: { brand?: string; last4?: string; exp_month?: number; exp_year?: number } | null;
+}
+
+interface CheckoutEnvelope<T> {
+  success?: boolean;
+  data?: T;
+  message?: string;
+  error?: { code?: string; message?: string; retryable?: boolean; details?: unknown };
+}
+
+/** Checkout endpoints answer with `{ data }` on success and `{ error: { code } }` on failure. */
+async function readCheckoutResponse<T>(response: Response): Promise<T> {
+  const body: CheckoutEnvelope<T> | null = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new CheckoutApiError(
+      response.status,
+      body?.error?.code ?? 'unknown_error',
+      body?.error?.message ?? body?.message ?? 'Checkout request failed',
+      body?.error?.retryable ?? false,
+      body?.error?.details,
+    );
+  }
+  if (!body?.data) {
+    throw new CheckoutApiError(response.status, 'invalid_response', 'Unexpected checkout response', false);
+  }
+  return body.data;
+}
 
 class OrderService {
-  async createOrder(checkoutData: CheckoutData, cart: Cart, _userId: string, couponCodes?: Record<string, string>, deliverySelections?: Record<string, string>): Promise<Order[]> {
+  /** Legacy card flow only (CHECKOUT_FLOW=legacy). Manual-capture checkout uses createCheckoutSession. */
+  async createPaymentIntent(amountInCents: number): Promise<{ clientSecret: string; paymentIntentId: string }> {
+    const response = await fetch(API_ENDPOINTS.PAYMENT_INTENT, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ amountInCents }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to initialise payment');
+    }
+    const json = await response.json();
+    const data = json.data ?? json;
+    return {
+      clientSecret: data.clientSecret,
+      paymentIntentId: data.paymentIntentId,
+    };
+  }
+
+  /**
+   * Creates the checkout session, or resumes it when the same Idempotency-Key and body
+   * were already used (the server then answers 200 and `replayed` is true).
+   */
+  async createCheckoutSession(
+    payload: CheckoutSessionCreateInput,
+    idempotencyKey: string,
+  ): Promise<{ session: CheckoutSession; replayed: boolean }> {
+    const response = await fetch(API_ENDPOINTS.CHECKOUT_SESSIONS, {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify(payload),
+    });
+    const session = await readCheckoutResponse<CheckoutSession>(response);
+    return { session, replayed: response.status === 200 };
+  }
+
+  async getCheckoutSession(sessionId: string): Promise<CheckoutSession> {
+    const response = await fetch(API_ENDPOINTS.CHECKOUT_SESSION(sessionId), {
+      headers: getAuthHeaders(),
+    });
+    return readCheckoutResponse<CheckoutSession>(response);
+  }
+
+  /** Verifies every seller's payment hold and places the orders. Returns the session with its orders. */
+  async confirmCheckoutSession(sessionId: string): Promise<CheckoutSession> {
+    const response = await fetch(API_ENDPOINTS.CHECKOUT_SESSION_CONFIRM(sessionId), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return readCheckoutResponse<CheckoutSession>(response);
+  }
+
+  async createOrder(checkoutData: CheckoutData, cart: Cart, couponCodes?: Record<string, string>, deliverySelections?: Record<string, string>): Promise<Order[]> {
     const items = cart.items.map(item => ({
       productId: item.product.id,
       variantId: item.selectedVariant?._id,
@@ -19,6 +155,7 @@ class OrderService {
         items,
         shippingAddress: checkoutData.shippingAddress,
         paymentMethod: checkoutData.paymentMethod,
+        paymentIntentId: checkoutData.paymentIntentId,
         ...(couponCodes && Object.keys(couponCodes).length > 0 ? { couponCodes } : {}),
         ...(deliverySelections && Object.keys(deliverySelections).length > 0 ? { deliverySelections } : {}),
       })
@@ -29,13 +166,13 @@ class OrderService {
       throw new Error(error.message || 'Failed to create order');
     }
 
-    const data = await response.json();
+    const data: { orders?: RawOrder[]; order?: RawOrder } = await response.json();
     // Backend now returns { orders: [...] } — one per seller
-    const raw: any[] = data.orders ?? (data.order ? [data.order] : []);
-    return raw.map((o: any) => this.adaptOrder(o));
+    const raw: RawOrder[] = data.orders ?? (data.order ? [data.order] : []);
+    return raw.map((o) => this.adaptOrder(o));
   }
 
-  async getOrders(_userId: string): Promise<Order[]> {
+  async getOrders(): Promise<Order[]> {
     const response = await fetch(API_ENDPOINTS.ORDERS, {
       headers: getAuthHeaders()
     });
@@ -44,11 +181,11 @@ class OrderService {
       throw new Error('Failed to fetch orders');
     }
 
-    const data = await response.json();
-    return data.orders.map((order: any) => this.adaptOrder(order));
+    const data: { orders: RawOrder[] } = await response.json();
+    return data.orders.map((order) => this.adaptOrder(order));
   }
 
-  async getOrderById(orderId: string, _userId: string): Promise<Order | null> {
+  async getOrderById(orderId: string): Promise<Order | null> {
     try {
       const response = await fetch(API_ENDPOINTS.ORDER(orderId), {
         headers: getAuthHeaders()
@@ -58,14 +195,14 @@ class OrderService {
         return null;
       }
 
-      const data = await response.json();
+      const data: { order: RawOrder } = await response.json();
       return this.adaptOrder(data.order);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
 
-  async updateOrderStatus(orderId: string, _userId: string, status: OrderStatus, cancelReason?: string): Promise<Order> {
+  async updateOrderStatus(orderId: string, status: OrderStatus, cancelReason?: string): Promise<Order> {
     const response = await fetch(API_ENDPOINTS.ORDER_STATUS(orderId), {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -77,12 +214,12 @@ class OrderService {
       throw new Error(error.message || 'Failed to update order status');
     }
 
-    const data = await response.json();
+    const data: { order: RawOrder } = await response.json();
     return this.adaptOrder(data.order);
   }
 
-  async cancelOrder(orderId: string, userId: string, reason?: string): Promise<Order> {
-    return this.updateOrderStatus(orderId, userId, 'cancelled', reason);
+  async cancelOrder(orderId: string, reason?: string): Promise<Order> {
+    return this.updateOrderStatus(orderId, 'cancelled', reason);
   }
 
   async confirmReceived(orderId: string): Promise<Order> {
@@ -94,12 +231,12 @@ class OrderService {
       const error = await response.json();
       throw new Error(error.message || 'Failed to confirm receipt');
     }
-    const data = await response.json();
+    const data: { order: RawOrder } = await response.json();
     return this.adaptOrder(data.order);
   }
 
-  async getOrderSummaryAsync(userId: string): Promise<{ totalOrders: number; totalSpent: number }> {
-    const orders = await this.getOrders(userId);
+  async getOrderSummaryAsync(): Promise<{ totalOrders: number; totalSpent: number }> {
+    const orders = await this.getOrders();
     const completedOrders = orders.filter(o => o.status !== 'cancelled');
 
     return {
@@ -108,17 +245,44 @@ class OrderService {
     };
   }
 
+  async savePaymentMethod(
+    paymentMethod: PaymentMethodLike,
+    user: { firstName?: string; lastName?: string } | null,
+    isDefault: boolean,
+  ): Promise<void> {
+    const cardData = paymentMethod.card;
+    const response = await fetch(API_ENDPOINTS.PAYMENT_METHODS, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        type: 'credit-card',
+        brand: cardData?.brand ?? '',
+        last4: cardData?.last4 ?? '',
+        cardHolder: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+        expiryMonth: cardData?.exp_month?.toString() ?? '',
+        expiryYear: cardData?.exp_year?.toString() ?? '',
+        setAsDefault: isDefault,
+        stripePaymentMethodId: paymentMethod.id,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save payment method');
+    }
+  }
+
   // Helper method to adapt backend order format to frontend format
-  private adaptOrder(order: any): Order {
+  private adaptOrder(order: RawOrder): Order {
     return {
-      id: order._id || order.id,
+      id: order._id || order.id || '',
       userId: order.userId,
-      items: order.items.map((item: any) => {
-        const rawSeller = item.product?.sellerId ?? item.product?.seller ?? item.product?.createdBy;
+      items: order.items.map((item): CartItem => {
+        const itemProduct = typeof item.product === 'object' ? item.product : undefined;
+        const rawSeller = itemProduct?.sellerId ?? itemProduct?.seller ?? itemProduct?.createdBy;
         const seller = rawSeller && typeof rawSeller === 'object' ? rawSeller : null;
         const sellerId: string | undefined = seller
-          ? seller._id?.toString() ?? seller.id?.toString()
-          : rawSeller?.toString();
+          ? seller._id ?? seller.id
+          : typeof rawSeller === 'string' ? rawSeller : undefined;
         let sellerName: string | undefined;
         if (seller) {
           const full = seller.fullName?.trim();
@@ -130,17 +294,17 @@ class OrderService {
           }
         }
 
-        const variantId: string | undefined = item.variantId;
+        const variantId = item.variantId;
         const discountPercent: number =
           item.discountPercent ?? item.variantDiscount ?? 0;
         const rawAttrs = item.selectedAttributes;
-        let selectedVariant: import('../types/cart').SelectedVariant | undefined;
+        let selectedVariant: SelectedVariant | undefined;
         if (variantId && rawAttrs && typeof rawAttrs === 'object') {
           const attributes: Record<string, string> = {};
           for (const [k, v] of Object.entries(rawAttrs)) {
             attributes[k] = String(v);
           }
-          const variantPrice: number = item.productPrice ?? item.product?.price ?? 0;
+          const variantPrice: number = item.productPrice ?? itemProduct?.price ?? 0;
           selectedVariant = {
             _id: variantId,
             attributes,
@@ -152,40 +316,44 @@ class OrderService {
           };
         }
 
+        const product: Product = itemProduct?._id ? {
+          id: itemProduct._id,
+          name: item.productName || itemProduct.name || '',
+          description: itemProduct.description || '',
+          price: item.productPrice || itemProduct.price || 0,
+          category: itemProduct.category || '',
+          image: item.productImage || itemProduct.image || '',
+          images: itemProduct.images,
+          stock: itemProduct.stock || 0,
+          rating: itemProduct.rating || 0,
+          reviews: itemProduct.reviews || 0,
+          tags: itemProduct.tags,
+          discount: variantId ? undefined : discountPercent,
+          specifications: itemProduct.specifications ?? undefined,
+          createdAt: itemProduct.createdAt || new Date().toISOString(),
+          sellerId,
+        } : {
+          id: typeof item.product === 'string' ? item.product : '',
+          name: item.productName || '',
+          description: '',
+          price: item.productPrice || 0,
+          category: '',
+          image: item.productImage || '',
+          stock: 0,
+          rating: 0,
+          reviews: 0,
+          discount: variantId ? undefined : discountPercent,
+          createdAt: new Date().toISOString(),
+        };
+
         return {
-          product: item.product?._id ? {
-            id: item.product._id,
-            name: item.productName || item.product.name,
-            description: item.product.description || '',
-            price: item.productPrice || item.product.price,
-            category: item.product.category || '',
-            image: item.productImage || item.product.image,
-            images: item.product.images,
-            stock: item.product.stock || 0,
-            rating: item.product.rating || 0,
-            reviews: item.product.reviews || 0,
-            tags: item.product.tags,
-            discount: variantId ? undefined : discountPercent,
-            specifications: item.product.specifications ?? undefined,
-            createdAt: item.product.createdAt || new Date().toISOString(),
-            sellerId,
-          } : {
-            id: item.product?.toString() ?? '',
-            name: item.productName,
-            description: '',
-            price: item.productPrice,
-            category: '',
-            image: item.productImage,
-            stock: 0,
-            rating: 0,
-            reviews: 0,
-            discount: variantId ? undefined : discountPercent,
-            createdAt: new Date().toISOString(),
-          },
+          lineId: item._id,
+          product,
           quantity: item.quantity,
           sellerId,
           sellerName,
           selectedVariant,
+          isSelected: false,
         };
       }),
       shippingAddress: order.shippingAddress,
@@ -201,6 +369,21 @@ class OrderService {
       createdAt: order.createdAt,
       estimatedDelivery: order.estimatedDelivery,
       selectedDeliveryOption: resolveSelectedDeliveryOption(order),
+      paymentFlowVersion: order.paymentFlowVersion,
+      paymentStatus: order.paymentStatus,
+      paymentErrorCode: order.paymentError?.code,
+      placedAt: order.placedAt,
+      acceptBy: order.acceptBy,
+      authorizationExpiresAt: order.authorizationExpiresAt,
+      cancelledByRole: order.cancelledByRole,
+      cancelledAt: order.cancelledAt,
+      deliveredAt: order.deliveredAt,
+      refundRequestDeadlineAt: order.refundRequestDeadlineAt,
+      refundedItems: order.refundedItems,
+      refundedAmountMinor: order.refundedAmountMinor,
+      activeRefundRequestId: order.activeRefundRequestId,
+      refundReservedAmountMinor: order.refundReservedAmountMinor,
+      currency: order.currency,
     };
   }
 }

@@ -1,7 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IAddress } from './User.js';
+import type { RefundAllocationV1 } from '../services/refundAllocation.js';
 
-export type OrderStatus = 'pending' | 'preparing' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'awaiting_payment' | 'pending' | 'preparing' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export const CANCELLED_BY_ROLES = ['buyer', 'seller', 'system'] as const;
+export type CancelledByRole = typeof CANCELLED_BY_ROLES[number];
 
 export interface ICartItem {
   product: mongoose.Types.ObjectId;
@@ -36,17 +40,55 @@ export interface IOrder extends Document {
   shipping: number;
   total: number;
   couponCode?: string;
+  paymentIntentId?: string;
   status: OrderStatus;
   estimatedDelivery?: Date;
   shippedAt?: Date;
+  /** Recorded delivery time and the end of the buyer's refund window (delivery + 168h); written once, never backfilled. */
+  deliveredAt?: Date;
+  refundRequestDeadlineAt?: Date;
   refundRequestedAt?: Date;
   cancelReason?: string;
+  /** Who cancelled the order and when; written once by the cancellation claim. Older orders have none. */
+  cancelledByRole?: CancelledByRole;
+  cancelledById?: mongoose.Types.ObjectId;
+  cancelledAt?: Date;
   sellerMessages?: Record<string, string>;
   deliverySelections?: Record<string, string>;
   selectedDeliveryOption?: string;
+  sellerId?: mongoose.Types.ObjectId;
+  checkoutSessionId?: string;
+  paymentFlowVersion: 'legacy' | 'manual_capture';
+  paymentStatus?: PaymentStatus;
+  amountMinor?: number;
+  currency?: string;
+  authorizedAt?: Date;
+  placedAt?: Date;
+  authorizationExpiresAt?: Date;
+  acceptBy?: Date;
+  capturedAt?: Date;
+  stockRestoredAt?: Date;
+  refundId?: string;
+  /** Refundable amount of each unit, built once from this order's snapshot (see refundAllocation.ts). */
+  refundAllocation?: RefundAllocationV1;
+  /** The one unresolved delivered-item refund request, if any. */
+  activeRefundRequestId?: mongoose.Types.ObjectId;
+  refundedAmountMinor?: number;
+  refundReservedAmountMinor?: number;
+  refundedShippingMinor?: number;
+  refundReservedShippingMinor?: number;
+  /** Units that are reserved by an unresolved request or already refunded; they cannot be requested again. */
+  refundUnitsTaken?: Array<{ lineId: string; ordinal: number }>;
+  paymentError?: { code: string; message: string; at: Date };
   createdAt: Date;
   updatedAt: Date;
 }
+
+export const PAYMENT_STATUSES = [
+  'awaiting_authorization', 'authorized', 'capture_pending', 'captured',
+  'release_pending', 'released', 'refund_pending', 'refunded', 'partially_refunded', 'failed', 'not_required',
+] as const;
+export type PaymentStatus = typeof PAYMENT_STATUSES[number];
 
 const CartItemSchema = new Schema<ICartItem>({
   product: {
@@ -97,6 +139,19 @@ const PaymentMethodSchema = new Schema<IPaymentMethod>({
   cardHolder: String
 });
 
+const RefundAllocationSchema = new Schema({
+  version: { type: Number, required: true },
+  currency: { type: String, required: true },
+  capturedAmountMinor: { type: Number, required: true },
+  shippingMinor: { type: Number, required: true },
+  units: [new Schema({
+    lineId: { type: String, required: true },
+    ordinal: { type: Number, required: true },
+    merchandiseMinor: { type: Number, required: true },
+    taxMinor: { type: Number, required: true },
+  }, { _id: false })],
+}, { _id: false });
+
 const OrderSchema = new Schema<IOrder>({
   userId: {
     type: Schema.Types.ObjectId,
@@ -128,6 +183,38 @@ const OrderSchema = new Schema<IOrder>({
     default: {}
   },
   selectedDeliveryOption: { type: String },
+  sellerId: { type: Schema.Types.ObjectId, ref: 'User' },
+  checkoutSessionId: { type: String },
+  paymentFlowVersion: {
+    type: String,
+    enum: ['legacy', 'manual_capture'],
+    default: 'legacy',
+  },
+  paymentStatus: { type: String, enum: PAYMENT_STATUSES },
+  amountMinor: { type: Number, min: 0 },
+  currency: { type: String, uppercase: true },
+  authorizedAt: Date,
+  placedAt: Date,
+  authorizationExpiresAt: Date,
+  acceptBy: Date,
+  capturedAt: Date,
+  stockRestoredAt: Date,
+  refundId: { type: String },
+  refundAllocation: { type: RefundAllocationSchema },
+  activeRefundRequestId: { type: Schema.Types.ObjectId },
+  refundedAmountMinor: { type: Number, min: 0 },
+  refundReservedAmountMinor: { type: Number, min: 0 },
+  refundedShippingMinor: { type: Number, min: 0 },
+  refundReservedShippingMinor: { type: Number, min: 0 },
+  refundUnitsTaken: {
+    type: [new Schema({ lineId: { type: String, required: true }, ordinal: { type: Number, required: true } }, { _id: false })],
+    default: undefined,
+  },
+  paymentError: {
+    code: String,
+    message: String,
+    at: Date,
+  },
   paymentMethod: {
     type: PaymentMethodSchema,
     required: true
@@ -150,6 +237,7 @@ const OrderSchema = new Schema<IOrder>({
     min: 0
   },
   couponCode: { type: String },
+  paymentIntentId: { type: String, index: true, unique: true, sparse: true },
   tax: {
     type: Number,
     required: true,
@@ -167,18 +255,26 @@ const OrderSchema = new Schema<IOrder>({
   },
   status: {
     type: String,
-    enum: ['pending', 'preparing', 'processing', 'shipped', 'delivered', 'cancelled'],
+    enum: ['awaiting_payment', 'pending', 'preparing', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'pending'
   },
   estimatedDelivery: Date,
   shippedAt: Date,
+  deliveredAt: Date,
+  refundRequestDeadlineAt: Date,
   refundRequestedAt: Date,
-  cancelReason: { type: String }
+  cancelReason: { type: String },
+  cancelledByRole: { type: String, enum: CANCELLED_BY_ROLES },
+  cancelledById: { type: Schema.Types.ObjectId, ref: 'User' },
+  cancelledAt: Date
 }, {
   timestamps: true
 });
 
 // Index for user order history
 OrderSchema.index({ userId: 1, createdAt: -1 });
+
+// Index for the acceptance-deadline scan
+OrderSchema.index({ status: 1, acceptBy: 1 });
 
 export default mongoose.model<IOrder>('Order', OrderSchema);

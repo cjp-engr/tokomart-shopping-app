@@ -9,7 +9,19 @@ export interface PaymentMethod {
   cardHolder?: string;
 }
 
+/** Units of one order line that were paid back, and approved ones still being paid back. */
+export interface RefundedItemMark { lineId: string; refunded: number; processing: number }
+
 export interface Order {
+  /** Items with refunded units, for marking them in the order lists. */
+  refundedItems?: RefundedItemMark[];
+  deliveredAt?: string;
+  refundRequestDeadlineAt?: string;
+  refundedAmountMinor?: number;
+  /** The refund request that is not settled yet (waiting for the seller, or being paid back); absent when none. */
+  activeRefundRequestId?: string;
+  refundReservedAmountMinor?: number;
+  currency?: string;
   id: string;
   userId: string;
   items: CartItem[];
@@ -26,6 +38,24 @@ export interface Order {
   selectedDeliveryOption?: string;
   createdAt: string;
   estimatedDelivery?: string;
+  /** Manual-capture orders are paid by a hold that is captured when the seller starts preparing. */
+  paymentFlowVersion?: 'legacy' | 'manual_capture';
+  paymentStatus?: string | null;
+  paymentErrorCode?: string;
+  placedAt?: string;
+  /** Seller acceptance deadline; the order is cancelled and the hold released if not accepted by then. */
+  acceptBy?: string;
+  authorizationExpiresAt?: string;
+  /** Who cancelled the order; absent on older cancellations. `system` means the deadline or an expired hold. */
+  cancelledByRole?: 'buyer' | 'seller' | 'system';
+  cancelledAt?: string;
+  /** Seller list only: the server says this seller can cancel this pending order right now. */
+  canSellerCancelPending?: boolean;
+}
+
+/** Where the card hold release stands after a seller cancellation; absent for cash on delivery. */
+export interface SellerPaymentOperation {
+  status: 'pending' | 'completed' | 'needs_review';
 }
 
 export interface CheckoutData {
@@ -33,4 +63,5 @@ export interface CheckoutData {
   paymentMethod: PaymentMethod;
   contactEmail: string;
   contactPhone: string;
+  paymentIntentId?: string;
 }

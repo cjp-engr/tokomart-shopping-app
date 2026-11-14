@@ -26,7 +26,7 @@ final class SellerApiClient {
     _token = res.data['token'] as String;
   }
 
-  Future<String> createSimpleProduct(String name) async {
+  Future<String> createSimpleProduct(String name, {String? image}) async {
     assert(_token != null, 'Call login() before using SellerApiClient');
     final res = await _dio.post(
       '/seller/products',
@@ -39,6 +39,7 @@ final class SellerApiClient {
         'stock': 10,
         'shippingOptions': ['standard'],
         'shippingFee': 'free',
+        if (image != null) 'image': image,
       },
       options: Options(headers: {'Authorization': 'Bearer $_token'}),
     );

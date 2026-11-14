@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+# A newer push to the same pull request replaces the run still going; runs on main are never cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  backend:
+    name: Backend build & tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build
+      - run: npm test
+
+  backend-integration:
+    name: Backend database integration tests
+    # Not ubuntu-latest: MongoDB refuses to start on Linux kernels 6.19 through 7.0.13, and the ubuntu-24.04 image
+    # (what ubuntu-latest points to) ships 7.0.0-azure. The ubuntu-22.04 image has kernel 6.8. Go back to
+    # ubuntu-latest once its kernel is 7.0.14 or newer (see the "Show the kernel version" step below).
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      TEST_MONGODB_URI: mongodb://127.0.0.1:27017/tokomart_payment_test?replicaSet=rs0
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - name: Show the kernel version
+        run: uname -r
+      - name: Start an isolated MongoDB replica set
+        run: bash scripts/start-integration-mongo.sh
+      - name: Run transaction and restart integration tests
+        run: npm run test:integration -- --reporter=default --reporter=junit --outputFile.junit=test-results/backend-integration.xml
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-results
+          path: backend/test-results/backend-integration.xml
+          if-no-files-found: warn
+      - name: Show database logs on failure
+        if: failure()
+        run: docker logs tokomart-integration-mongo
+      - name: Remove the test database container
+        if: always()
+        run: docker rm --force tokomart-integration-mongo
+
+  frontend:
+    name: Web frontend lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  flutter:
+    name: Flutter analyze & unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend-mobile
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Flutter (SDK and pub packages are cached)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - name: Create the .env file
+        run: cp .env.example .env
+      - name: Get packages
+        run: flutter pub get
+      # pub get has just run, so the next two skip their own package check.
+      - name: Analyze
+        run: flutter analyze --no-pub
+      - name: Unit tests
+        run: flutter test --no-pub
