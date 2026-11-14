@@ -17,10 +17,11 @@ final class Checkout extends Module {
     String state = 'Metro Manila',
     String zip = '1000',
   }) async {
-    await $(keys.orders.checkoutStreetField).enterText(street);
-    await $(keys.orders.checkoutCityField).enterText(city);
-    await $(keys.orders.checkoutStateField).enterText(state);
-    await $(keys.orders.checkoutZipField).enterText(zip);
+    await $(keys.orders.checkoutNewAddressOption).scrollTo().tap();
+    await $(keys.orders.checkoutStreetField).scrollTo().enterText(street);
+    await $(keys.orders.checkoutCityField).scrollTo().enterText(city);
+    await $(keys.orders.checkoutStateField).scrollTo().enterText(state);
+    await $(keys.orders.checkoutZipField).scrollTo().enterText(zip);
   }
 
   Future<void> selectCOD() async {
@@ -35,33 +36,45 @@ final class Checkout extends Module {
         .tap();
   }
 
-  Future<void> switchToNewCardIfNeeded() async {
-    if ($(keys.orders.paymentNewCardTab).exists) {
-      await $(keys.orders.paymentNewCardTab)
-          .scrollTo(scrollDirection: AxisDirection.down)
-          .tap();
-    }
-  }
-
-  Future<void> fillNewCard({
-    required String cardNumber,
-    required String cardHolder,
-  }) async {
-    await $(keys.orders.checkoutCardNumberField)
-        .scrollTo(scrollDirection: AxisDirection.down)
-        .enterText(cardNumber);
-    await $(keys.orders.checkoutCardHolderField)
-        .scrollTo(scrollDirection: AxisDirection.down)
-        .enterText(cardHolder);
-  }
-
   Future<void> placeOrder() async {
     await $(keys.orders.placeOrderButton)
         .scrollTo(scrollDirection: AxisDirection.down)
         .tap();
   }
 
-  Future<void> expectOrdersScreen() async {
-    await $(keys.orders.ordersScreen).waitUntilVisible();
+  Future<void> selectSavedCard({required String cardId}) async {
+    $.log('Choosing the saved card $cardId');
+    await $(keys.orders.paymentSavedCardsTab).scrollTo().tap();
+    await $(keys.orders.savedPaymentCard(cardId)).scrollTo().tap();
+  }
+
+  Future<void> enterNativeStripeCard({
+    String cardNumber = '4242424242424242',
+    String expiry = '1230',
+    String cvc = '123',
+    String postalCode = '10001',
+  }) async {
+    $.log('Entering the Stripe test card in the native payment sheet');
+    await _enterNativeText('et_card_number', cardNumber);
+    await _enterNativeText('et_expiry', expiry);
+    await _enterNativeText('et_cvc', cvc);
+    await _enterNativeText('postal_code', postalCode);
+  }
+
+  Future<void> submitPayment() async {
+    $.log('Submitting the payment');
+    await $(keys.orders.paymentSubmitButton).scrollTo().tap();
+  }
+
+  Future<void> expectOrdersScreen({Duration? timeout}) async {
+    await $(keys.orders.ordersScreen).waitUntilVisible(timeout: timeout);
+  }
+
+  Future<void> _enterNativeText(String viewId, String text) async {
+    await $.platform.android.enterText(
+      AndroidSelector(resourceName: 'com.example.TokoMart:id/$viewId'),
+      text: text,
+      keyboardBehavior: KeyboardBehavior.alternative,
+    );
   }
 }

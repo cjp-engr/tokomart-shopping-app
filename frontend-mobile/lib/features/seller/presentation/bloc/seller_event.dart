@@ -37,7 +37,22 @@ class SellerProductDeleteRequested extends SellerEvent {
 }
 
 class SellerOrdersLoadRequested extends SellerEvent {
-  const SellerOrdersLoadRequested();
+  /// A silent reload refreshes the list in the background: it never shows the
+  /// loading state and ignores a failed request.
+  final bool silent;
+  const SellerOrdersLoadRequested({this.silent = false});
+  @override
+  List<Object?> get props => [silent];
+}
+
+/// A seller cancels a pending order. The reason is required; the server decides
+/// whether the order can still be cancelled and reports the payment outcome.
+class SellerOrderCancelRequested extends SellerEvent {
+  final String orderId;
+  final String reason;
+  const SellerOrderCancelRequested(this.orderId, this.reason);
+  @override
+  List<Object?> get props => [orderId, reason];
 }
 
 class SellerOrderStatusUpdateRequested extends SellerEvent {

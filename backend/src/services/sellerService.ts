@@ -1,12 +1,18 @@
 import Product from '../models/Product.js';
-import Order, { OrderStatus } from '../models/Order.js';
+import Order, { OrderStatus, type IOrder } from '../models/Order.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { assertValidShippingSettings } from '../validators/shippingSettings.js';
+import { isSellerVisibleOrder, sellerVisibleOrderFilter } from './orderVisibility.js';
+import { acceptOrder } from './orderAcceptance.js';
+import { markOrderDelivered } from './orderDelivery.js';
+import { canSellerCancelPending, cancelOrderAsSeller, type SellerPaymentOperation } from './sellerCancellation.js';
+import { refundedItemsByOrder } from './orderRefundMarks.js';
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
+export const VALID_TRANSITIONS: Record<string, string[]> = {
   pending:    ['preparing', 'cancelled'],
   preparing:  ['processing', 'cancelled'],
   processing: ['shipped', 'cancelled'],
-  shipped:    ['delivered', 'cancelled'],
+  shipped:    ['delivered'],
   delivered:  [],
   cancelled:  [],
 };
@@ -47,11 +53,20 @@ export async function getSellerProducts(sellerId: string) {
   return Product.find({ sellerId }).sort({ createdAt: -1 });
 }
 
+/** Stored fees are a Map on a Mongoose document and a plain object on a lean one. */
+function storedFeeAmounts(raw: unknown): Record<string, number> {
+  if (raw instanceof Map) return Object.fromEntries(raw) as Record<string, number>;
+  return (raw as Record<string, number> | undefined) ?? {};
+}
+
 export async function createSellerProduct(
   sellerId: string,
   data: { name: string; description: string; price: number; category: string; stock?: number; tags?: string[]; brand?: string; condition?: string; sku?: string; discount?: number; shippingOptions?: string[]; shippingFee?: string; shippingFeeAmounts?: Record<string, number>; image?: string; variantAttributes?: any[]; variants?: any[] },
   imageUrls: string[],
 ) {
+  // Shipping settings are required: without them the seller's shipping cost would fall back to the flat default.
+  assertValidShippingSettings(data);
+
   const normalizedVariants = (data.variants ?? []).map((v: any) => ({
     ...v,
     images: Array.isArray(v.images) ? v.images : (v.image ? [v.image] : []),
@@ -74,6 +89,14 @@ export async function updateSellerProduct(
   const product = await Product.findById(productId);
   if (!product) throw new AppError(404, 'Product not found');
   if (product.sellerId?.toString() !== sellerId) throw new AppError(403, 'Not authorized to update this product');
+
+  // Check the product as it will be after the update: omitted fields keep their stored values, so a partial
+  // update is fine, but an older product still without shipping settings must get them now.
+  assertValidShippingSettings({
+    shippingOptions: updates.shippingOptions ?? [...(product.shippingOptions ?? [])],
+    shippingFee: updates.shippingFee ?? product.shippingFee,
+    shippingFeeAmounts: updates.shippingFeeAmounts ?? storedFeeAmounts(product.shippingFeeAmounts),
+  });
 
   const { image: imageUrl, variants: rawVariants, ...rest } = updates;
   const defined = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
@@ -104,7 +127,12 @@ export async function deleteSellerProduct(productId: string, sellerId: string) {
 export async function getSellerOrders(sellerId: string) {
   const sellerProductIds = await Product.find({ sellerId }).distinct('_id');
 
-  const orders = await Order.find({ 'items.product': { $in: sellerProductIds } })
+  // The persisted sellerId is the authority, so deleting a product never hides the seller's own order.
+  // Orders without one keep the product match until no such orders exist.
+  const orders = await Order.find({
+    $or: [{ sellerId }, { sellerId: { $exists: false }, 'items.product': { $in: sellerProductIds } }],
+    ...sellerVisibleOrderFilter(),
+  })
     .populate('items.product')
     .populate('userId', 'firstName lastName email')
     .sort({ createdAt: -1 });
@@ -112,8 +140,11 @@ export async function getSellerOrders(sellerId: string) {
   // Filter each order's items to only this seller's products.
   // After populate, item.product is a Document — extract _id to compare.
   const sellerIdSet = new Set(sellerProductIds.map(id => id.toString()));
+  const refundMarks = await refundedItemsByOrder(orders.map(order => order.id));
   return orders.map(order => {
-    const filteredItems = order.items.filter(item => {
+    // An order is one seller's: with a persisted sellerId every item is theirs, even if its product was deleted.
+    const ownsOrder = order.sellerId?.toString() === sellerId;
+    const filteredItems = ownsOrder ? [...order.items] : order.items.filter(item => {
       const productId =
         item.product != null && typeof item.product === 'object' && '_id' in (item.product as object)
           ? (item.product as any)._id?.toString()
@@ -140,18 +171,39 @@ export async function getSellerOrders(sellerId: string) {
       },
       firstProduct ? { shippingFee: firstProduct.shippingFee, shippingFeeAmounts: feeAmounts } : undefined,
     );
-    return { ...doc, items: filteredItems };
+    return { ...doc, items: filteredItems, canSellerCancelPending: canSellerCancelPending(order, sellerId), refundedItems: refundMarks.get(order.id) ?? [] };
   });
 }
+
+/** `resolving` means the seller's acceptance started a capture that is still settling; the order is not yet `preparing`. */
+export type SellerStatusOutcome = 'completed' | 'resolving';
 
 export async function updateSellerOrderStatus(
   orderId: string,
   sellerId: string,
   status: OrderStatus,
   cancelReason?: string,
-) {
+): Promise<{ order: IOrder; outcome: SellerStatusOutcome; paymentOperation?: SellerPaymentOperation }> {
   const order = await Order.findById(orderId);
-  if (!order) throw new AppError(404, 'Order not found');
+  if (!order || !isSellerVisibleOrder(order)) throw new AppError(404, 'Order not found', 'order_not_found');
+
+  // Cancelling a pending order, or retrying one that is already cancelled, belongs to the cancellation
+  // service: it owns the ownership check, the reason, the shared claim and the hold release.
+  if (status === 'cancelled' && (order.status === 'pending' || order.status === 'cancelled')) {
+    const cancelled = await cancelOrderAsSeller(orderId, sellerId, cancelReason);
+    return {
+      order: cancelled.order,
+      outcome: 'completed',
+      ...(cancelled.paymentOperation ? { paymentOperation: cancelled.paymentOperation } : {}),
+    };
+  }
+
+  // Acceptance owns the seller-ownership check, the deadline and any card capture. It also answers a
+  // repeat or late request (the order is no longer pending) with 409 order_not_pending.
+  if (status === 'preparing') {
+    const accepted = await acceptOrder({ orderId, sellerId });
+    return { order: accepted.order, outcome: accepted.kind };
+  }
 
   const sellerProductIds = await Product.find({ sellerId }).distinct('_id');
   const sellerIdSet = new Set(sellerProductIds.map(id => id.toString()));
@@ -163,11 +215,17 @@ export async function updateSellerOrderStatus(
         : item.product?.toString();
     return productId ? sellerIdSet.has(productId) : false;
   });
-  if (!hasSellersProduct) throw new AppError(403, 'Not authorized to update this order');
+  if (!hasSellersProduct) throw new AppError(403, 'Not authorized to update this order', 'not_order_seller');
 
   const allowed = VALID_TRANSITIONS[order.status] ?? [];
   if (!allowed.includes(status)) {
     throw new AppError(400, `Cannot transition order from '${order.status}' to '${status}'`);
+  }
+
+  // Seller refunds/releases are a later feature. Never cancel a paid card without returning money.
+  if (status === 'cancelled' && (order.paymentFlowVersion === 'manual_capture'
+      || ['credit-card', 'debit-card'].includes(order.paymentMethod.type))) {
+    throw new AppError(409, 'Seller cancellation for card payments is not available yet', 'cancellation_unavailable');
   }
 
   if (status === 'cancelled') {
@@ -180,11 +238,18 @@ export async function updateSellerOrderStatus(
     if (cancelReason) order.cancelReason = cancelReason;
   }
 
+  if (status === 'delivered') {
+    // Conditional on still being shipped, so a stale read cannot replace another change or move the refund deadline.
+    const delivered = await markOrderDelivered(orderId, 'shipped', new Date(), { role: 'seller', id: sellerId });
+    if (!delivered) throw new AppError(409, 'Order changed while updating its status');
+    return { order: delivered, outcome: 'completed' };
+  }
+
   if (status === 'shipped' && !order.shippedAt) {
     order.shippedAt = new Date();
   }
 
   order.status = status;
   await order.save();
-  return order;
+  return { order, outcome: 'completed' };
 }

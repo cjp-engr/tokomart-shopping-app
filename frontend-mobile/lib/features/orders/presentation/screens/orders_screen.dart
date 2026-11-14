@@ -8,11 +8,13 @@ import '../bloc/order_bloc.dart';
 import '../bloc/order_event.dart';
 import '../bloc/order_state.dart';
 import '../../domain/entities/order_entity.dart';
+import '../../domain/order_tabs.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/theme_colors.dart';
+import '../../../../core/utils/order_payment_notice.dart';
 import '../../../../core/utils/order_utils.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/image_placeholder.dart';
@@ -20,15 +22,23 @@ import '../../../../shared/widgets/loading_widget.dart';
 import '../../../../shared/widgets/review_bottom_sheet.dart';
 import '../../../../shared/widgets/seller_avatar.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import 'order_payment_notice_card.dart';
+import '../../domain/refund_mark.dart';
+import '../widgets/refund_item_badge.dart';
+import '../../../refunds/presentation/completed_refunds.dart';
 
 class _TabDef {
+  final bool refunds;
+
+  /// Fully refunded orders are no longer completed purchases; their refund is under Return/Refund.
+  final bool hidesFullyRefunded;
   final String label;
   final List<String> statuses;
-  const _TabDef(this.label, this.statuses);
+  const _TabDef(this.label, this.statuses,
+      {this.refunds = false, this.hidesFullyRefunded = false});
 
-  List<OrderEntity> filter(List<OrderEntity> orders) => statuses.isEmpty
-      ? orders
-      : orders.where((o) => statuses.contains(o.status)).toList();
+  List<OrderEntity> filter(List<OrderEntity> orders) =>
+      ordersForTab(orders, statuses, hideFullyRefunded: hidesFullyRefunded);
 }
 
 const _kTabs = [
@@ -36,7 +46,8 @@ const _kTabs = [
   _TabDef(AppStrings.statusPreparing, ['preparing']),
   _TabDef(AppStrings.statusToShip, ['processing']),
   _TabDef(AppStrings.statusToReceive, ['shipped']),
-  _TabDef(AppStrings.statusComplete, ['delivered']),
+  _TabDef(AppStrings.statusComplete, ['delivered'], hidesFullyRefunded: true),
+  _TabDef('Return/Refund', [], refunds: true),
   _TabDef(AppStrings.statusCancelled, ['cancelled']),
 ];
 
@@ -91,37 +102,13 @@ class _OrdersScreenState extends State<OrdersScreen>
                   indicatorWeight: 2.5,
                   dividerColor: context.borderColor,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  tabs: _kTabs.map((tab) {
-                    final count = tab.filter(orders).length;
-                    return Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(tab.label,
+                  // No counts on the tabs: they only gave numbers that do not help the buyer find anything.
+                  tabs: _kTabs
+                      .map((tab) => Tab(
+                          child: Text(tab.label,
                               style: const TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w600)),
-                          if (count > 0) ...[
-                            const SizedBox(width: 5),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(26),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '$count',
-                                style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                                  fontSize: 13, fontWeight: FontWeight.w600))))
+                      .toList(),
                 ),
               ),
             ),
@@ -142,6 +129,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                     : TabBarView(
                         controller: _tabController,
                         children: _kTabs.map((tab) {
+                          if (tab.refunds) return const CompletedRefunds();
                           final filtered = tab.filter(orders);
                           return _OrderList(
                             orders: filtered,
@@ -375,8 +363,17 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
     // which includes discounts, vouchers, shipping, and tax.
     final groupTotal = order.total;
     final itemCount = items.fold<int>(0, (s, i) => s + i.quantity);
+    final paymentNotice = orderPaymentNotice(order);
+    final refundLabel = order.status == 'delivered'
+        ? orderRefundLabel(
+            paymentStatus: order.paymentStatus,
+            refundedAmountMinor: order.refundedAmountMinor,
+            refundReservedAmountMinor: order.refundReservedAmountMinor,
+            refundRequestActive: order.refundRequestActive)
+        : null;
 
     return InkWell(
+      key: keys.orders.orderCard(order.id),
       onTap: () => context
           .push('/orders/${order.id}?seller=${Uri.encodeComponent(sellerKey)}'),
       borderRadius: BorderRadius.circular(AppSizes.radiusLg),
@@ -439,12 +436,24 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
               ),
             ),
 
+            if (refundLabel != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSizes.md, 0, AppSizes.md, AppSizes.sm),
+                child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: RefundItemBadge(mark: refundLabel)),
+              ),
+
             const Divider(height: 1),
 
             // ── Items ───────────────────────────────────────────────────
             ...items.map((item) => Column(
                   children: [
-                    _OrderItemRow(item: item),
+                    _OrderItemRow(
+                        item: item,
+                        mark: refundMarkFor(
+                            order.refundedItems, item.lineId, item.quantity)),
                     if (order.status == 'delivered')
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
@@ -543,6 +552,13 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
               ),
             ),
 
+            if (paymentNotice != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSizes.md, 0, AppSizes.md, AppSizes.sm),
+                child: OrderPaymentNoticeLabel(notice: paymentNotice),
+              ),
+
             // ── Delivery banner / cancelled notice ──────────────────────
             if (isCancelled)
               Container(
@@ -565,9 +581,10 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            AppStrings.orderCancelledNotice,
-                            style: TextStyle(
+                          Text(
+                            cancelledBySellerNotice(order)?.title ??
+                                AppStrings.orderCancelledNotice,
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.danger,
@@ -685,7 +702,8 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
 
 class _OrderItemRow extends StatelessWidget {
   final OrderItemEntity item;
-  const _OrderItemRow({required this.item});
+  final RefundMark? mark;
+  const _OrderItemRow({required this.item, this.mark});
 
   @override
   Widget build(BuildContext context) {
@@ -748,6 +766,7 @@ class _OrderItemRow extends StatelessWidget {
                     ),
                   ),
                 ],
+                RefundItemBadge(mark: mark),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

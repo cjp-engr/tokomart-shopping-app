@@ -7,8 +7,11 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Spinner } from '../components/common/Spinner';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getStatusConfig } from '../utils/orderUtils';
+import { ordersInTab } from '../utils/orderTabs';
+import { canBuyerCancel } from '../utils/orderPayment';
 import { fetchReviewStatuses, fetchSingleReview } from '../utils/reviewUtils';
 import type { ReviewData } from '../utils/reviewUtils';
 import {
@@ -22,8 +25,11 @@ import {
   Eye,
 } from 'lucide-react';
 import { ReviewModal } from '../components/common/ReviewModal';
+import { CompletedRefunds } from '../components/orders/CompletedRefunds';
+import { RefundItemMark } from '../components/orders/RefundItemMark';
+import { OrderRefundBadge } from '../components/orders/OrderRefundBadge';
 
-type TabKey = 'all' | 'pending' | 'preparing' | 'to-ship' | 'to-receive' | 'complete' | 'cancelled';
+type TabKey = 'all' | 'pending' | 'preparing' | 'to-ship' | 'to-receive' | 'complete' | 'cancelled' | 'refunds';
 
 const TABS: { key: TabKey; label: string; statuses: OrderStatus[] }[] = [
   { key: 'all',        label: 'All',        statuses: [] },
@@ -32,6 +38,7 @@ const TABS: { key: TabKey; label: string; statuses: OrderStatus[] }[] = [
   { key: 'to-ship',    label: 'To Ship',    statuses: ['processing'] },
   { key: 'to-receive', label: 'To Receive', statuses: ['shipped'] },
   { key: 'complete',   label: 'Complete',   statuses: ['delivered'] },
+  { key: 'refunds', label: 'Return/Refund', statuses: [] },
   { key: 'cancelled',  label: 'Cancelled',  statuses: ['cancelled'] },
 ];
 
@@ -58,6 +65,8 @@ export const OrderHistory: React.FC = () => {
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; orderId: string | null; reason: string; loading: boolean }>({
     open: false, orderId: null, reason: '', loading: false,
   });
+  const [receiveDialogOrderId, setReceiveDialogOrderId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null);
   const [reviewMap, setReviewMap] = useState<Map<string, ReviewData>>(new Map());
 
@@ -68,7 +77,7 @@ export const OrderHistory: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        const userOrders = await orderService.getOrders(user.id);
+        const userOrders = await orderService.getOrders();
         if (cancelled) return;
         setOrders(userOrders);
 
@@ -99,14 +108,18 @@ export const OrderHistory: React.FC = () => {
 
   const confirmCancelOrder = async () => {
     if (!user || !cancelDialog.orderId) return;
+    setCancelError(null);
     setCancelDialog(d => ({ ...d, loading: true }));
     try {
-      await orderService.cancelOrder(cancelDialog.orderId, user.id, cancelDialog.reason || undefined);
-      const updatedOrders = await orderService.getOrders(user.id);
+      await orderService.cancelOrder(cancelDialog.orderId, cancelDialog.reason || undefined);
+      const updatedOrders = await orderService.getOrders();
       setOrders(updatedOrders);
       setCancelDialog({ open: false, orderId: null, reason: '', loading: false });
     } catch (error) {
       console.error('Failed to cancel order:', error);
+      setCancelError(error instanceof Error ? error.message : 'Cancellation could not be completed. Please refresh and try again.');
+      // Acceptance may have won the race; refresh the visible order state.
+      void orderService.getOrders().then(setOrders).catch(() => {});
       setCancelDialog(d => ({ ...d, loading: false }));
     }
   };
@@ -123,12 +136,8 @@ export const OrderHistory: React.FC = () => {
     }
   };
 
-  const filteredOrders = activeTab === 'all'
-    ? orders
-    : orders.filter(o => TABS.find(t => t.key === activeTab)!.statuses.includes(o.status));
-
-  const tabCount = (tab: typeof TABS[number]) =>
-    tab.key === 'all' ? orders.length : orders.filter(o => tab.statuses.includes(o.status)).length;
+  const activeTabDef = TABS.find(t => t.key === activeTab)!;
+  const filteredOrders = ordersInTab(activeTabDef.key, activeTabDef.statuses, orders);
 
   if (loading) {
     return (
@@ -173,7 +182,6 @@ export const OrderHistory: React.FC = () => {
       <div className="border-b border-gray-200" data-testid="order-tabs">
         <nav className="-mb-px flex gap-0 overflow-x-auto scrollbar-none" aria-label="Order status tabs">
           {TABS.map((tab) => {
-            const count = tabCount(tab);
             const isActive = activeTab === tab.key;
             return (
               <button
@@ -188,13 +196,6 @@ export const OrderHistory: React.FC = () => {
                 data-testid={`order-tab-${tab.key}`}
               >
                 {tab.label}
-                <span
-                  className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold ${
-                    isActive ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {count}
-                </span>
               </button>
             );
           })}
@@ -202,7 +203,7 @@ export const OrderHistory: React.FC = () => {
       </div>
 
       {/* Orders list */}
-      {filteredOrders.length === 0 ? (
+      {activeTab === 'refunds' ? <CompletedRefunds /> : filteredOrders.length === 0 ? (
         <Card className="text-center py-16" data-testid="orders-empty">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <Package className="w-8 h-8 text-gray-300" />
@@ -254,10 +255,13 @@ export const OrderHistory: React.FC = () => {
                       <Store className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{sellerName}</span>
                     </div>
-                    <Badge variant={statusConfig.variant} className="flex items-center gap-1">
-                      <StatusIcon className="w-3.5 h-3.5" />
-                      {statusConfig.label}
-                    </Badge>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {order.status === 'delivered' && <OrderRefundBadge order={order} />}
+                      <Badge variant={statusConfig.variant} className="flex items-center gap-1">
+                        <StatusIcon className="w-3.5 h-3.5" />
+                        {statusConfig.label}
+                      </Badge>
+                    </div>
                   </Link>
 
                   {/* Order meta — navigates to order detail */}
@@ -272,7 +276,7 @@ export const OrderHistory: React.FC = () => {
 
                   {/* Items */}
                   <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {sellerItems.map(({ product, quantity, selectedVariant }) => {
+                    {sellerItems.map(({ lineId, product, quantity, selectedVariant }) => {
                       const existingReview = reviewMap.get(product.id);
                       const itemKey = selectedVariant?.key ?? product.id;
                       const rawPrice = selectedVariant?.price ?? product.price;
@@ -301,6 +305,7 @@ export const OrderHistory: React.FC = () => {
                                 </p>
                               )}
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">x{quantity}</p>
+                              <RefundItemMark marks={order.refundedItems} lineId={lineId} quantity={quantity} />
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p className="text-sm font-semibold text-primary-600">
@@ -400,7 +405,7 @@ export const OrderHistory: React.FC = () => {
                       <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="text-xs font-medium text-red-600 dark:text-red-400 block">
-                          This order has been cancelled
+                          {order.cancelledByRole === 'seller' ? 'Cancelled by the seller' : 'This order has been cancelled'}
                         </span>
                         {order.cancelReason && (
                           <span className="text-xs text-red-500 dark:text-red-400">
@@ -417,7 +422,7 @@ export const OrderHistory: React.FC = () => {
                       <Eye className="w-4 h-4 mr-1.5" /> View Details
                     </Button>
                     <div className="flex-1" />
-                    {(order.status === 'pending' || order.status === 'preparing') && (
+                    {canBuyerCancel(order) && (
                       <Button variant="danger" size="sm" onClick={() => handleCancelOrder(order.id)}>
                         Cancel Order
                       </Button>
@@ -427,7 +432,7 @@ export const OrderHistory: React.FC = () => {
                         variant="success"
                         size="sm"
                         loading={confirmingIds.has(order.id)}
-                        onClick={() => handleConfirmReceived(order.id)}
+                        onClick={() => setReceiveDialogOrderId(order.id)}
                       >
                         <CheckCircle className="w-4 h-4 mr-1.5" />
                         Order Received
@@ -453,6 +458,21 @@ export const OrderHistory: React.FC = () => {
         </div>
       )}
 
+      <ConfirmDialog
+        open={receiveDialogOrderId !== null}
+        title="Confirm Receipt"
+        message="Confirm that you have received this order? This cannot be undone."
+        confirmLabel="Yes, I received it"
+        cancelLabel="Not yet"
+        variant="warning"
+        onConfirm={() => {
+          const orderId = receiveDialogOrderId;
+          setReceiveDialogOrderId(null);
+          if (orderId) handleConfirmReceived(orderId);
+        }}
+        onCancel={() => setReceiveDialogOrderId(null)}
+      />
+
       {cancelDialog.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
@@ -460,6 +480,7 @@ export const OrderHistory: React.FC = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Are you sure you want to cancel this order? This action cannot be undone.
             </p>
+            {cancelError && <p role="alert" className="text-sm text-red-600">{cancelError}</p>}
             <textarea
               value={cancelDialog.reason}
               onChange={e => setCancelDialog(d => ({ ...d, reason: e.target.value }))}

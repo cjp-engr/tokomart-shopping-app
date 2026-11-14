@@ -1,0 +1,113 @@
+name: Start the E2E stack
+description: >
+  Starts a throwaway MongoDB replica set, seeds it, and starts the backend on port 5000. With `with-web` it also
+  builds the web app and serves it on port 5173. Installs the Playwright project in e2e-testing.
+
+inputs:
+  checkout-flow:
+    description: CHECKOUT_FLOW for the backend and VITE_CHECKOUT_FLOW for the web app (legacy or manual_capture)
+    default: manual_capture
+  auth-limit:
+    description: RATE_LIMIT_AUTH_MAX for the backend. 0 turns the limiter off.
+    default: '0'
+  api-limit:
+    description: RATE_LIMIT_API_MAX for the backend. 0 turns the limiter off.
+    default: '0'
+  with-web:
+    description: Also build and serve the web app, and make sure Chrome is installed
+    default: 'false'
+  stripe-secret-key:
+    description: Stripe test secret key. A placeholder is used when empty, so Stripe calls fail but the backend starts.
+    default: ''
+  stripe-webhook-secret:
+    description: Stripe webhook signing secret
+    default: ''
+  stripe-publishable-key:
+    description: Stripe test publishable key, built into the web app
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 20
+        cache: npm
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+          e2e-testing/package-lock.json
+
+    - name: Start an isolated MongoDB replica set
+      shell: bash
+      run: bash backend/scripts/start-integration-mongo.sh
+
+    - name: Install and build the backend
+      shell: bash
+      working-directory: backend
+      run: |
+        npm ci --legacy-peer-deps
+        npm run build
+
+    - name: Create a random JWT secret for this run
+      shell: bash
+      run: |
+        secret="$(openssl rand -hex 32)"
+        echo "::add-mask::$secret"
+        echo "JWT_SECRET=$secret" >> "$GITHUB_ENV"
+
+    - name: Seed the database with the test accounts and products
+      shell: bash
+      working-directory: backend
+      env:
+        MONGODB_URI: mongodb://127.0.0.1:27017/tokomart_e2e_test?replicaSet=rs0
+        NODE_ENV: development
+      run: npm run seed
+
+    - name: Start the backend
+      shell: bash
+      working-directory: backend
+      env:
+        PORT: '5000'
+        NODE_ENV: development
+        MONGODB_URI: mongodb://127.0.0.1:27017/tokomart_e2e_test?replicaSet=rs0
+        JWT_EXPIRES_IN: 7d
+        CHECKOUT_FLOW: ${{ inputs.checkout-flow }}
+        SELLER_SEES_MANUAL_CAPTURE: 'true'
+        RATE_LIMIT_AUTH_MAX: ${{ inputs.auth-limit }}
+        RATE_LIMIT_API_MAX: ${{ inputs.api-limit }}
+        AUTO_COMPLETE_ORDERS_ENABLED: 'false'
+        STRIPE_SECRET_KEY: ${{ inputs.stripe-secret-key != '' && inputs.stripe-secret-key || 'sk_test_ci_placeholder' }}
+        STRIPE_WEBHOOK_SECRET: ${{ inputs.stripe-webhook-secret != '' && inputs.stripe-webhook-secret || 'whsec_ci_placeholder' }}
+      run: |
+        nohup node dist/server.js > "$RUNNER_TEMP/backend.log" 2>&1 &
+        for i in $(seq 1 60); do
+          if curl -fsS http://localhost:5000/health > /dev/null; then echo "Backend is up"; exit 0; fi
+          sleep 2
+        done
+        echo "Backend did not start"; cat "$RUNNER_TEMP/backend.log"; exit 1
+
+    - name: Build and serve the web app
+      if: inputs.with-web == 'true'
+      shell: bash
+      working-directory: frontend
+      env:
+        VITE_API_BASE_URL: http://localhost:5000/api
+        VITE_CHECKOUT_FLOW: ${{ inputs.checkout-flow }}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${{ inputs.stripe-publishable-key }}
+      run: |
+        npm ci
+        npm run build
+        nohup npx vite preview --host localhost --port 5173 --strictPort > "$RUNNER_TEMP/web.log" 2>&1 &
+        for i in $(seq 1 30); do
+          if curl -fsS http://localhost:5173 > /dev/null; then echo "Web app is up"; exit 0; fi
+          sleep 2
+        done
+        echo "Web app did not start"; cat "$RUNNER_TEMP/web.log"; exit 1
+
+    - name: Install the Playwright project
+      shell: bash
+      working-directory: e2e-testing
+      run: |
+        npm ci
+        if [ "${{ inputs.with-web }}" = "true" ]; then npx playwright install chrome; fi

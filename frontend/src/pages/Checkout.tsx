@@ -1,5 +1,7 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { stripePromise } from '../lib/stripe';
 import { SelectVoucherModal } from '../components/voucher/SelectVoucherModal';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +13,22 @@ import { formatNetworkError } from '../utils/network';
 import type { CheckoutData, PaymentMethod } from '../types/order';
 import type { SavedCard, SavedAddress } from '../types/user';
 import orderService from '../services/orderService';
-import { API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import { CheckoutApiError } from '../services/checkoutApiError';
+import {
+  authorizeSellers,
+  confirmPlacedOrders,
+  type SellerPaymentClient,
+} from '../services/cardCheckoutFlow';
+import { CARD_CHECKOUT_FLOW } from '../config/checkout';
+import type { CheckoutSession } from '../types/checkout';
+import { buildCheckoutSessionPayload } from '../utils/checkoutSession';
+import {
+  clearCheckoutAttempt,
+  getOrCreateCheckoutAttempt,
+  loadCheckoutAttempt,
+  saveCheckoutAttempt,
+} from '../utils/checkoutAttempt';
+import { CardBrandIcon } from '../components/common/CardBrandIcon';
 import {
   CreditCard,
   Lock,
@@ -29,20 +46,39 @@ import {
   ChevronRight,
   Truck,
   Zap,
+  Store,
 } from 'lucide-react';
+import { TAX_RATE } from '../utils/constants';
+import { sellerShippingFee } from '../utils/shipping';
+import type { CartItem } from '../types/cart';
+
+const DELIVERY_META: Record<string, { label: string; sub: string; Icon: React.ElementType }> = {
+  standard: { label: 'Standard', sub: '3–7 business days', Icon: Truck },
+  express:  { label: 'Express',  sub: '1–2 business days', Icon: Zap },
+  pickup:   { label: 'Pickup',   sub: 'Ready in-store',    Icon: Store },
+};
+
+const STRIPE_ERROR_MESSAGES = {
+  NO_STRIPE_PM: 'This card cannot be charged. Please remove it and add a new card through checkout.',
+  PAYMENT_NOT_READY: 'Payment not ready. Please wait a moment and try again.',
+  CARD_ERROR: 'Card error. Please try again.',
+  PAYMENT_FAILED: 'Card payment failed. Please go back and try again.',
+  PAYMENT_INCOMPLETE: 'Payment was not completed. Please go back and try again.',
+  PROCESSING_ERROR: 'Could not process payment. Please try again.',
+} as const;
 
 type PaymentMode = 'saved' | 'new';
 
-export const Checkout: React.FC = () => {
+const CheckoutInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, clearCart, removeFromCart } = useCart();
-  const { user, addAddress } = useAuth();
+  const { user, addAddress, deletePaymentMethod } = useAuth();
 
   const [step, setStep] = useState<'shipping' | 'payment' | 'review'>('shipping');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const orderPlaced = useRef(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const savedAddresses: SavedAddress[] = user?.savedAddresses ?? [];
   const defaultAddr = savedAddresses.find(a => a.isDefault) ?? savedAddresses[0];
@@ -83,6 +119,50 @@ export const Checkout: React.FC = () => {
   const [saveAddress, setSaveAddress] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
 
+  // Stripe
+  const stripe = useStripe();
+  const elements = useElements();
+  const [pendingPaymentMethodId, setPendingPaymentMethodId] = useState<string | null>(null);
+  // Session checkout with a new card: one PaymentMethod per seller, keyed by seller ID
+  const [pendingSellerPaymentMethods, setPendingSellerPaymentMethods] = useState<Record<string, string>>({});
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  // Manual-capture checkout: the open session, sellers whose payment is held, and the message for the buyer
+  const [cardSession, setCardSession] = useState<CheckoutSession | null>(null);
+  const [cardAuthorizedIds, setCardAuthorizedIds] = useState<string[]>([]);
+  const [cardStopMessage, setCardStopMessage] = useState<string | null>(null);
+  const userId = user?.id;
+
+  // Helper: Check if payment mode is card-based
+  const isCardPayment = (mode: PaymentMode, type: string): boolean => {
+    return mode === 'saved' || (mode === 'new' && (type === 'credit-card' || type === 'debit-card'));
+  };
+
+  // Helper: Validate saved card has Stripe payment method
+  const validateSavedCard = (card: SavedCard | undefined): boolean => {
+    if (!card?.stripePaymentMethodId) {
+      setStripeError(STRIPE_ERROR_MESSAGES.NO_STRIPE_PM);
+      return false;
+    }
+    return true;
+  };
+
+  // Helper: Handle payment errors with consistent state reset
+  const handlePaymentError = (message: string) => {
+    setError(message);
+    setLoading(false);
+  };
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains('dark'),
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains('dark')),
+    );
+    observer.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
   // Inherit selections passed from Cart page
   const cartState = location.state as {
     deliverySelections?: Record<string, string>;
@@ -120,7 +200,7 @@ export const Checkout: React.FC = () => {
     cartState?.deliverySelections ?? {}
   );
 
-  const effectivePrice = (product: typeof cart.items[0]['product']) =>
+  const effectivePrice = (product: CartItem['product']) =>
     product.discount && product.discount > 0
       ? product.price * (1 - product.discount / 100)
       : product.price;
@@ -128,7 +208,7 @@ export const Checkout: React.FC = () => {
   // Group cart items by seller for the Order Review and per-seller shipping display
   const sellerGroups = useMemo(() => {
     const map = new Map<string, {
-      sellerId: string; sellerName: string; items: typeof cart.items;
+      sellerId: string; sellerName: string; items: CartItem[];
       grossSubtotal: number; productDiscount: number; voucherDiscount: number;
       subtotal: number; shipping: number; tax: number; storeTotal: number;
       shippingOptions: string[]; shippingFee: string | undefined; shippingFeeAmounts: Record<string, number>;
@@ -174,15 +254,12 @@ export const Checkout: React.FC = () => {
       const netSubtotal = Math.max(0, group.subtotal - group.voucherDiscount);
       const selectedOpt = deliverySelections[key] ?? group.shippingOptions[0];
       group.selectedDelivery = selectedOpt;
-      if (group.shippingFee === 'free') {
-        group.shipping = 0;
-      } else if (group.shippingFee === 'buyer_pays') {
-        const fee = selectedOpt != null ? group.shippingFeeAmounts[selectedOpt] : undefined;
-        group.shipping = fee ?? Object.values(group.shippingFeeAmounts)[0] ?? 0;
-      } else {
-        group.shipping = 0;
-      }
-      group.tax = netSubtotal * 0.08;
+      group.shipping = sellerShippingFee({
+        shippingFee: group.shippingFee,
+        shippingFeeAmounts: group.shippingFeeAmounts,
+        selectedOption: selectedOpt,
+      });
+      group.tax = netSubtotal * TAX_RATE;
       group.storeTotal = netSubtotal + group.shipping + group.tax;
     }
     return Array.from(map.values());
@@ -190,6 +267,8 @@ export const Checkout: React.FC = () => {
 
   // Persist default delivery option in state (matches review UI default)
   useEffect(() => {
+    // Persists the default option; the updater returns `prev` when nothing changes, so this settles
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeliverySelections(prev => {
       const next = { ...prev };
       let changed = false;
@@ -202,6 +281,11 @@ export const Checkout: React.FC = () => {
       return changed ? next : prev;
     });
   }, [sellerGroups]);
+
+  // Fetch PaymentIntent when user selects a card payment type (new card only, not saved cards)
+  const grandTotal = sellerGroups.reduce((s, g) => s + g.storeTotal, 0);
+  // PaymentIntent is created fresh in handlePaymentSubmit to guarantee
+  // the amount reflects the final grandTotal (including shipping) at submission time.
 
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -285,33 +369,75 @@ export const Checkout: React.FC = () => {
     }
   };
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePaymentSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setStripeError(null);
+
+    // Saved card: store PM ID and advance to review — Stripe charged at Place Order
     if (paymentMode === 'saved' && selectedCardId) {
+      const savedCard = savedCards.find(c => c._id === selectedCardId);
+      if (!validateSavedCard(savedCard)) return;
+
+      setPendingPaymentMethodId(savedCard!.stripePaymentMethodId!);
       setStep('review');
       window.scrollTo(0, 0);
       return;
     }
-    if (!validatePayment()) return;
 
-    if (saveCard) {
-      try {
-        await fetch(API_ENDPOINTS.PAYMENT_METHODS, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            type: paymentData.type,
-            last4: paymentData.cardNumber.slice(-4),
-            cardHolder: paymentData.cardHolder,
-            expiryMonth: paymentData.expiryMonth,
-            expiryYear: paymentData.expiryYear,
-            setAsDefault: savedCards.length === 0,
-          }),
-        });
-      } catch {
-        // Non-critical: proceed even if save fails
+    if (isCardPayment(paymentMode, paymentData.type)) {
+      if (!stripe || !elements) {
+        setError(STRIPE_ERROR_MESSAGES.PAYMENT_NOT_READY);
+        return;
       }
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) return;
+
+      setLoading(true);
+
+      // Create payment method to validate card and get details for saving
+      const { paymentMethod, error: pmErr } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      setLoading(false);
+
+      if (pmErr) {
+        setStripeError(pmErr.message ?? STRIPE_ERROR_MESSAGES.CARD_ERROR);
+        return;
+      }
+
+      setPendingPaymentMethodId(paymentMethod!.id);
+
+      if (CARD_CHECKOUT_FLOW === 'manual_capture') {
+        // A card that is not saved to the customer can back only one intent, so each seller gets its own
+        // PaymentMethod. Created now, while the card element is still mounted.
+        const perSeller: Record<string, string> = {};
+        for (const group of sellerGroups) {
+          const extra = await stripe.createPaymentMethod({ type: 'card', card: cardElement });
+          if (extra.error || !extra.paymentMethod) {
+            setStripeError(extra.error?.message ?? STRIPE_ERROR_MESSAGES.CARD_ERROR);
+            return;
+          }
+          perSeller[group.sellerId] = extra.paymentMethod.id;
+        }
+        setPendingSellerPaymentMethods(perSeller);
+      }
+
+      if (saveCard) {
+        try {
+          await orderService.savePaymentMethod(paymentMethod!, user, savedCards.length === 0);
+        } catch {
+          // best-effort — card save failure does not block checkout
+        }
+      }
+
+      setStep('review');
+      window.scrollTo(0, 0);
+      return;
     }
+
+    if (!validatePayment()) return;
     setStep('review');
     window.scrollTo(0, 0);
   };
@@ -319,10 +445,7 @@ export const Checkout: React.FC = () => {
   const handleDeleteCard = async (cardId: string) => {
     setDeletingCardId(cardId);
     try {
-      await fetch(API_ENDPOINTS.PAYMENT_METHOD(cardId), {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
+      await deletePaymentMethod(cardId);
       // If the deleted card was selected, reset selection
       if (selectedCardId === cardId) {
         const remaining = savedCards.filter(c => c._id !== cardId);
@@ -336,10 +459,180 @@ export const Checkout: React.FC = () => {
     }
   };
 
+  // Manual-capture checkout: open (or resume) one session, hold each seller's payment, then place the orders.
+  // No amount is sent from here; the server prices the cart and creates each seller's PaymentIntent.
+  const placeCardCheckout = async (buyerId: string) => {
+    if (!stripe || !pendingPaymentMethodId) {
+      handlePaymentError(STRIPE_ERROR_MESSAGES.PAYMENT_NOT_READY);
+      return;
+    }
+    const paymentMethodId = pendingPaymentMethodId;
+    const usingSavedCard = paymentMode === 'saved';
+    const stripeClient: SellerPaymentClient = {
+      confirmPayment: (clientSecret, methodId) => stripe.confirmCardPayment(clientSecret, { payment_method: methodId }),
+      retrievePayment: clientSecret => stripe.retrievePaymentIntent(clientSecret),
+    };
+    setCardStopMessage(null);
+    try {
+      // Always opened with the current input: the server replays the stored key, or rejects a changed body.
+      setCardAuthorizedIds([]);
+      const attempt = getOrCreateCheckoutAttempt(buyerId);
+      const selectedCard = paymentMode === 'saved' ? savedCards.find(c => c._id === selectedCardId) : undefined;
+      const resolvedDeliverySelections = { ...deliverySelections };
+      for (const group of sellerGroups) {
+        if (!resolvedDeliverySelections[group.sellerId] && group.shippingOptions[0]) {
+          resolvedDeliverySelections[group.sellerId] = group.shippingOptions[0];
+        }
+      }
+      const couponCodes: Record<string, string> = {};
+      for (const [sellerId, v] of Object.entries(voucherSelections)) {
+        if (v.code) couponCodes[sellerId] = v.code;
+      }
+      const payload = buildCheckoutSessionPayload({
+        cart: { ...cart, items: checkoutItems },
+        shippingAddress: {
+          street: shippingData.street,
+          city: shippingData.city,
+          state: shippingData.state,
+          zipCode: shippingData.zipCode,
+          country: shippingData.country || 'PH',
+        },
+        paymentMethod: selectedCard
+          ? { type: selectedCard.type === 'debit-card' ? 'debit-card' : 'credit-card', last4: selectedCard.last4, cardHolder: selectedCard.cardHolder }
+          : { type: paymentData.type === 'debit-card' ? 'debit-card' : 'credit-card', last4: paymentData.cardNumber.slice(-4), cardHolder: paymentData.cardHolder },
+        couponCodes,
+        deliverySelections: resolvedDeliverySelections,
+        savedPaymentMethodId: selectedCard?.stripePaymentMethodId,
+      });
+      const { session } = await orderService.createCheckoutSession(payload, attempt.idempotencyKey);
+      saveCheckoutAttempt(buyerId, { ...attempt, sessionId: session.id });
+      setCardSession(session);
+
+      const authorization = await authorizeSellers({
+        api: orderService,
+        client: stripeClient,
+        session,
+        // A saved card is attached to the customer and can back every seller. A new card uses the
+        // PaymentMethod created for that seller.
+        paymentMethodIdFor: sellerId => (usingSavedCard ? paymentMethodId : pendingSellerPaymentMethods[sellerId]),
+        onAuthorized: sellerId => setCardAuthorizedIds(prev => [...prev, sellerId]),
+      });
+      if (authorization.status !== 'authorized') {
+        if (authorization.status === 'closed') {
+          clearCheckoutAttempt(buyerId);
+          setCardSession(null);
+        }
+        setCardStopMessage(authorization.message);
+        return;
+      }
+
+      const confirmed = await confirmPlacedOrders(orderService, session.id);
+      if (confirmed.status === 'placed') {
+        clearCheckoutAttempt(buyerId);
+        setOrderPlaced(true);
+        // Save the new address after the order is placed (best effort, as in the legacy flow)
+        if (selectedAddressId === 'new' && saveAddress) {
+          try {
+            await addAddress({
+              label: 'Home',
+              street: shippingData.street,
+              city: shippingData.city,
+              state: shippingData.state,
+              zipCode: shippingData.zipCode,
+              country: shippingData.country || 'PH',
+            });
+          } catch {
+            // non-blocking
+          }
+        }
+        // Remove only the checked-out items so deselected cart items are preserved
+        if (checkoutItems.length === cart.items.length) {
+          clearCart();
+        } else {
+          for (const item of checkoutItems) {
+            removeFromCart(item.product.id, item.selectedVariant?.key);
+          }
+        }
+        navigate(`/orders?success=${confirmed.orders[0]?.id ?? ''}`);
+        return;
+      }
+      if (confirmed.status === 'failed' || confirmed.status === 'closed') {
+        clearCheckoutAttempt(buyerId);
+        setCardSession(null);
+      }
+      setCardStopMessage(confirmed.message);
+    } catch (err) {
+      if (err instanceof CheckoutApiError && err.code === 'idempotency_conflict') {
+        // The cart or delivery details changed since this attempt started; start a new one.
+        clearCheckoutAttempt(buyerId);
+        setCardSession(null);
+        setError('Your cart or delivery details changed since you started checkout. Review your order and place it again.');
+      } else {
+        setError(err instanceof CheckoutApiError ? err.message : formatNetworkError(err));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reopen an unfinished card checkout after a reload (manual-capture flow only)
+  useEffect(() => {
+    if (CARD_CHECKOUT_FLOW !== 'manual_capture' || !userId) return;
+    const attempt = loadCheckoutAttempt(userId);
+    if (!attempt?.sessionId) return;
+    orderService.getCheckoutSession(attempt.sessionId)
+      .then(session => {
+        if (session.status === 'open') setCardSession(session);
+        else clearCheckoutAttempt(userId);
+      })
+      .catch(err => {
+        // A missing session can never resume; other failures keep the attempt for a later try.
+        if (err instanceof CheckoutApiError && err.status === 404) clearCheckoutAttempt(userId);
+      });
+  }, [userId]);
+
   const handlePlaceOrder = async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
+
+    if (CARD_CHECKOUT_FLOW === 'manual_capture' && isCardPayment(paymentMode, paymentData.type)) {
+      await placeCardCheckout(user.id);
+      return;
+    }
+
+    // Charge Stripe at order placement time
+    const isCard = isCardPayment(paymentMode, paymentData.type);
+    let finalPaymentIntentId: string | undefined;
+
+    if (isCard) {
+      if (!stripe || !pendingPaymentMethodId) {
+        handlePaymentError(STRIPE_ERROR_MESSAGES.PAYMENT_NOT_READY);
+        return;
+      }
+      try {
+        const { clientSecret: cs, paymentIntentId: pid } = await orderService.createPaymentIntent(
+          Math.round(grandTotal * 100)
+        );
+        finalPaymentIntentId = pid;
+        const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(cs, {
+          payment_method: pendingPaymentMethodId,
+        });
+        if (stripeErr) {
+          handlePaymentError(stripeErr.message ?? STRIPE_ERROR_MESSAGES.PAYMENT_FAILED);
+          return;
+        }
+        if (paymentIntent?.status !== 'succeeded') {
+          handlePaymentError(STRIPE_ERROR_MESSAGES.PAYMENT_INCOMPLETE);
+          return;
+        }
+      } catch (err) {
+        console.error('Payment processing error:', err);
+        handlePaymentError(STRIPE_ERROR_MESSAGES.PROCESSING_ERROR);
+        setPendingPaymentMethodId(null);
+        return;
+      }
+    }
 
     // Save new address to profile if user opted in
     if (selectedAddressId === 'new' && saveAddress) {
@@ -393,6 +686,7 @@ export const Checkout: React.FC = () => {
         paymentMethod,
         contactEmail: shippingData.email,
         contactPhone: shippingData.phone,
+        paymentIntentId: finalPaymentIntentId,
       };
 
       const couponCodes: Record<string, string> = {};
@@ -400,8 +694,8 @@ export const Checkout: React.FC = () => {
         if (v.code) couponCodes[sellerId] = v.code;
       }
       const checkoutCart = { ...cart, items: checkoutItems };
-      const orders = await orderService.createOrder(checkoutData, checkoutCart, user.id, couponCodes, resolvedDeliverySelections);
-      orderPlaced.current = true;
+      const orders = await orderService.createOrder(checkoutData, checkoutCart, couponCodes, resolvedDeliverySelections);
+      setOrderPlaced(true);
       // Remove only the checked-out items so deselected cart items are preserved
       if (checkoutItems.length === cart.items.length) {
         clearCart();
@@ -418,10 +712,11 @@ export const Checkout: React.FC = () => {
     }
   };
 
-  if (checkoutItems.length === 0 && !orderPlaced.current) {
-    navigate('/cart');
-    return null;
-  }
+  useEffect(() => {
+    if (checkoutItems.length === 0 && !orderPlaced) navigate('/cart');
+  }, [checkoutItems.length, orderPlaced, navigate]);
+
+  if (checkoutItems.length === 0 && !orderPlaced) return null;
 
   return (
     <div className="space-y-6" data-testid="checkout-page">
@@ -724,7 +1019,7 @@ export const Checkout: React.FC = () => {
                       }`}>
                         {selectedCardId === card._id && <span className="w-2 h-2 rounded-full bg-primary-500" />}
                       </span>
-                      <CreditCard className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <CardBrandIcon brand={card.brand} className="h-7 w-11 flex-shrink-0 rounded" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
                           {card.type.replace('-', ' ')} •••• {card.last4}
@@ -767,93 +1062,33 @@ export const Checkout: React.FC = () => {
                   </select>
                 </div>
 
-                {paymentData.type !== 'cash-on-delivery' && (<>
-                <Input
-                  label="Card Number"
-                  name="cardNumber"
-                  value={paymentData.cardNumber}
-                  onChange={handlePaymentChange}
-                  error={paymentErrors.cardNumber}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={16}
-                  fullWidth
-                  required
-                />
-
-                <Input
-                  label="Cardholder Name"
-                  name="cardHolder"
-                  value={paymentData.cardHolder}
-                  onChange={handlePaymentChange}
-                  error={paymentErrors.cardHolder}
-                  placeholder="John Doe"
-                  fullWidth
-                  required
-                />
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Expiry Month <span className="text-red-500">*</span>
+                {(paymentData.type === 'credit-card' || paymentData.type === 'debit-card') && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Card Details
                     </label>
-                    <select
-                      name="expiryMonth"
-                      value={paymentData.expiryMonth}
-                      onChange={handlePaymentChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    >
-                      <option value="">MM</option>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                        <option key={month} value={month.toString().padStart(2, '0')}>
-                          {month.toString().padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
-                    {paymentErrors.expiryMonth && (
-                      <p className="mt-1 text-sm text-red-500">{paymentErrors.expiryMonth}</p>
+                    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
+                      <CardElement
+                        options={{
+                          hidePostalCode: true,
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: isDark ? '#F3F4F6' : '#374151',
+                              '::placeholder': { color: '#9CA3AF' },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                    {stripeError && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {stripeError}
+                      </p>
                     )}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Expiry Year <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="expiryYear"
-                      value={paymentData.expiryYear}
-                      onChange={handlePaymentChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    >
-                      <option value="">YYYY</option>
-                      {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(
-                        (year) => (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        )
-                      )}
-                    </select>
-                    {paymentErrors.expiryYear && (
-                      <p className="mt-1 text-sm text-red-500">{paymentErrors.expiryYear}</p>
-                    )}
-                  </div>
-
-                  <Input
-                    label="CVV"
-                    name="cvv"
-                    value={paymentData.cvv}
-                    onChange={handlePaymentChange}
-                    error={paymentErrors.cvv}
-                    placeholder="123"
-                    maxLength={4}
-                    fullWidth
-                    required
-                  />
-                </div>
-
-                </>)}
+                )}
 
                 {paymentData.type !== 'cash-on-delivery' && (
                 <div className="flex items-center gap-2 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
@@ -894,15 +1129,24 @@ export const Checkout: React.FC = () => {
 
               {/* ── Saved card mode: Back + Continue buttons ── */}
               {paymentMode === 'saved' && hasCards && (
-                <div className="flex justify-between pt-2">
+                <div className="space-y-3 pt-2">
+                  {stripeError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      {stripeError}
+                    </p>
+                  )}
+                <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setStep('shipping')}>Back</Button>
                   <Button
                     size="lg"
-                    disabled={!selectedCardId}
-                    onClick={() => { setStep('review'); window.scrollTo(0, 0); }}
+                    loading={loading}
+                    disabled={!selectedCardId || loading}
+                    onClick={() => handlePaymentSubmit()}
                   >
                     Review Order
                   </Button>
+                </div>
                 </div>
               )}
             </Card>
@@ -984,30 +1228,55 @@ export const Checkout: React.FC = () => {
 
                       {/* Delivery option picker */}
                       {group.shippingOptions.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
-                            <Truck className="w-3.5 h-3.5" /> Delivery Method
-                          </p>
-                          <div className="flex flex-wrap gap-2">
+                        <div className="mt-3 rounded-xl border border-gray-100 dark:border-gray-700/60 overflow-hidden">
+                          <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/60 flex items-center gap-2">
+                            <Truck className="w-3.5 h-3.5 text-primary-500" />
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Delivery Method</span>
+                          </div>
+                          <div className="p-3 flex flex-col sm:flex-row gap-2">
                             {group.shippingOptions.map((opt) => {
-                              const label = opt === 'standard' ? 'Standard' : opt === 'express' ? 'Express' : 'Pickup';
-                              const Icon = opt === 'express' ? Zap : opt === 'pickup' ? Package : Truck;
+                              const { label, sub, Icon } = DELIVERY_META[opt] ?? { label: opt, sub: '', Icon: Truck };
                               const selected = (deliverySelections[group.sellerId] ?? group.shippingOptions[0]) === opt;
+                              const fee = group.shippingFee === 'buyer_pays' ? group.shippingFeeAmounts[opt] : undefined;
                               return (
                                 <button
                                   key={opt}
                                   type="button"
                                   onClick={() => setDeliverySelections(prev => ({ ...prev, [group.sellerId]: opt }))}
-                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                                  className={`relative flex items-center gap-3 flex-1 px-4 py-3 rounded-lg border-2 text-left transition-all duration-150 ${
                                     selected
-                                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/30 text-primary-700 dark:text-primary-300'
-                                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 hover:border-primary-300 dark:hover:border-primary-700'
                                   }`}
                                 >
-                                  <Icon className="w-3.5 h-3.5" />
-                                  {label}
-                                  {group.shippingFee === 'buyer_pays' && group.shippingFeeAmounts[opt] != null && (
-                                    <span className="ml-0.5 text-xs opacity-75">({formatCurrency(group.shippingFeeAmounts[opt])})</span>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                                    selected
+                                      ? 'bg-primary-500 text-white'
+                                      : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                  }`}>
+                                    <Icon className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-semibold leading-tight ${selected ? 'text-primary-700 dark:text-primary-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                                      {label}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sub}</p>
+                                  </div>
+                                  {fee != null && (
+                                    <div className="text-right flex-shrink-0">
+                                      <span className={`text-sm font-bold ${
+                                        fee === 0
+                                          ? 'text-emerald-600 dark:text-emerald-400'
+                                          : selected
+                                            ? 'text-primary-600 dark:text-primary-400'
+                                            : 'text-gray-700 dark:text-gray-300'
+                                      }`}>
+                                        {fee === 0 ? 'FREE' : formatCurrency(fee)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {selected && (
+                                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary-500" />
                                   )}
                                 </button>
                               );
@@ -1147,6 +1416,48 @@ export const Checkout: React.FC = () => {
                 </div>
               </Card>
 
+              {CARD_CHECKOUT_FLOW === 'manual_capture' && isCardPayment(paymentMode, paymentData.type) && (
+                <Card padding="lg" data-testid="card-authorization-panel">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                    <Lock className="w-5 h-5" />
+                    Payment authorization
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Your money is reserved now and charged when each seller starts preparing your order.
+                    Orders a seller does not accept within 24 hours are cancelled and their reservation is released.
+                    Multi-seller purchases may need a separate confirmation for each seller.
+                    Your bank may show pending charges until the reservation is released or captured.
+                  </p>
+                  <ul className="space-y-2">
+                    {sellerGroups.map(group => {
+                      const draft = cardSession?.sellers.find(s => s.sellerId === group.sellerId);
+                      const authorized = !!draft && (cardAuthorizedIds.includes(group.sellerId) || !draft.clientSecret);
+                      return (
+                        <li key={group.sellerId} className="flex justify-between text-sm">
+                          <span className="text-gray-700 dark:text-gray-300">{group.sellerName}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {formatCurrency(draft ? draft.amountMinor / 100 : group.storeTotal)}
+                            {draft && (
+                              <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                                {authorized ? 'Reserved' : 'Awaiting payment'}
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {!cardSession && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                      Amounts are estimates. The server confirms the final amount for each seller when you place the order.
+                    </p>
+                  )}
+                  {cardStopMessage && (
+                    <p role="alert" className="mt-4 text-sm text-red-700 dark:text-red-400">{cardStopMessage}</p>
+                  )}
+                </Card>
+              )}
+
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep('payment')}>
                   Back
@@ -1259,3 +1570,9 @@ export const Checkout: React.FC = () => {
     </div>
   );
 };
+
+export const Checkout: React.FC = () => (
+  <Elements stripe={stripePromise}>
+    <CheckoutInner />
+  </Elements>
+);

@@ -1,14 +1,20 @@
-﻿import express from 'express';
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { connectDB } from './config/database.js';
 import { startAutoCompleteJob } from './jobs/autoCompleteOrders.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { mountApiDocs } from './config/swaggerUi.js';
+import { configureTrustProxy } from './config/deployment.js';
 
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -18,18 +24,22 @@ import cartRoutes from './routes/cartRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
-
-dotenv.config();
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import paymentRoutes from './routes/paymentRoutes.js';
+import checkoutRoutes from './routes/checkoutRoutes.js';
+import { startDraftCleaner } from './services/draftCleaner.js';
+import { startAcceptanceScanner } from './services/acceptanceScanner.js';
+import { startPaymentOperationWorker } from './services/paymentOperationWorker.js';
+import { startStripeInboxWorker } from './services/stripeInboxWorker.js';
 
 const app = express();
+configureTrustProxy(app);
 
-connectDB();
+await connectDB();
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+mountApiDocs(app);
 
-// 0 = unlimited. Defaults: auth 10/15 min, api 100/min.
+// 0 = unlimited. Defaults: auth 10/min, api 100/min.
 // Override via env vars to use small values in rate-limit tests.
 const authMax = parseInt(process.env.RATE_LIMIT_AUTH_MAX ?? '10') || Infinity;
 const apiMax  = parseInt(process.env.RATE_LIMIT_API_MAX  ?? '100') || Infinity;
@@ -58,6 +68,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
+
+// Webhook needs raw body — must be before express.json()
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => { next(); });
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -76,6 +90,8 @@ app.use('/api/cart', apiLimiter, cartRoutes);
 app.use('/api/reviews', apiLimiter, reviewRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/coupons', apiLimiter, couponRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/checkout', apiLimiter, checkoutRoutes);
 
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'TokoMart API', version: '1.0.0' });
@@ -91,6 +107,10 @@ app.listen(PORT, () => {
   console.log(`📍 API: http://localhost:${PORT}`);
   console.log(`❤️  Health Check: http://localhost:${PORT}/health\n`);
   startAutoCompleteJob();
+  startDraftCleaner();
+  startAcceptanceScanner();
+  startPaymentOperationWorker();
+  startStripeInboxWorker();
 });
 
 export default app;

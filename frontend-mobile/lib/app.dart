@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'core/network/api_client.dart';
+import 'features/refunds/data/refund_api.dart';
 import 'core/network/connectivity_cubit.dart';
 import 'core/widgets/offline_banner.dart';
 import 'shared/services/storage_service.dart';
@@ -33,6 +34,9 @@ import 'features/orders/presentation/bloc/order_bloc.dart';
 // Features - Wishlist
 import 'features/wishlist/presentation/bloc/wishlist_bloc.dart';
 
+// Features - Checkout
+import 'features/checkout/bloc/payment_bloc.dart';
+
 // Features - Seller
 import 'features/seller/data/datasources/seller_remote_datasource.dart';
 import 'features/seller/data/repositories/seller_repository_impl.dart';
@@ -41,6 +45,9 @@ import 'features/seller/presentation/bloc/seller_bloc.dart';
 // Features - Follow
 import 'features/follow/data/datasources/follow_remote_datasource.dart';
 import 'package:dio/dio.dart';
+
+// Core Services
+import 'core/services/card_service.dart';
 
 class TokoMart extends StatefulWidget {
   final StorageService storageService;
@@ -52,17 +59,20 @@ class TokoMart extends StatefulWidget {
 
 class _TokoMartState extends State<TokoMart> {
   late final ApiClient _apiClient;
+  late final CardService _cardService;
   late final AuthBloc _authBloc;
   late final CartBloc _cartBloc;
   late final ProductBloc _productBloc;
   late final OrderBloc _orderBloc;
   late final SellerBloc _sellerBloc;
+  late final PaymentBloc _paymentBloc;
   late final FollowRemoteDataSource _followDs;
 
   @override
   void initState() {
     super.initState();
     _apiClient = ApiClient(widget.storageService);
+    _cardService = CardService(_apiClient);
 
     // Auth
     final authDs = AuthRemoteDataSource(_apiClient.dio);
@@ -85,6 +95,9 @@ class _TokoMartState extends State<TokoMart> {
     // Cart
     _cartBloc = CartBloc(CartRemoteDataSource(_apiClient.dio));
 
+    // Checkout - Payment
+    _paymentBloc = PaymentBloc(apiService: _apiClient.dio);
+
     // Follow
     _followDs = FollowRemoteDataSource(_apiClient.dio);
   }
@@ -96,6 +109,7 @@ class _TokoMartState extends State<TokoMart> {
     _productBloc.close();
     _orderBloc.close();
     _sellerBloc.close();
+    _paymentBloc.close();
     super.dispose();
   }
 
@@ -103,6 +117,8 @@ class _TokoMartState extends State<TokoMart> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        RepositoryProvider<CardService>.value(value: _cardService),
+        RepositoryProvider<RefundApi>.value(value: RefundApi(_apiClient.dio)),
         BlocProvider(create: (_) => ThemeCubit()),
         BlocProvider(create: (_) => ConnectivityCubit()),
         BlocProvider.value(value: _authBloc),
@@ -111,6 +127,7 @@ class _TokoMartState extends State<TokoMart> {
         BlocProvider(create: (_) => WishlistBloc()),
         BlocProvider.value(value: _orderBloc),
         BlocProvider.value(value: _sellerBloc),
+        BlocProvider.value(value: _paymentBloc),
       ],
       child: _RouterWrapper(authBloc: _authBloc, cartBloc: _cartBloc, followDs: _followDs, dio: _apiClient.dio),
     );

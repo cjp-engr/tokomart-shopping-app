@@ -1,0 +1,162 @@
+# Local payment verification — 2026-10-18
+
+## Delivered-item refunds: continuation verification
+
+Fresh manual service-flow check on 2026-10-18 used Stripe test mode only and new
+fixtures in `tokomart_delivered_refund_manual_test` on port27018. The owner's
+standalone database, web/backend processes and automation folders were untouched.
+The verifier uses Stripe's published `pm_card_visa` fixture, following
+[Stripe testing documentation](https://docs.stripe.com/testing).
+
+- Order `6ad4c7ea81753138fa4b2848`, intent `pi_3URu0iJrMKRA89iL00ezozMh`.
+- Initial authorization: requires_capture, zero received. Existing seller acceptance
+  captured USD2660 minor units. Existing shipping/receipt transitions recorded delivery.
+- Requests `6ad4c7ec81753138fa4b2871` and `6ad4c7ee81753138fa4b2892` each selected
+  one unit and refunded USD1080 minor units after approval.
+- Refunds `re_3URu0iJrMKRA89iL0S5xGVos` and `re_3URu0iJrMKRA89iL05DO9jFA`
+  both verified succeeded. Total refunded2160; original shipping500 remained charged.
+- Final fulfillment delivered; payment partially_refunded; no reserved refund balance.
+  Product stock8 and soldCount2 stayed unchanged. Original order total26.60 remained.
+
+Reproduce from backend with `node --import tsx scripts/verify-delivered-refunds.mjs
+--run-test-mode` (one command). It refuses live keys and uses a fixed local `_test`
+database. Safe result JSON is written to ignored
+`backend/test-results/delivered-refund-manual-evidence.json`; no secrets are printed.
+Each execution creates a new test payment and fresh fixtures; do not run repeatedly
+without a reason. No hosted feature flags were enabled.
+
+This check exercised the actual backend services and Stripe, not the web/browser
+or native Stripe UI. New web logic tests and Flutter BLoC/widget tests supplement
+database race/restart/provider-mock tests. Owner UI acceptance remains outstanding.
+Per current AGENTS.md, no Playwright/Patrol work was done in this continuation.
+The older automation evidence below describes earlier authorized work only.
+
+## Environment
+
+- Web: `http://localhost:5173`, built with `VITE_CHECKOUT_FLOW=manual_capture`.
+- API: `http://127.0.0.1:5001/api`, running `CHECKOUT_FLOW=manual_capture` and `SELLER_SEES_MANUAL_CAPTURE=true`.
+- Separate local replica-set database: `tokomart_local_payments_20261017` on port 27018.
+- Existing environment files were left unchanged. Stripe credentials were read privately from the backend environment file; every inspected intent has `livemode=false` and `capture_method=manual`.
+
+The verification originally used web port 5174 to avoid the older web/API on 5173/5000. After the local checks passed, the user retired that setup: the old processes were stopped and the verified web moved to 5173, still using API 5001 and the same isolated database. Local backend/frontend environment settings and the default VS Code mobile debug launch now select this setup. No old database was deleted. Historic results below were obtained before the port move; deployed apps are unchanged.
+
+After the move, the new-card authorization and two-seller acceptance/cancellation web cases passed again on 5173 (3 passed including buyer authentication setup). The normal Android app was rebuilt/launched with `API_BASE_URL=http://10.0.2.2:5001/api` and `CHECKOUT_FLOW=manual_capture`; product and account requests returned 200. Local web test environment settings now use web 5173/API 5001. Reload the browser after the move; use the default VS Code mobile debug configuration for subsequent runs.
+
+## Web: passed
+
+The existing Playwright authorization suite passed for a new card, a saved card, and a two-seller checkout. Read-only Stripe API inspection confirmed four separate authorizations with `status=requires_capture`, the full amount capturable, and `amount_received=0`.
+
+The new opt-in local settlement suite passed buyer/seller UI actions:
+
+- Seller accepted order `6ad4758de66f6d06139b8c19`. Its intent `pi_3URoWeJrMKRA89iL0rWFzkYj` became `succeeded`; `amount_received=2700`, `amount_capturable=0`. The order became preparing/captured, and the buyer saw Payment charged.
+- Buyer cancelled the other seller's order `6ad4758de66f6d06139b8c1a`. Its intent `pi_3URoWfJrMKRA89iL1luAtd5Z` became `canceled`; `amount_received=0`, `amount_capturable=0`. The order became cancelled/released, and the buyer saw Reservation released.
+- An accelerated expiry of order `6ad47599e66f6d06139b8d7c` caused the running deadline scanner to cancel and release intent `pi_3URoWqJrMKRA89iL0passGL7`. Stripe confirmed `canceled` and zero received/capturable amounts; the buyer saw Reservation released.
+
+Expiry was accelerated by moving this isolated local order's `acceptBy` into the past. This verifies the scanner and actual Stripe release; it is **not** a real 24-hour wait or an observed bank-side authorization expiration. Exact deadline rules are covered separately by backend integration tests. Webhook delivery was not exercised in this run.
+
+The four checkout-only authorizations remain as test-mode pending examples. They have not been accepted; their local acceptance deadlines will release them if the API remains running.
+
+Read-only Stripe evidence is stored in the ignored file `backend/test-results/local-payment-verification/stripe-evidence.json`. It includes order/intent IDs and amounts, with no credentials or client secrets.
+
+## Android emulator: passed
+
+An Android emulator is available. The old Patrol checkout helpers target the legacy card form, so a new saved-card/multiple-seller verification test and stable payment-control keys were prepared. The test bootstrap can initialize the real Stripe plugin when requested.
+
+The user subsequently approved the Patrol runner. Initial attempts stopped before tests because Java's Windows socket transport failed and the sandbox blocked Patrol's signal handler. A process-only Java setting and an approved runner outside the sandbox allowed the Android build and test to run; no global Java or app configuration was changed.
+
+The Android saved-card/two-seller checkout test passed. Orders `6ad47918e66f6d06139b8fc3` and `6ad47918e66f6d06139b8fc4` each had `paymentStatus=authorized`. Direct Stripe inspection confirmed both intents had `livemode=false`, `capture_method=manual`, `status=requires_capture`, `amount_capturable=2160`, and `amount_received=0`.
+
+The first UI attempt identified missing test keys on the existing checkout payment-method controls. Those keys were added; payment behavior was unchanged. A separate native-form inspection identified Stripe's actual Android card fields before writing new-card interactions.
+
+The actual native Stripe new-card checkout also passed using test card 4242. Order `6ad47ac0e66f6d06139b9170` / intent `pi_3URos7JrMKRA89iL13sWh8w4` initially had `requires_capture`, `amount_capturable=2160`, and `amount_received=0`. Native entry uses the inspected Stripe resource IDs with Patrol's alternative keyboard mode; its default keyboard-dismiss action navigated away from the form on this emulator.
+
+The two Android settlement tests passed:
+
+- Seller `s1` accepted mobile order `6ad47918e66f6d06139b8fc4` through the dashboard. Stripe intent `pi_3URolIJrMKRA89iL1HBAwRKv` became `succeeded`, received 2160, and had zero capturable. The buyer saw Payment charged.
+- The buyer cancelled mobile order `6ad47918e66f6d06139b8fc3` through the order detail and confirmation dialog. Stripe intent `pi_3URolHJrMKRA89iL0f8eLWEC` became `canceled`, with zero received and capturable. The buyer saw Reservation released.
+- The native new-card order's deadline was accelerated using the isolated helper. The running scanner released intent `pi_3URos7JrMKRA89iL13sWh8w4`; Stripe confirmed `canceled`, zero received/capturable, and the Android buyer saw Reservation released.
+
+Every inspected Android intent was test mode and manual capture. These are emulator results, not physical-device or iOS verification. The expiry qualification and untested webhook-delivery limitation above apply to Android too.
+
+Final checks: mobile analysis reported no issues. The web expiry case passed again after adding the isolated web-origin guard (2 passed including authentication setup); order `6ad47c67e66f6d06139b9352` / intent `pi_3URoywJrMKRA89iL16iyjYJe` was cancelled/released with zero received/capturable in Stripe. The generated mobile runner has no content diff from HEAD. No changes were committed or pushed.
+
+The verification tests are opt-in using `--dart-define=LOCAL_PAYMENT_VERIFICATION=true` and reject an API other than the isolated emulator endpoint. Stripe-initializing tests also reject publishable keys without the `pk_test_` prefix. No payment business logic was changed during this verification; app changes add test keys and test bootstrap support.
+
+The mobile cases share fixture login/cart setup, authorization checks, and capture
+polling through `patrol_test/modules/local_payment_api.dart`. UI actions remain in
+the individual test files, and API clients close even on failures. The address
+helper explicitly selects New Address before entering fields, so the cases also
+work when the test buyer already has a saved address. Generated runner changes
+are restored after a verification run; the checked-in integration entrypoint still
+imports the baseline runner.
+
+### Cleanup regression check (2026-10-18)
+
+After extracting the shared mobile helper, Android new-card and saved-card
+checkout passed, followed by both acceptance/cancellation settlement cases.
+The web settlement and expiry suite passed (3 tests including authentication).
+A final Android saved-card checkout passed with both fixture products on page
+two of the catalog and a saved address already present. Fixture lookup now
+follows catalog pagination instead of assuming the products are on page one.
+
+Direct Stripe test-mode inspection confirmed captured accepted orders
+`6ad491ef880452fa06b44b80` (Android) and `6ad492d3880452fa06b44f21` (web).
+Cancelled orders `6ad491ef880452fa06b44b7f` and `6ad492d3880452fa06b44f22`,
+and accelerated-expiry orders `6ad491dd880452fa06b44a62` and
+`6ad492df880452fa06b45161`, had zero received and capturable amounts.
+The final Android checkout orders `6ad49351880452fa06b45338` and
+`6ad49351880452fa06b45339` remained `requires_capture` with zero received.
+All eight inspected intents used manual capture and had `livemode=false`.
+Expiry remains accelerated local verification, not a real 24-hour wait.
+
+One Android runner startup needed its notification permission granted before
+the test app could launch; subsequent runs started normally. This cleanup
+changes test setup, selectors, and readability, not payment business rules.
+
+## Repeating the web checks
+
+From `e2e-testing`, with the verification web/API processes already running:
+
+```powershell
+$env:API_URL='http://127.0.0.1:5001'
+$env:WEB_URL='http://localhost:5173'
+$env:CHECKOUT_FLOW='manual_capture'
+npx playwright test tests/web/buyer/card-checkout-authorization.spec.ts --project=web-buyer --grep 'TC-(143|144|148):' --workers=1
+$env:LOCAL_PAYMENT_VERIFICATION='true'
+npx playwright test tests/web/buyer/local-payment-settlement.spec.ts --project=web-buyer --workers=1
+```
+
+From `backend`, refresh Stripe evidence with `node --import tsx scripts/local-payment-evidence.mjs`. This helper intentionally targets only the isolated local database and requires a Stripe test key. Its `expire ORDER_ID` mode only moves the deadline of a pending authorized manual-capture order in that database; it does not change global deadlines.
+
+## Repeating Android checks
+
+Use the running `emulator-5554` and the same isolated backend. Run these Patrol targets from `frontend-mobile` with `API_BASE_URL=http://10.0.2.2:5001/api`, `BASE_URL=http://10.0.2.2:5001`, `CHECKOUT_FLOW=manual_capture`, and `LOCAL_PAYMENT_VERIFICATION=true` as Dart defines:
+
+- The card checkout tests, each one test per file with its own tag. They need no fixture: the buyer's cart is cleared through the API, a saved test card (`tok_visa`) is saved through the API when the buyer has none, and each ends by checking through the API that the new order is `authorized` under `manual_capture`. Each creates one authorized test order that stays pending until its acceptance deadline.
+  - `patrol_test/2_buyer/simple_saved_credit_checkout_test.dart` (TC-096, tag `tc-096`): simple product, saved card.
+  - `patrol_test/2_buyer/simple_new_credit_checkout_test.dart` (TC-097, tag `tc-097`): simple product, new card typed into the native Stripe sheet.
+  - `patrol_test/2_buyer/variant_saved_credit_checkout_test.dart` (TC-104, tag `tc-104`) and `variant_new_credit_checkout_test.dart` (TC-103, tag `tc-103`): "E2E Test Variant Tee" in size M with a saved or a new card; they also check `Size: M` on the order item.
+  - `patrol_test/2_buyer/multi_seller_card_checkout_test.dart` (TC-083, tag `tc-083`): creates a second seller's product (with an image) through the API as `s1@ex.com`, checks out two products with the saved card, expects two authorized orders (one hold per seller), and deletes the product afterwards.
+- The settlement checks are four one-test files, each needing a fresh one-time order fixture passed as a Dart define:
+  - `patrol_test/1_seller/local_seller_accepts_order_test.dart` (TC-182): the test creates its own pending card order through the checkout session API (buyer login, Stripe test card `tok_visa`, session confirm), the seller accepts it, and the API confirms capture. Set `LOCAL_ACCEPT_ORDER_ID` to accept a given order instead. It needs no fixture and logs "Created pending card order <id>".
+  - `patrol_test/2_buyer/local_buyer_cancels_order_test.dart` (TC-180): the test creates its own pending card order through the API, the buyer cancels it and sees "Reservation released". Set `LOCAL_CANCEL_ORDER_ID` to cancel a given order instead.
+  - `patrol_test/2_buyer/local_charged_payment_notice_test.dart` (TC-179): the test creates a card order through the API and has the seller accept it through the API, then the buyer sees "Payment charged". Set `LOCAL_ACCEPT_ORDER_ID` to use an already accepted order instead.
+  - `patrol_test/2_buyer/local_expired_order_notice_test.dart` (TC-401): the buyer sees "Reservation released" on `LOCAL_EXPIRED_ORDER_ID`, an order prepared by the fixture script below.
+  Run a single test by its tag instead of its file (the tags are `tc-083`, `tc-096`, `tc-097`, `tc-103`, `tc-104`, `tc-179`, `tc-180`, `tc-182` and `tc-401`), for example `patrol test --tags tc-182 --device emulator-5554` plus the Dart defines above and `LOCAL_ACCEPT_ORDER_ID`. Do not select by `local-stripe-verification`: all of these tests carry it.
+  Only the expired-order test (TC-401) needs a prepared order, because no API changes an order's acceptance deadline. Run `node --import tsx scripts/local-expired-order-fixture.mjs` from `backend` (the API and its scanner must be running). It creates an order through the API, moves its deadline into the past, waits for the scanner to cancel it and release the hold (about a minute), then prints `LOCAL_EXPIRED_ORDER_ID=<id>`; pass that id to the TC-401 test. The script is fixed to the isolated local database and API, like the `expire ORDER_ID` helper above. The other three tests create their own orders. Each covers its scenario only in part; see `docs/test-cases/test-scenarios-mobile.md`.
+  Seller account: the seller login comes from `SELLER_EMAIL` (default in `patrol_test/test_credentials.dart`, `x@x.com` since 2026-11-08; it was `s1@ex.com`). In a database seeded with `npm run seed`, "The Art of Programming" belongs to `x@x.com`, so the fixture order from that product is accepted by `x@x.com`; pass `--dart-define=SELLER_EMAIL=...` to use another seller. The multi-seller test creates its own second-seller product. Check an order's owner with a seller login before choosing the account.
+  Emulator space: the debug and test APKs need roughly 1 GB free on the emulator; at 587 MB free the install failed with `INSTALL_FAILED_INSUFFICIENT_STORAGE`.
+  Patrol rewrites the tracked `patrol_test/test_bundle.dart` on every run; restore it before committing.
+
+On this Windows setup the runner used the Dart executable directly, JDK `C:/Program Files/Eclipse Adoptium/jdk-17.0.19.10-hotspot`, and a process-only `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:/Files/Automation/shopping-app-automation/frontend-mobile/.dart_tool/local-payment-verification/unused-socket-directory`. That final path must remain nonexistent to let Java fall back to TCP loopback. The sandbox required an approved external runner for the process signal handler and SDK cache. Generated `patrol_test/test_bundle.dart` changes are excluded from the final work.
+
+## Shipping policy amendment — 2026-10-18
+
+The shipping-aware backend and web/mobile quote changes were checked using mocked
+Stripe integration tests and unit/widget tests. The updated manual test script
+expects 1080 then 1580 refunded (including shipping500 once), total2660, payment
+status refunded, and delivered fulfillment unchanged. It writes a separate
+delivered-refund-shipping-evidence.json file. This updated actual Stripe check has
+not been rerun; the earlier real Stripe evidence above used the original policy
+and retained shipping. Owner UI acceptance remains required. Change of mind is
+pending-only and rejected for delivered requests.

@@ -20,9 +20,18 @@ export const API_ENDPOINTS = {
   ORDER_STATUS: (id: string) => `${API_BASE_URL}/orders/${id}/status`,
   ORDER_CONFIRM_RECEIVED: (id: string) => `${API_BASE_URL}/orders/${id}/confirm-received`,
 
+  // Payments
+  PAYMENT_INTENT: `${API_BASE_URL}/payments/create-intent`,
+
+  // Checkout sessions (manual-capture card flow)
+  CHECKOUT_SESSIONS: `${API_BASE_URL}/checkout/sessions`,
+  CHECKOUT_SESSION: (id: string) => `${API_BASE_URL}/checkout/sessions/${id}`,
+  CHECKOUT_SESSION_CONFIRM: (id: string) => `${API_BASE_URL}/checkout/sessions/${id}/confirm`,
+
   // Payment methods
   PAYMENT_METHODS: `${API_BASE_URL}/auth/payment-methods`,
   PAYMENT_METHOD: (id: string) => `${API_BASE_URL}/auth/payment-methods/${id}`,
+  PAYMENT_METHOD_DEFAULT: (id: string) => `${API_BASE_URL}/auth/payment-methods/${id}/default`,
 
   // Saved addresses
   SAVED_ADDRESSES: `${API_BASE_URL}/auth/saved-addresses`,

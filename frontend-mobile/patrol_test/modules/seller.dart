@@ -8,6 +8,7 @@ final class Seller extends Module {
   Seller(super.$);
 
   Future<void> navigateToDashboard() async {
+    $.log('Opening the seller dashboard');
     await $(keys.seller.sellerNavTab).tap();
     await $(keys.seller.dashboardScreen).waitUntilVisible();
   }
@@ -197,5 +198,11 @@ final class Seller extends Module {
   Future<void> confirmDelete() async {
     await $(keys.widgets.dialogConfirmButton).waitUntilVisible();
     await $(keys.widgets.dialogConfirmButton).tap();
+  }
+
+  Future<void> acceptOrderAndStartPreparing({required String orderId}) async {
+    $.log('Accepting order $orderId and starting preparation');
+    await $(keys.seller.ordersTab).tap();
+    await $(keys.seller.acceptOrderButton(orderId)).scrollTo().tap();
   }
 }

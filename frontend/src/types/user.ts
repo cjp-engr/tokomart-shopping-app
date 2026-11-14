@@ -9,11 +9,13 @@ export interface Address {
 export interface SavedCard {
   _id: string;
   type: 'credit-card' | 'debit-card' | 'paypal';
+  brand?: string;
   last4: string;
   cardHolder: string;
   expiryMonth: string;
   expiryYear: string;
   isDefault: boolean;
+  stripePaymentMethodId?: string;
 }
 
 export interface SavedAddress {

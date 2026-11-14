@@ -3,13 +3,24 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Order } from '../types/order';
 import orderService from '../services/orderService';
+import { RefundRequestPanel } from '../components/orders/RefundRequestPanel';
+import { RefundItemMark } from '../components/orders/RefundItemMark';
+import { OrderRefundBadge } from '../components/orders/OrderRefundBadge';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Spinner } from '../components/common/Spinner';
 import { ReviewModal } from '../components/common/ReviewModal';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getStatusConfig, formatPaymentMethodType, formatDeliveryOption } from '../utils/orderUtils';
+import {
+  acceptanceDeadline,
+  hasShortAcceptanceWindow,
+  cancelledBySellerNotice,
+  paymentStatusNotice,
+  type PaymentNoticeTone,
+} from '../utils/orderPayment';
 import { fetchReviewStatuses, fetchSingleReview } from '../utils/reviewUtils';
 import type { ReviewData } from '../utils/reviewUtils';
 import {
@@ -25,6 +36,13 @@ import {
   Pencil,
   Zap,
 } from 'lucide-react';
+
+const NOTICE_CLASSES: Record<PaymentNoticeTone, string> = {
+  info: 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+  success: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  neutral: 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700',
+  warning: 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+};
 
 type ReviewModalState = {
   productId: string;
@@ -44,6 +62,7 @@ export const OrderDetail: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmingReceipt, setConfirmingReceipt] = useState(false);
+  const [showReceiveDialog, setShowReceiveDialog] = useState(false);
   const [reviewMap, setReviewMap] = useState<Map<string, ReviewData>>(new Map());
   const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null);
 
@@ -54,7 +73,7 @@ export const OrderDetail: React.FC = () => {
     (async () => {
       setLoading(true);
       try {
-        const o = await orderService.getOrderById(id, user.id);
+        const o = await orderService.getOrderById(id);
         if (cancelled) return;
         setOrder(o);
 
@@ -110,6 +129,10 @@ export const OrderDetail: React.FC = () => {
   const StatusIcon = statusConfig.icon;
   const isDelivered = order.status === 'delivered';
   const isCancelled = order.status === 'cancelled';
+  const paymentNotice = paymentStatusNotice(order);
+  const sellerCancelNotice = cancelledBySellerNotice(order);
+  const deadline = acceptanceDeadline(order);
+  const shortWindow = hasShortAcceptanceWindow(order);
 
   const groups = new Map<string, typeof order.items>();
   order.items.forEach(item => {
@@ -138,10 +161,13 @@ export const OrderDetail: React.FC = () => {
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatDate(order.createdAt)}</p>
         </div>
-        <Badge variant={statusConfig.variant} className="flex items-center gap-1.5 px-3 py-1.5 text-sm" data-testid="order-status-badge">
-          <StatusIcon className="w-4 h-4" />
-          {statusConfig.label}
-        </Badge>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {isDelivered && <OrderRefundBadge order={order} />}
+          <Badge variant={statusConfig.variant} className="flex items-center gap-1.5 px-3 py-1.5 text-sm" data-testid="order-status-badge">
+            <StatusIcon className="w-4 h-4" />
+            {statusConfig.label}
+          </Badge>
+        </div>
       </div>
 
       {/* Seller groups */}
@@ -166,7 +192,7 @@ export const OrderDetail: React.FC = () => {
             </div>
 
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {sellerItems.map(({ product, quantity, selectedVariant }) => {
+              {sellerItems.map(({ lineId, product, quantity, selectedVariant }) => {
                 const existingReview = reviewMap.get(product.id);
                 const itemKey = selectedVariant?.key ?? product.id;
                 const rawPrice = selectedVariant?.price ?? product.price;
@@ -193,6 +219,7 @@ export const OrderDetail: React.FC = () => {
                           </p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">x{quantity}</p>
+                        <RefundItemMark marks={order.refundedItems} lineId={lineId} quantity={quantity} />
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm font-semibold text-primary-600">
@@ -337,6 +364,8 @@ export const OrderDetail: React.FC = () => {
         </div>
       </Card>
 
+      {order.status === 'delivered' && <RefundRequestPanel key={order.id} orderId={order.id} onUpdated={() => { void orderService.getOrderById(order.id).then(setOrder).catch(() => {}); }} />}
+
       {/* Payment */}
       <Card>
         <div className="flex items-center gap-2 mb-3">
@@ -347,6 +376,25 @@ export const OrderDetail: React.FC = () => {
           {formatPaymentMethodType(order.paymentMethod.type)}
           {order.paymentMethod.last4 ? ` ending in ${order.paymentMethod.last4}` : ''}
         </p>
+        {paymentNotice && (
+          <div
+            className={`mt-3 rounded-lg border px-3 py-2 ${NOTICE_CLASSES[paymentNotice.tone]}`}
+            data-testid="payment-status-notice"
+          >
+            <p className="text-sm font-semibold">{paymentNotice.title}</p>
+            <p className="text-xs mt-0.5">{paymentNotice.body}</p>
+          </div>
+        )}
+        {deadline && (
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400" data-testid="acceptance-deadline">
+            The seller must accept by {formatDate(deadline)}. If not, the order is cancelled and the reservation is released.
+          </p>
+        )}
+        {deadline && shortWindow && (
+          <p className="mt-1 text-xs text-amber-700 dark:text-amber-400" data-testid="short-authorization-note">
+            Your card authorization ends sooner than usual, so the seller has less time to accept this order.
+          </p>
+        )}
       </Card>
 
       {/* Delivery banner */}
@@ -373,7 +421,7 @@ export const OrderDetail: React.FC = () => {
             size="sm"
             variant="success"
             loading={confirmingReceipt}
-            onClick={handleConfirmReceived}
+            onClick={() => setShowReceiveDialog(true)}
             data-testid="confirm-received-btn"
           >
             <CheckCircle className="w-4 h-4 mr-1.5" />
@@ -385,7 +433,14 @@ export const OrderDetail: React.FC = () => {
       {isCancelled && (
         <div className="flex items-center gap-2 px-5 py-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800">
           <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-          <span className="text-sm font-medium text-red-600 dark:text-red-400">This order has been cancelled</span>
+          <div>
+            <span className="text-sm font-medium text-red-600 dark:text-red-400 block">
+              {sellerCancelNotice ? sellerCancelNotice.title : 'This order has been cancelled'}
+            </span>
+            {sellerCancelNotice && (
+              <span className="text-xs text-red-500 dark:text-red-400" data-testid="order-cancelled-by-seller">{sellerCancelNotice.body}</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -413,6 +468,20 @@ export const OrderDetail: React.FC = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={showReceiveDialog}
+        title="Confirm Receipt"
+        message="Confirm that you have received this order? This cannot be undone."
+        confirmLabel="Yes, I received it"
+        cancelLabel="Not yet"
+        variant="warning"
+        onConfirm={() => {
+          setShowReceiveDialog(false);
+          handleConfirmReceived();
+        }}
+        onCancel={() => setShowReceiveDialog(false)}
+      />
     </div>
   );
 };
