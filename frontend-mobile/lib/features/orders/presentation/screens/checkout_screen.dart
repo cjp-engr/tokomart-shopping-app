@@ -276,7 +276,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (userId != null) {
       context.read<OrderBloc>().add(OrdersLoadRequested(userId));
     }
-    Navigator.of(context).pop(); // PaymentScreen is on top
+    // go() alone removes the pushed PaymentScreen together with the checkout page. Popping the PaymentScreen
+    // first would reveal the checkout screen for about half a second before the orders screen replaces it.
     context.go('/orders');
   }
 
@@ -587,13 +588,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         RadioListTile<String>(
                                           key: keys.orders
                                               .paymentOption('credit-card'),
-                                          title: const Text('Credit/Debit Card'),
+                                          title:
+                                              const Text('Credit/Debit Card'),
                                           value: 'credit-card',
                                           contentPadding: EdgeInsets.zero,
                                         ),
                                         RadioListTile<String>(
-                                          key: keys.orders
-                                              .paymentOption('cash-on-delivery'),
+                                          key: keys.orders.paymentOption(
+                                              'cash-on-delivery'),
                                           title: const Text('Cash on Delivery'),
                                           value: 'cash-on-delivery',
                                           contentPadding: EdgeInsets.zero,
