@@ -276,7 +276,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (userId != null) {
       context.read<OrderBloc>().add(OrdersLoadRequested(userId));
     }
-    Navigator.of(context).pop(); // PaymentScreen is on top
+    // go() alone removes the pushed PaymentScreen together with the checkout page. Popping the PaymentScreen
+    // first would reveal the checkout screen for about half a second before the orders screen replaces it.
     context.go('/orders');
   }
 

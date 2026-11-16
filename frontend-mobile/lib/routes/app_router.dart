@@ -152,7 +152,10 @@ GoRouter createRouter(AuthBloc authBloc,
           ),
           GoRoute(
             path: '/orders',
-            builder: (_, __) => const OrdersScreen(),
+            // No transition: after a card order is placed, go('/orders') replaces the checkout and payment screens,
+            // and an animated tab change would show the products list underneath for about half a second.
+            pageBuilder: (_, __) =>
+                const NoTransitionPage<void>(child: OrdersScreen()),
           ),
           GoRoute(
             path: '/wishlist',
