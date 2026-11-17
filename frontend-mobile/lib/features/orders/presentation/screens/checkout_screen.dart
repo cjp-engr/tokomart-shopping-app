@@ -11,6 +11,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/seller_shipping.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -630,6 +631,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     saved: totalDiscount,
                     loading: context.watch<OrderBloc>().state.status ==
                         OrderStatus.placing,
+                    continuesToPayment: _paymentType != 'cash-on-delivery',
                     onPlace: () => _submit(cart, widget.selectedIds),
                   ),
                 ],
@@ -1685,11 +1687,13 @@ class _BottomBar extends StatelessWidget {
   final double total;
   final double saved;
   final bool loading;
+  final bool continuesToPayment;
   final VoidCallback onPlace;
   const _BottomBar({
     required this.total,
     required this.saved,
     required this.loading,
+    required this.continuesToPayment,
     required this.onPlace,
   });
 
@@ -1742,8 +1746,10 @@ class _BottomBar extends StatelessWidget {
           Expanded(
             child: AppButton(
               key: keys.orders.placeOrderButton,
-              label: 'Place Order',
-              icon: Icons.lock_outline,
+              // A card order is only placed on the payment screen; Cash on Delivery is placed right here.
+              label: continuesToPayment
+                  ? AppStrings.continueToPayment
+                  : AppStrings.placeOrder,
               loading: loading,
               onPressed: onPlace,
             ),
