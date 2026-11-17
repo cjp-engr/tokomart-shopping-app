@@ -119,6 +119,7 @@ class AppStrings {
   static const String voucherSavings = 'Voucher Savings';
   static const String shippingFee = 'Shipping Fee';
   static const String placeOrder = 'Place Order';
+  static const String continueToPayment = 'Continue to Payment';
 
   // ── Orders ────────────────────────────────────────────────────────────────
   static const String orders = 'My Orders';
