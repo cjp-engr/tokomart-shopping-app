@@ -84,65 +84,68 @@ class _OrdersScreenState extends State<OrdersScreen>
       builder: (context, state) {
         final orders = state.orders;
 
-        return Scaffold(
-          key: keys.orders.ordersScreen,
-          appBar: AppBar(
-            title: const Text(AppStrings.orders),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48),
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: context.onSurfaceSecondary,
-                indicatorColor: AppColors.primary,
-                indicatorWeight: 2.5,
-                dividerColor: context.borderColor,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-                // No counts on the tabs: they only gave numbers that do not help the buyer find anything.
-                tabs: _kTabs
-                    .map((tab) => Tab(
-                        child: Text(tab.label,
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w600))))
-                    .toList(),
+        return Semantics(
+          identifier: 'orders_screen',
+          child: Scaffold(
+            key: keys.orders.ordersScreen,
+            appBar: AppBar(
+              title: const Text(AppStrings.orders),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: context.onSurfaceSecondary,
+                  indicatorColor: AppColors.primary,
+                  indicatorWeight: 2.5,
+                  dividerColor: context.borderColor,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  // No counts on the tabs: they only gave numbers that do not help the buyer find anything.
+                  tabs: _kTabs
+                      .map((tab) => Tab(
+                          child: Text(tab.label,
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600))))
+                      .toList(),
+                ),
               ),
             ),
+            body: state.status == OrderStatus.loading
+                ? const LoadingWidget()
+                : state.status == OrderStatus.failure
+                    ? ErrorWidget2(
+                        message: state.errorMessage ?? AppStrings.genericError,
+                        onRetry: () {
+                          final user = context.read<AuthBloc>().state.user;
+                          if (user != null) {
+                            context
+                                .read<OrderBloc>()
+                                .add(OrdersLoadRequested(user.id));
+                          }
+                        },
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: _kTabs.map((tab) {
+                          if (tab.refunds) return const CompletedRefunds();
+                          final filtered = tab.filter(orders);
+                          return _OrderList(
+                            orders: filtered,
+                            emptyLabel: tab.label,
+                            onRefresh: () async {
+                              final user = context.read<AuthBloc>().state.user;
+                              if (user != null) {
+                                context
+                                    .read<OrderBloc>()
+                                    .add(OrdersLoadRequested(user.id));
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
           ),
-          body: state.status == OrderStatus.loading
-              ? const LoadingWidget()
-              : state.status == OrderStatus.failure
-                  ? ErrorWidget2(
-                      message: state.errorMessage ?? AppStrings.genericError,
-                      onRetry: () {
-                        final user = context.read<AuthBloc>().state.user;
-                        if (user != null) {
-                          context
-                              .read<OrderBloc>()
-                              .add(OrdersLoadRequested(user.id));
-                        }
-                      },
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: _kTabs.map((tab) {
-                        if (tab.refunds) return const CompletedRefunds();
-                        final filtered = tab.filter(orders);
-                        return _OrderList(
-                          orders: filtered,
-                          emptyLabel: tab.label,
-                          onRefresh: () async {
-                            final user = context.read<AuthBloc>().state.user;
-                            if (user != null) {
-                              context
-                                  .read<OrderBloc>()
-                                  .add(OrdersLoadRequested(user.id));
-                            }
-                          },
-                        );
-                      }).toList(),
-                    ),
         );
       },
     );
@@ -704,6 +707,10 @@ class _OrderItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String selectedAttr = item.selectedAttributes.entries
+        .map((e) => '${e.key}: ${e.value}')
+        .join(' / ');
+
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md, vertical: AppSizes.sm),
@@ -730,28 +737,33 @@ class _OrderItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.productName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: context.onSurfaceColor,
+                Semantics(
+                  identifier: item.productName,
+                  child: Text(
+                    item.productName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.onSurfaceColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (item.selectedAttributes.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    item.selectedAttributes.entries
-                        .map((e) => '${e.key}: ${e.value}')
-                        .join(' / '),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: context.onSurfaceSecondary,
+                  Semantics(
+                    identifier:
+                        'selected_variant_${selectedAttr.toLowerCase().replaceAll(RegExp(r'[:\s]+'), '_')}',
+                    child: Text(
+                      selectedAttr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.onSurfaceSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
                 RefundItemBadge(mark: mark),

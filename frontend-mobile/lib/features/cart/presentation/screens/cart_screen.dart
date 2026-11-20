@@ -786,8 +786,10 @@ class _CheckoutBar extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
-            child: ElevatedButton(
-              key: keys.cart.checkoutButton,
+            child: Semantics(
+              identifier: 'checkout_button',
+              child: ElevatedButton(
+                key: keys.cart.checkoutButton,
               onPressed: onCheckout,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(0, AppSizes.buttonHeight),
@@ -827,6 +829,7 @@ class _CheckoutBar extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
             ),
           ),
         ],
