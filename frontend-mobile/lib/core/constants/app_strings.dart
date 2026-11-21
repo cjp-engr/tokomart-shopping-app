@@ -149,6 +149,7 @@ class AppStrings {
   static const String orderNotFound = 'Order not found';
   static const String status = 'Status';
   static const String estimatedDelivery = 'Estimated Delivery';
+  static const String deliveredOn = 'Delivered on';
   static const String deliveryInformation = 'Delivery Information';
   static const String address = 'Address';
   static const String orderItems = 'Order Items';

@@ -11,3 +11,15 @@ describe('refund panel on the order page', () => {
     expect(html).not.toMatch(/<button/);
   });
 });
+
+describe('refund policy on the order page', () => {
+  it('is shown for card orders and when the payment type is unknown', () => {
+    expect(renderToStaticMarkup(<RefundRequestPanel orderId="o" paymentType="credit-card" />)).toContain('Refund policy');
+    expect(renderToStaticMarkup(<RefundRequestPanel orderId="o" />)).toContain('Refund policy');
+  });
+  it('is not shown for Cash on Delivery orders, which cannot be refunded in the app', () => {
+    const html = renderToStaticMarkup(<RefundRequestPanel orderId="o" paymentType="cash-on-delivery" />);
+    expect(html).toContain('Item refunds');
+    expect(html).not.toContain('Refund policy');
+  });
+});

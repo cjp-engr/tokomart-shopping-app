@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CashOnDeliveryNotice } from '../components/orders/CashOnDeliveryNotice';
 import { stripePromise } from '../lib/stripe';
 import { SelectVoucherModal } from '../components/voucher/SelectVoucherModal';
 import { useCart } from '../context/CartContext';
@@ -1041,6 +1042,8 @@ const CheckoutInner: React.FC = () => {
                     </div>
                   </button>
                 </div>
+
+              {isCashOnDelivery && <CashOnDeliveryNotice />}
 
               {/* ── Saved cards list ── */}
               {paymentMode === 'saved' && hasCards && (

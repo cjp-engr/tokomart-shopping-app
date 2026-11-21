@@ -364,7 +364,7 @@ export const OrderDetail: React.FC = () => {
         </div>
       </Card>
 
-      {order.status === 'delivered' && <RefundRequestPanel key={order.id} orderId={order.id} onUpdated={() => { void orderService.getOrderById(order.id).then(setOrder).catch(() => {}); }} />}
+      {order.status === 'delivered' && <RefundRequestPanel key={order.id} orderId={order.id} paymentType={order.paymentMethod?.type} onUpdated={() => { void orderService.getOrderById(order.id).then(setOrder).catch(() => {}); }} />}
 
       {/* Payment */}
       <Card>
