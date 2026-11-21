@@ -57,4 +57,27 @@ void main() {
     expect(RefundEligibility.fromJson({}).requestsEnabled, isFalse);
     expect(refundMoney(500, 'jpy'), contains('500'));
   });
+  test(
+      'tells Cash on Delivery buyers to inspect the items before they accept and pay',
+      () {
+    final message = refundEligibilityMessage('unsupported_payment',
+        paymentType: 'cash-on-delivery');
+    expect(message,
+        contains('Cash on Delivery orders cannot be refunded in the app'));
+    expect(message, contains('inspect your items'));
+    expect(message, contains('right items'));
+    expect(message, contains('damaged or missing'));
+    expect(message, contains('decline the delivery'));
+    const generic = 'This payment method does not support in-app refunds.';
+    expect(
+        refundEligibilityMessage('unsupported_payment', paymentType: 'paypal'),
+        generic);
+    expect(refundEligibilityMessage('unsupported_payment'), generic);
+    expect(
+        refundEligibilityMessage('window_closed',
+            paymentType: 'cash-on-delivery'),
+        'The seven-day refund request window has ended.');
+    expect(refundEligibilityMessage('something_new'),
+        'This order is not eligible for a refund request.');
+  });
 }

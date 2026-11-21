@@ -7,12 +7,16 @@ import '../../../../shared/widgets/option_picker.dart';
 import '../../../../shared/widgets/quantity_pill.dart';
 import '../data/refund_api.dart';
 import '../data/refund_models.dart';
+import 'package:toko_mart/features/checkout/widgets/cash_on_delivery_notice.dart';
 import 'refund_bloc.dart';
 import 'refund_components.dart';
 import 'refund_order_card.dart';
 
 class RefundRequestPanel extends StatelessWidget {
   final String orderId;
+
+  /// The order's payment type; Cash on Delivery orders get an inspect-before-you-pay notice instead of the generic one.
+  final String? paymentType;
   final RefundApi? api;
   final VoidCallback? onUpdated;
 
@@ -21,6 +25,7 @@ class RefundRequestPanel extends StatelessWidget {
   const RefundRequestPanel(
       {super.key,
       required this.orderId,
+      this.paymentType,
       this.api,
       this.onUpdated,
       this.refreshSignal});
@@ -29,13 +34,17 @@ class RefundRequestPanel extends StatelessWidget {
       create: (_) =>
           RefundBloc(api ?? context.read<RefundApi>(), orderId: orderId)
             ..add(LoadRefunds()),
-      child: _RefundForm(onUpdated: onUpdated, refreshSignal: refreshSignal));
+      child: _RefundForm(
+          paymentType: paymentType,
+          onUpdated: onUpdated,
+          refreshSignal: refreshSignal));
 }
 
 class _RefundForm extends StatefulWidget {
+  final String? paymentType;
   final VoidCallback? onUpdated;
   final Listenable? refreshSignal;
-  const _RefundForm({this.onUpdated, this.refreshSignal});
+  const _RefundForm({this.paymentType, this.onUpdated, this.refreshSignal});
   @override
   State<_RefundForm> createState() => _RefundFormState();
 }
@@ -457,11 +466,14 @@ class _RefundFormState extends State<_RefundForm> {
           if (e != null && !e.eligible && e.reason != 'active_request')
             Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                    refundEligibilityReasons[e.reason] ??
-                        'This order is not eligible for a refund request.',
-                    style: TextStyle(
-                        fontSize: 13, color: context.onSurfaceSecondary))),
+                child: e.reason == 'unsupported_payment' &&
+                        widget.paymentType == 'cash-on-delivery'
+                    ? const CashOnDeliveryNoticeCard()
+                    : Text(
+                        refundEligibilityMessage(e.reason,
+                            paymentType: widget.paymentType),
+                        style: TextStyle(
+                            fontSize: 13, color: context.onSurfaceSecondary))),
           if (state.retryPending &&
               (e == null || !e.eligible || !e.requestsEnabled))
             TextButton(
@@ -518,7 +530,9 @@ class _RefundFormState extends State<_RefundForm> {
                           ]))),
             ],
           ],
-          RefundPolicy(deliveredAt: e?.deliveredAt),
+          // A Cash on Delivery order cannot be refunded in the app, so the refund rules would only mislead.
+          if (widget.paymentType != 'cash-on-delivery')
+            RefundPolicy(deliveredAt: e?.deliveredAt),
         ]);
       });
 }

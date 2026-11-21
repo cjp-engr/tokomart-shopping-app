@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { refundQuote, refundShippingQuote, refundReasonLabels, refundMark, sellerRefundBadge, orderRefundLabel, refundCardStatusLabel, refundCardChip } from './refund';
+import { refundEligibilityMessage, refundQuote, refundShippingQuote, refundReasonLabels, refundMark, sellerRefundBadge, orderRefundLabel, refundCardStatusLabel, refundCardChip } from './refund';
 const lines = [{ lineId: 'a', productName: 'Mug', quantityOrdered: 2, quantityAvailable: 2, availableUnitAmountsMinor: [1080, 1079] }];
 describe('delivered refund shipping quote', () => {
   it('shows shipping only for all remaining units with an eligible seller-fault reason', () => {
@@ -124,5 +124,26 @@ describe('chip on a Return/Refund card', () => {
   it('has no chip for the states that keep their own warning look', () => {
     expect(refundCardChip({ state: 'rejected' })).toBeNull();
     expect(refundCardChip({ state: 'needs_review' })).toBeNull();
+  });
+});
+
+describe('refundEligibilityMessage', () => {
+  it('tells Cash on Delivery buyers to inspect the items before they accept and pay', () => {
+    const message = refundEligibilityMessage('unsupported_payment', 'cash-on-delivery');
+    expect(message).toContain('Cash on Delivery orders cannot be refunded in the app');
+    expect(message).toContain('inspect your items');
+    expect(message).toContain('right items');
+    expect(message).toContain('damaged or missing');
+    expect(message).toContain('decline the delivery');
+  });
+  it('keeps the generic message for other payment types and when the type is unknown', () => {
+    const generic = 'This payment method does not support in-app refunds.';
+    expect(refundEligibilityMessage('unsupported_payment', 'paypal')).toBe(generic);
+    expect(refundEligibilityMessage('unsupported_payment')).toBe(generic);
+  });
+  it('does not change the other reasons for a Cash on Delivery order', () => {
+    expect(refundEligibilityMessage('window_closed', 'cash-on-delivery')).toBe('The seven-day refund request window has ended.');
+    expect(refundEligibilityMessage('something_new', 'cash-on-delivery')).toBe('This order is not eligible for a refund request.');
+    expect(refundEligibilityMessage(undefined, 'cash-on-delivery')).toBe('This order is not eligible for a refund request.');
   });
 });

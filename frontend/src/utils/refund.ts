@@ -69,6 +69,16 @@ export const refundEligibilityLabels: Record<string, string> = {
   active_request: 'A refund request is already awaiting a decision or payment outcome.', no_units_left: 'All refundable units have been requested.', review_needed: 'Payment details need review before another refund can be requested.',
 };
 
+export const cashOnDeliveryNoticeTitle = 'Inspect before you pay';
+export const cashOnDeliveryNoRefundNotice =
+  'Cash on Delivery orders cannot be refunded in the app. Before you accept an order and pay, please inspect your items: check that you received the right items and that nothing is damaged or missing. If something is wrong, decline the delivery.';
+
+/** The sentence shown when a delivered order cannot be refunded in the app. */
+export function refundEligibilityMessage(reason: string | undefined, paymentType?: string): string {
+  if (reason === 'unsupported_payment' && paymentType === 'cash-on-delivery') return cashOnDeliveryNoRefundNotice;
+  return refundEligibilityLabels[reason ?? ''] ?? 'This order is not eligible for a refund request.';
+}
+
 /** What a refund chip shows: all paid back, some paid back, or approved and still being paid back. */
 export type RefundKind = 'full' | 'partial' | 'processing';
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../constants/app_strings.dart';
 
 Color orderStatusColor(String status) {
   switch (status) {
@@ -34,6 +35,24 @@ int orderStatusStep(String status) {
     case 'delivered':  return 4;
     default:           return -1;
   }
+}
+
+/// The label and date of the delivery card: the day it was delivered once it is delivered, the estimate before that.
+({String label, String date}) deliveryCaption({
+  required String status,
+  String? estimatedDelivery,
+  DateTime? deliveredAt,
+}) {
+  if (status == 'delivered' && deliveredAt != null) {
+    return (
+      label: AppStrings.deliveredOn,
+      date: formatOrderDate(deliveredAt.toIso8601String()),
+    );
+  }
+  return (
+    label: AppStrings.estimatedDelivery,
+    date: formatOrderDate(estimatedDelivery),
+  );
 }
 
 String formatOrderDate(String? raw) {
