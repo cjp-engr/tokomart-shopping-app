@@ -587,20 +587,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         setState(() => _paymentType = v!),
                                     child: Column(
                                       children: [
-                                        RadioListTile<String>(
-                                          key: keys.orders
-                                              .paymentOption('credit-card'),
-                                          title:
-                                              const Text('Credit/Debit Card'),
-                                          value: 'credit-card',
-                                          contentPadding: EdgeInsets.zero,
+                                        Semantics(
+                                          identifier:
+                                              'payment_option_credit-card',
+                                          child: RadioListTile<String>(
+                                            key: keys.orders
+                                                .paymentOption('credit-card'),
+                                            title:
+                                                const Text('Credit/Debit Card'),
+                                            value: 'credit-card',
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
                                         ),
-                                        RadioListTile<String>(
-                                          key: keys.orders.paymentOption(
-                                              'cash-on-delivery'),
-                                          title: const Text('Cash on Delivery'),
-                                          value: 'cash-on-delivery',
-                                          contentPadding: EdgeInsets.zero,
+                                        Semantics(
+                                          identifier:
+                                              'payment_option_cash-on-delivery',
+                                          child: RadioListTile<String>(
+                                            key: keys.orders.paymentOption(
+                                                'cash-on-delivery'),
+                                            title:
+                                                const Text('Cash on Delivery'),
+                                            value: 'cash-on-delivery',
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -785,53 +794,67 @@ class _AddressSectionState extends State<_AddressSection> {
               padding: const EdgeInsets.only(top: 12),
               child: Column(
                 children: [
-                  AppTextField(
-                    key: keys.orders.checkoutStreetField,
-                    label: 'Street Address',
-                    controller: widget.streetCtrl,
-                    prefixIcon: Icons.home_outlined,
-                    keyboardType: TextInputType.streetAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  Semantics(
+                    identifier: 'checkout_street_field',
+                    child: AppTextField(
+                      key: keys.orders.checkoutStreetField,
+                      label: 'Street Address',
+                      controller: widget.streetCtrl,
+                      prefixIcon: Icons.home_outlined,
+                      keyboardType: TextInputType.streetAddress,
+                      textInputAction: TextInputAction.next,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Required' : null,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
-                        child: AppTextField(
-                          key: keys.orders.checkoutCityField,
-                          label: 'City',
-                          controller: widget.cityCtrl,
-                          keyboardType: TextInputType.text,
-                          textInputAction: TextInputAction.next,
-                          validator: (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                        child: Semantics(
+                          identifier: 'checkout_city_field',
+                          child: AppTextField(
+                            key: keys.orders.checkoutCityField,
+                            label: 'City',
+                            controller: widget.cityCtrl,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Required'
+                                : null,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: AppTextField(
-                          key: keys.orders.checkoutStateField,
-                          label: 'State / Province',
-                          controller: widget.stateCtrl,
-                          keyboardType: TextInputType.text,
-                          textInputAction: TextInputAction.next,
-                          validator: (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                        child: Semantics(
+                          identifier: 'checkout_state_field',
+                          child: AppTextField(
+                            key: keys.orders.checkoutStateField,
+                            label: 'State / Province',
+                            controller: widget.stateCtrl,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Required'
+                                : null,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  AppTextField(
-                    key: keys.orders.checkoutZipField,
-                    label: 'ZIP Code',
-                    controller: widget.zipCtrl,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.done,
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  Semantics(
+                    identifier: 'checkout_zip_field',
+                    child: AppTextField(
+                      key: keys.orders.checkoutZipField,
+                      label: 'ZIP Code',
+                      controller: widget.zipCtrl,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Required' : null,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Material(
@@ -977,16 +1000,20 @@ class _AddressOption extends StatelessWidget {
                     Row(
                       children: [
                         Flexible(
-                          child: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: selected
-                                  ? AppColors.primary
-                                  : context.onSurfaceColor,
+                          child: Semantics(
+                            identifier:
+                                '${label.trim().toLowerCase().replaceAll(' ', '_')}_delivery_option',
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: selected
+                                    ? AppColors.primary
+                                    : context.onSurfaceColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (isDefault) ...[
@@ -1749,6 +1776,8 @@ class _BottomBar extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
+              child: Semantics(
+            identifier: 'place_order_button',
             child: AppButton(
               key: keys.orders.placeOrderButton,
               // A card order is only placed on the payment screen; Cash on Delivery is placed right here.
@@ -1758,7 +1787,7 @@ class _BottomBar extends StatelessWidget {
               loading: loading,
               onPressed: onPlace,
             ),
-          ),
+          )),
         ],
       ),
     );
