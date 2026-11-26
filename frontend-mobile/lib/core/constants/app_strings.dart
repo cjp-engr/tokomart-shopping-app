@@ -69,6 +69,8 @@ class AppStrings {
   // ── Cart ──────────────────────────────────────────────────────────────────
   static const String cart = 'Cart';
   static const String emptyCart = 'Your cart is empty';
+  static const String emptyCartBody =
+      'Add products to your cart\nand they will show up here';
   static const String checkout = 'Checkout';
   static const String subtotal = 'Subtotal';
   static const String shipping = 'Shipping';

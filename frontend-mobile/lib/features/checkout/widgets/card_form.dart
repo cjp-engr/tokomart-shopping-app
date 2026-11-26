@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:toko_mart/core/constants/stripe_error_messages.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 
 /// A StatefulWidget form for capturing new card details.
 ///
@@ -101,7 +102,7 @@ class _CardFormWidgetState extends State<CardFormWidget> {
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               fontSize: 13,
-              color: Colors.grey[700],
+              color: context.onSurfaceSecondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -111,12 +112,15 @@ class _CardFormWidgetState extends State<CardFormWidget> {
         // Note: includes postal code and country fields (part of flutter_stripe)
         CardFormField(
           style: CardFormStyle(
-            backgroundColor: Colors.grey[50],
-            borderColor: Colors.grey[300],
+            backgroundColor:
+                context.isDark ? const Color(0xFF1F2937) : Colors.grey[50],
+            borderColor:
+                context.isDark ? const Color(0xFF374151) : Colors.grey[300],
             borderRadius: 10,
             fontSize: 16,
             cursorColor: const Color(0xFFD97706),
-            textColor: Colors.black87,
+            textColor: context.isDark ? Colors.white : Colors.black87,
+            placeholderColor: context.isDark ? Colors.white54 : null,
           ),
         ),
         const SizedBox(height: 20),
@@ -148,7 +152,7 @@ class _CardFormWidgetState extends State<CardFormWidget> {
                     child: Text(
                       'Save this card for next time',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[800],
+                        color: context.onSurfaceColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

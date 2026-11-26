@@ -55,10 +55,10 @@ class OrderDetailScreen extends StatelessWidget {
         if (order == null) {
           return Scaffold(
             appBar: AppBar(title: const Text(AppStrings.orderDetails)),
-            body: const Center(
+            body: Center(
               child: Text(
                 AppStrings.orderNotFound,
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: context.onSurfaceSecondary),
               ),
             ),
           );

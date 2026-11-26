@@ -69,8 +69,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                           Container(
                             width: 88,
                             height: 88,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryLight,
+                            decoration: BoxDecoration(
+                              color: context.primaryTint,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -203,7 +203,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primaryLight,
+                                          color: context.primaryTint,
                                           borderRadius: BorderRadius.circular(
                                               AppSizes.radiusFull),
                                         ),

@@ -2642,7 +2642,7 @@ class _NetworkImageTile extends StatelessWidget {
           errorBuilder: (_, __, ___) => Container(
             width: 96,
             height: 96,
-            color: AppColors.surfaceVariant,
+            color: context.surfaceVariantColor,
             child: const Icon(Icons.broken_image_outlined,
                 color: AppColors.textMuted),
           ),

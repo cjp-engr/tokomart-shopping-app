@@ -90,7 +90,7 @@ class ProductCard extends StatelessWidget {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.surfaceColor,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toko_mart/keys.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 // Only PaymentMethod is needed; flutter_stripe also exports a `Card` that
 // would clash with Material's Card.
 import 'package:flutter_stripe/flutter_stripe.dart' show PaymentMethod;
@@ -347,10 +348,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
             tooltip: 'Go back',
           ),
           elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
+          backgroundColor: context.surfaceColor,
+          foregroundColor: context.onSurfaceColor,
         ),
-        backgroundColor: Colors.grey[50],
+        backgroundColor: context.bgColor,
         body: BlocBuilder<PaymentBloc, PaymentState>(
           builder: (context, state) {
             final isLoading = state is CreatingPaymentIntent ||
@@ -406,7 +407,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -424,6 +425,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   children: [
                     Expanded(
                       child: _buildTabButton(
+                        context,
                         'New Card',
                         _isNewCardTab,
                         () => setState(() => _currentTabIndex = 0),
@@ -431,6 +433,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     Expanded(
                       child: _buildTabButton(
+                        context,
                         'Saved Cards',
                         !_isNewCardTab,
                         () => setState(() => _currentTabIndex = 1),
@@ -451,7 +454,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildTabButton(String label, bool isActive, VoidCallback onTap) {
+  Widget _buildTabButton(
+      BuildContext context, String label, bool isActive, VoidCallback onTap) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -467,7 +471,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive ? const Color(0xFFD97706) : Colors.grey[600],
+                  color: isActive ? const Color(0xFFD97706) : context.onSurfaceSecondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -540,7 +544,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final total = widget.amountInCents / 100;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -568,7 +572,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               // Amounts are the server's, one per seller, held separately.
               for (final seller in state.session.sellers) _sellerAmountRow(context, seller),
               const SizedBox(height: 4),
-              Container(height: 1, color: Colors.grey[200]),
+              Container(height: 1, color: context.borderColor),
               const SizedBox(height: 12),
             ],
             Row(
@@ -578,7 +582,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Text(
                   'Total Amount',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
+                        color: context.onSurfaceSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                 ),
@@ -595,13 +599,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const SizedBox(height: 12),
             Container(
               height: 1,
-              color: Colors.grey[200],
+              color: context.borderColor,
             ),
             const SizedBox(height: 12),
             Text(
               '${widget.cartItems.length} item${widget.cartItems.length != 1 ? 's' : ''}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                    color: context.onSurfaceSecondary,
                     fontWeight: FontWeight.w500,
                   ),
             ),
@@ -634,7 +638,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: reserved ? Colors.green[700] : Colors.grey[600],
+              color: reserved ? Colors.green[700] : context.onSurfaceSecondary,
             ),
           ),
         ],

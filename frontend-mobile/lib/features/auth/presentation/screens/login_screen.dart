@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -158,10 +159,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSizes.xs),
-                      const Text(
+                      Text(
                         AppStrings.signInToAccount,
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: context.onSurfaceSecondary,
                           fontSize: 14,
                           height: 1.5,
                         ),

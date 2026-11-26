@@ -68,7 +68,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         state.sellerProfileError ??
                             AppStrings.failedToLoadSeller,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: context.onSurfaceSecondary),
                       ),
                       const SizedBox(height: AppSizes.md),
                       ElevatedButton(
@@ -127,18 +127,18 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                     ),
                   ),
                   if (products.isEmpty)
-                    const SliverFillRemaining(
+                    SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.shopping_bag_outlined,
+                            const Icon(Icons.shopping_bag_outlined,
                                 size: 48, color: AppColors.textMuted),
-                            SizedBox(height: AppSizes.sm),
+                            const SizedBox(height: AppSizes.sm),
                             Text(
                               AppStrings.noProductsYet,
-                              style: TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(color: context.onSurfaceSecondary),
                             ),
                           ],
                         ),
