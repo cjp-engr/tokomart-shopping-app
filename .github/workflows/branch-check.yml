@@ -4,19 +4,44 @@ on:
   pull_request:
     branches:
       - main
+      - feat/main-flutter-semantics
+      - feat/main-shift-left-testing
 
 jobs:
   check-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Block specific branches from merging to main
+      - name: Check the source branch of this pull request
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          BRANCH="${{ github.head_ref }}"
-          BLOCKED=("feat/main-flutter-semantics" "feat/flutter-semantics-for-update")
-          for b in "${BLOCKED[@]}"; do
-            if [[ "$BRANCH" == "$b" ]]; then
-              echo "Branch '$BRANCH' is not allowed to merge into main."
+          # Long-lived branches. They, and every branch made from them (<name>-<suffix>), never merge into main.
+          LONG_LIVED=("feat/main-flutter-semantics" "feat/main-shift-left-testing")
+          BLOCKED=("feat/flutter-semantics-for-update")
+          # Into one of the long-lived branches: the source must be named <that branch>-<any suffix>,
+          # for example feat/main-flutter-semantics-11262026 or feat/main-flutter-semantics-fix-login.
+
+          if [[ "$BASE_REF" == "main" ]]; then
+            for b in "${BLOCKED[@]}" "${LONG_LIVED[@]}"; do
+              if [[ "$HEAD_REF" == "$b" ]]; then
+                echo "Branch '$HEAD_REF' is not allowed to merge into main."
+                exit 1
+              fi
+            done
+            for b in "${LONG_LIVED[@]}"; do
+              if [[ "$HEAD_REF" == "$b-"* ]]; then
+                echo "Branch '$HEAD_REF' updates '$b' and is not allowed to merge into main."
+                exit 1
+              fi
+            done
+            echo "Branch '$HEAD_REF' is allowed to merge into main."
+          else
+            SUFFIX="${HEAD_REF#"$BASE_REF-"}"
+            if [[ "$HEAD_REF" == "$SUFFIX" || -z "$SUFFIX" ]]; then
+              echo "Branch '$HEAD_REF' cannot be merged into '$BASE_REF'."
+              echo "Name it $BASE_REF-<suffix>, for example $BASE_REF-11262026."
               exit 1
             fi
-          done
-          echo "Branch '$BRANCH' is allowed."
+            echo "Branch '$HEAD_REF' is allowed to merge into '$BASE_REF'."
+          fi
