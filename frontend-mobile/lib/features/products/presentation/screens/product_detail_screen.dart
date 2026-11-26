@@ -181,15 +181,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.surfaceColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                                 color: Colors.black.withAlpha(15), blurRadius: 8)
                           ],
                         ),
-                        child: const Icon(Icons.arrow_back_rounded,
-                            color: AppColors.textPrimary, size: 20),
+                        child: Icon(Icons.arrow_back_rounded,
+                            color: context.onSurfaceColor, size: 20),
                       ),
                     ),
                   ),
@@ -216,7 +216,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             decoration: BoxDecoration(
                               color: _previewMode
                                   ? AppColors.primary
-                                  : Colors.white,
+                                  : context.surfaceColor,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
@@ -230,7 +230,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   : Icons.visibility_outlined,
                               color: _previewMode
                                   ? Colors.white
-                                  : AppColors.textPrimary,
+                                  : context.onSurfaceColor,
                               size: 20,
                             ),
                           ),
@@ -256,7 +256,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: context.surfaceColor,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
@@ -264,8 +264,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           blurRadius: 8)
                                     ],
                                   ),
-                                  child: const Icon(Icons.shopping_bag_outlined,
-                                      color: AppColors.textPrimary, size: 20),
+                                  child: Icon(Icons.shopping_bag_outlined,
+                                      color: context.onSurfaceColor, size: 20),
                                 ),
                                 if (count > 0)
                                   Positioned(
@@ -338,7 +338,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: context.surfaceColor,
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
@@ -924,7 +924,7 @@ class _QtyBtn extends StatelessWidget {
               size: 18,
               color: onPressed == null
                   ? AppColors.textMuted
-                  : AppColors.textPrimary),
+                  : context.onSurfaceColor),
         ),
       ),
     );

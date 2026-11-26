@@ -19,4 +19,23 @@ void main() {
     expect(find.textContaining('damaged or missing'), findsOneWidget);
     expect(find.textContaining('decline the delivery'), findsOneWidget);
   });
+
+  testWidgets('is not a bright cream box in dark mode', (tester) async {
+    Color cardColor() => ((tester
+            .widget<Container>(find.byKey(keys.orders.cashOnDeliveryNotice))
+            .decoration) as BoxDecoration)
+        .color!;
+
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.light(),
+        home: const Scaffold(body: CashOnDeliveryNoticeCard())));
+    expect(cardColor(), const Color(0xFFFFFBEB));
+
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.dark(),
+        home: const Scaffold(body: CashOnDeliveryNoticeCard())));
+    await tester.pumpAndSettle(); // the theme change animates
+    expect(cardColor(), isNot(const Color(0xFFFFFBEB)));
+    expect(cardColor().a, lessThan(0.3));
+  });
 }
