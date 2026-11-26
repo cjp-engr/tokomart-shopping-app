@@ -185,6 +185,7 @@ class _CartScreenState extends State<CartScreen> {
                   height: MediaQuery.of(context).size.height * 0.7,
                   child: EmptyWidget(
                     message: AppStrings.emptyCart,
+                    description: AppStrings.emptyCartBody,
                     icon: Icons.shopping_cart_outlined,
                     actionLabel: AppStrings.browseProducts,
                     onAction: () => context.go('/'),

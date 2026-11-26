@@ -466,7 +466,7 @@ class _StatsRow extends StatelessWidget {
         children: [
           _StatCard(
             icon: Icons.shopping_bag_rounded,
-            iconBg: AppColors.primaryLight,
+            iconBg: context.primaryTint,
             iconColor: AppColors.primary,
             value: '${state.products.length}',
             label: AppStrings.products,
@@ -653,7 +653,7 @@ class _ProductsTab extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: isActive
                                 ? Colors.white.withAlpha(51)
-                                : AppColors.surfaceVariant,
+                                : context.surfaceVariantColor,
                             borderRadius:
                                 BorderRadius.circular(AppSizes.radiusFull),
                           ),
@@ -824,7 +824,7 @@ class _OrdersTab extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: isActive
                                   ? Colors.white.withAlpha(51)
-                                  : AppColors.surfaceVariant,
+                                  : context.surfaceVariantColor,
                               borderRadius:
                                   BorderRadius.circular(AppSizes.radiusFull),
                             ),
@@ -1122,7 +1122,7 @@ class _OrderCard extends StatelessWidget {
       context,
       icon: Icons.local_shipping_outlined,
       iconColor: AppColors.primary,
-      iconBackground: AppColors.primaryLight,
+      iconBackground: context.primaryTint,
       title: AppStrings.markShipped,
       body: 'Confirm that this order has been shipped to the buyer?',
       cancelLabel: AppStrings.notYet,
@@ -1264,8 +1264,8 @@ class _BuyerAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryLight,
+      decoration: BoxDecoration(
+        color: context.primaryTint,
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
@@ -1332,9 +1332,9 @@ class _OrderItemRow extends StatelessWidget {
                     fit: BoxFit.cover,
                     cacheWidth: 84,
                     cacheHeight: 84,
-                    errorBuilder: (_, __, ___) => _placeholder(),
+                    errorBuilder: (_, __, ___) => _placeholder(context),
                   )
-                : _placeholder(),
+                : _placeholder(context),
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -1409,11 +1409,11 @@ class _OrderItemRow extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
+  Widget _placeholder(BuildContext context) => Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: context.surfaceVariantColor,
           borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         ),
         child: const Icon(Icons.inventory_2_outlined,
@@ -1575,9 +1575,9 @@ class _ProductTile extends StatelessWidget {
                             fit: BoxFit.cover,
                             cacheWidth: 152,
                             cacheHeight: 152,
-                            errorBuilder: (_, __, ___) => _placeholder(),
+                            errorBuilder: (_, __, ___) => _placeholder(context),
                           )
-                        : _placeholder(),
+                        : _placeholder(context),
                   ),
                   const SizedBox(width: AppSizes.sm + 2),
 
@@ -1591,7 +1591,7 @@ class _ProductTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
+                            color: context.primaryTint,
                             borderRadius:
                                 BorderRadius.circular(AppSizes.radiusFull),
                           ),
@@ -1659,7 +1659,7 @@ class _ProductTile extends StatelessWidget {
                             child: _ActionIconBtn(
                               icon: Icons.edit_outlined,
                               color: AppColors.primary,
-                              bgColor: AppColors.primaryLight,
+                              bgColor: context.primaryTint,
                               onPressed: isSaving ? null : onEdit,
                               tooltip: AppStrings.edit,
                             ),
@@ -1691,11 +1691,11 @@ class _ProductTile extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
+  Widget _placeholder(BuildContext context) => Container(
         width: 76,
         height: 76,
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: context.surfaceVariantColor,
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         ),
         child:
@@ -1729,7 +1729,7 @@ class _ActionIconBtn extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: active ? bgColor : AppColors.surfaceVariant,
+            color: active ? bgColor : context.surfaceVariantColor,
             borderRadius: BorderRadius.circular(AppSizes.radiusSm),
           ),
           child: Icon(
@@ -2270,9 +2270,9 @@ class _DetailItemRow extends StatelessWidget {
                     fit: BoxFit.cover,
                     cacheWidth: 100,
                     cacheHeight: 100,
-                    errorBuilder: (_, __, ___) => _placeholder(),
+                    errorBuilder: (_, __, ___) => _placeholder(context),
                   )
-                : _placeholder(),
+                : _placeholder(context),
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -2350,11 +2350,11 @@ class _DetailItemRow extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
+  Widget _placeholder(BuildContext context) => Container(
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: context.surfaceVariantColor,
           borderRadius: BorderRadius.circular(AppSizes.radiusSm),
         ),
         child: const Icon(Icons.inventory_2_outlined,

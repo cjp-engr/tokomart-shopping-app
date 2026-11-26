@@ -499,7 +499,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 child: Container(
                   margin: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     boxShadow: [
                       BoxShadow(

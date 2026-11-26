@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -85,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       icon: Icons.storefront_outlined,
       iconColor: AppColors.primary,
-      iconBackground: AppColors.primaryLight,
+      iconBackground: context.primaryTint,
       title: AppStrings.becomeSeller,
       body: AppStrings.becomeSellerBody,
       cancelLabel: AppStrings.notNow,

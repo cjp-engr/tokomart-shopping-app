@@ -69,6 +69,8 @@ class AppStrings {
   // ── Cart ──────────────────────────────────────────────────────────────────
   static const String cart = 'Cart';
   static const String emptyCart = 'Your cart is empty';
+  static const String emptyCartBody =
+      'Add products to your cart\nand they will show up here';
   static const String checkout = 'Checkout';
   static const String subtotal = 'Subtotal';
   static const String shipping = 'Shipping';
@@ -149,6 +151,7 @@ class AppStrings {
   static const String orderNotFound = 'Order not found';
   static const String status = 'Status';
   static const String estimatedDelivery = 'Estimated Delivery';
+  static const String deliveredOn = 'Delivered on';
   static const String deliveryInformation = 'Delivery Information';
   static const String address = 'Address';
   static const String orderItems = 'Order Items';

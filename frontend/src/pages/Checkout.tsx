@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CashOnDeliveryNotice } from '../components/orders/CashOnDeliveryNotice';
 import { stripePromise } from '../lib/stripe';
 import { SelectVoucherModal } from '../components/voucher/SelectVoucherModal';
 import { useCart } from '../context/CartContext';
@@ -47,6 +48,7 @@ import {
   Truck,
   Zap,
   Store,
+  Banknote,
 } from 'lucide-react';
 import { TAX_RATE } from '../utils/constants';
 import { sellerShippingFee } from '../utils/shipping';
@@ -293,6 +295,24 @@ const CheckoutInner: React.FC = () => {
     if (shippingErrors[name]) {
       setShippingErrors((prev) => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // Cash on Delivery is a payment type, not a mode: it uses the "new" form with the type set. Picking a card option
+  // again must clear it, because the order is placed as COD whenever the type is cash-on-delivery.
+  const isCashOnDelivery = paymentData.type === 'cash-on-delivery';
+  const savedTileActive = paymentMode === 'saved' && !isCashOnDelivery;
+  const newTileActive = paymentMode === 'new' && !isCashOnDelivery;
+
+  const choosePaymentOption = (option: 'saved' | 'new' | 'cash-on-delivery') => {
+    setPaymentErrors({});
+    setStripeError(null);
+    if (option === 'cash-on-delivery') {
+      setPaymentMode('new');
+      setPaymentData((prev) => ({ ...prev, type: 'cash-on-delivery' }));
+      return;
+    }
+    setPaymentMode(option);
+    setPaymentData((prev) => (prev.type === 'cash-on-delivery' ? { ...prev, type: 'credit-card' } : prev));
   };
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -956,50 +976,74 @@ const CheckoutInner: React.FC = () => {
               </h2>
 
               {/* ── Saved card / New card selector ── */}
-              {hasCards && (
-                <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className={`grid grid-cols-1 gap-3 mb-5 ${hasCards ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+                  {hasCards && (
                   <button
                     type="button"
-                    onClick={() => setPaymentMode('saved')}
+                    onClick={() => choosePaymentOption('saved')}
                     className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
-                      paymentMode === 'saved'
+                      savedTileActive
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/30'
                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                      paymentMode === 'saved' ? 'border-primary-500' : 'border-gray-400 dark:border-gray-500'
+                      savedTileActive ? 'border-primary-500' : 'border-gray-400 dark:border-gray-500'
                     }`}>
-                      {paymentMode === 'saved' && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                      {savedTileActive && <span className="w-2 h-2 rounded-full bg-primary-500" />}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold ${paymentMode === 'saved' ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-200'}`}>Saved Card</p>
+                      <p className={`text-sm font-semibold ${savedTileActive ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-200'}`}>Saved Card</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Use a saved card</p>
                     </div>
                   </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setPaymentMode('new')}
+                    onClick={() => choosePaymentOption('new')}
                     className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
-                      paymentMode === 'new'
+                      newTileActive
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/30'
                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                      paymentMode === 'new' ? 'border-primary-500' : 'border-gray-400 dark:border-gray-500'
+                      newTileActive ? 'border-primary-500' : 'border-gray-400 dark:border-gray-500'
                     }`}>
-                      {paymentMode === 'new' && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                      {newTileActive && <span className="w-2 h-2 rounded-full bg-primary-500" />}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold flex items-center gap-1 ${paymentMode === 'new' ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-200'}`}>
+                      <p className={`text-sm font-semibold flex items-center gap-1 ${newTileActive ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-200'}`}>
                         <PlusCircle className="w-3.5 h-3.5" /> New Card
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Enter a different card</p>
                     </div>
                   </button>
+                  <button
+                    type="button"
+                    data-testid="payment-option-cod"
+                    onClick={() => choosePaymentOption('cash-on-delivery')}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
+                      isCashOnDelivery
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/30'
+                        : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 hover:border-gray-300 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                      isCashOnDelivery ? 'border-primary-500' : 'border-gray-400 dark:border-gray-500'
+                    }`}>
+                      {isCashOnDelivery && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                    </span>
+                    <div>
+                      <p className={`text-sm font-semibold flex items-center gap-1 ${isCashOnDelivery ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-200'}`}>
+                        <Banknote className="w-3.5 h-3.5" /> Cash on Delivery
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Pay when you receive</p>
+                    </div>
+                  </button>
                 </div>
-              )}
+
+              {isCashOnDelivery && <CashOnDeliveryNotice />}
 
               {/* ── Saved cards list ── */}
               {paymentMode === 'saved' && hasCards && (
@@ -1045,22 +1089,22 @@ const CheckoutInner: React.FC = () => {
               {/* ── New card form ── */}
               {(paymentMode === 'new' || !hasCards) && (
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Payment Method
-                  </label>
-                  <select
-                    name="type"
-                    value={paymentData.type}
-                    onChange={handlePaymentChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="credit-card">Credit Card</option>
-                    <option value="debit-card">Debit Card</option>
-                    <option value="paypal">PayPal</option>
-                    <option value="cash-on-delivery">Cash on Delivery</option>
-                  </select>
-                </div>
+                {!isCashOnDelivery && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      name="type"
+                      value={paymentData.type}
+                      onChange={handlePaymentChange}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="credit-card">Credit Card</option>
+                      <option value="debit-card">Debit Card</option>
+                    </select>
+                  </div>
+                )}
 
                 {(paymentData.type === 'credit-card' || paymentData.type === 'debit-card') && (
                   <div className="space-y-2">
@@ -1402,7 +1446,9 @@ const CheckoutInner: React.FC = () => {
                   })() : (
                     <>
                       <p className="text-gray-700 dark:text-gray-300 capitalize">{paymentData.type.replace('-', ' ')}</p>
-                      <p className="text-gray-700 dark:text-gray-300">•••• •••• •••• {paymentData.cardNumber.slice(-4)}</p>
+                      {!isCashOnDelivery && (
+                        <p className="text-gray-700 dark:text-gray-300">•••• •••• •••• {paymentData.cardNumber.slice(-4)}</p>
+                      )}
                     </>
                   )}
                   <Button

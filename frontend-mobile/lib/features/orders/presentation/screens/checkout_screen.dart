@@ -28,6 +28,7 @@ import 'package:toko_mart/core/config/checkout_config.dart';
 import 'package:toko_mart/features/checkout/bloc/payment_bloc.dart';
 import 'package:toko_mart/features/checkout/screens/order_confirmation_screen.dart';
 import 'package:toko_mart/features/checkout/screens/payment_screen.dart';
+import 'package:toko_mart/features/checkout/widgets/cash_on_delivery_notice.dart';
 import 'package:toko_mart/features/checkout/utils/checkout_session_payload.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -613,6 +614,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ],
                                     ),
                                   ),
+                                  if (_paymentType == 'cash-on-delivery') ...[
+                                    const SizedBox(height: 8),
+                                    const CashOnDeliveryNoticeCard(),
+                                  ],
                                 ],
                               ),
                             ),

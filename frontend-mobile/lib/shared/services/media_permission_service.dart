@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_dialog.dart';
 import '../../core/constants/app_colors.dart';
@@ -93,7 +94,7 @@ class MediaPermissionService {
       useRootNavigator: true,
       icon: icon,
       iconColor: AppColors.primary,
-      iconBackground: AppColors.primaryLight,
+      iconBackground: context.primaryTint,
       title: title,
       body: reason,
       cancelLabel: 'Not Now',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toko_mart/keys.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:toko_mart/features/checkout/bloc/payment_bloc.dart';
 
 class SavedCardsListWidget extends StatelessWidget {
@@ -146,7 +147,7 @@ class SavedCardsListWidget extends StatelessWidget {
               Text(
                 'No saved cards',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                      color: context.onSurfaceSecondary,
                       fontWeight: FontWeight.w500,
                     ),
               ),
@@ -163,6 +164,8 @@ class SavedCardsListWidget extends StatelessWidget {
       itemBuilder: (context, index) {
         final method = savedMethods[index];
         final isSelected = selectedMethod?.id == method.id;
+        final defaultGreen =
+            context.isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -177,7 +180,7 @@ class SavedCardsListWidget extends StatelessWidget {
                   border: Border.all(
                     color: isSelected
                         ? const Color(0xFFD97706)
-                        : Colors.grey[300]!,
+                        : (context.isDark ? Colors.grey[700]! : Colors.grey[300]!),
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -219,7 +222,7 @@ class SavedCardsListWidget extends StatelessWidget {
                                         .bodyMedium
                                         ?.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color: context.onSurfaceColor,
                                         ),
                                   ),
                                 ),
@@ -231,8 +234,7 @@ class SavedCardsListWidget extends StatelessWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF15803D)
-                                          .withValues(alpha: 0.1),
+                                      color: defaultGreen.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -241,7 +243,7 @@ class SavedCardsListWidget extends StatelessWidget {
                                           .textTheme
                                           .labelSmall
                                           ?.copyWith(
-                                            color: const Color(0xFF15803D),
+                                            color: defaultGreen,
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
@@ -256,7 +258,7 @@ class SavedCardsListWidget extends StatelessWidget {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: context.onSurfaceSecondary,
                                   ),
                             ),
                           ],

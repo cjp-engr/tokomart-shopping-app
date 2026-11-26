@@ -55,10 +55,10 @@ class OrderDetailScreen extends StatelessWidget {
         if (order == null) {
           return Scaffold(
             appBar: AppBar(title: const Text(AppStrings.orderDetails)),
-            body: const Center(
+            body: Center(
               child: Text(
                 AppStrings.orderNotFound,
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: context.onSurfaceSecondary),
               ),
             ),
           );
@@ -198,7 +198,11 @@ class _OrderDetailViewState extends State<_OrderDetailView> {
     final stepIndex = orderStatusStep(order.status);
     final isCancelled = order.status == 'cancelled';
     final dateStr = formatOrderDate(order.createdAt);
-    final deliveryStr = formatOrderDate(order.estimatedDelivery);
+    final delivery = deliveryCaption(
+      status: order.status,
+      estimatedDelivery: order.estimatedDelivery,
+      deliveredAt: order.deliveredAt,
+    );
     final statusLabel = order.status.isNotEmpty
         ? order.status[0].toUpperCase() + order.status.substring(1)
         : '';
@@ -383,7 +387,7 @@ class _OrderDetailViewState extends State<_OrderDetailView> {
               ),
 
               // ── Estimated delivery ──────────────────────────────────────
-              if (!isCancelled && deliveryStr.isNotEmpty) ...[
+              if (!isCancelled && delivery.date.isNotEmpty) ...[
                 const SizedBox(height: AppSizes.sm),
                 _SectionCard(
                   child: Row(
@@ -406,7 +410,7 @@ class _OrderDetailViewState extends State<_OrderDetailView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            AppStrings.estimatedDelivery,
+                            delivery.label,
                             style: TextStyle(
                               fontSize: 12,
                               color: context.onSurfaceMuted,
@@ -415,7 +419,7 @@ class _OrderDetailViewState extends State<_OrderDetailView> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            deliveryStr,
+                            delivery.date,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -496,6 +500,7 @@ class _OrderDetailViewState extends State<_OrderDetailView> {
                 RefundRequestPanel(
                     key: ValueKey('refund_${order.id}'),
                     orderId: order.id,
+                    paymentType: order.paymentType,
                     refreshSignal: _refundRefresh,
                     onUpdated: () => context
                         .read<OrderBloc>()

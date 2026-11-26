@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock3 } from 'lucide-react';
 import { refundService, RefundApiError } from '../../services/refundService';
 import type { RefundEligibility, RefundInput, RefundReason, RefundRequest } from '../../types/refund';
-import { refundDate, refundEligibilityLabels, refundQuote, refundShippingQuote } from '../../utils/refund';
+import { refundDate, refundEligibilityMessage, refundQuote, refundShippingQuote } from '../../utils/refund';
+import { CashOnDeliveryNotice } from './CashOnDeliveryNotice';
 import { refundButton } from './RefundPresentation';
 import { RefundOrderCard } from './RefundOrderCard';
 import { RefundRequestForm } from './RefundRequestForm';
 
-export function RefundRequestPanel({ orderId, onUpdated }: { orderId: string; onUpdated?: () => void }) {
+export function RefundRequestPanel({ orderId, paymentType, onUpdated }: { orderId: string; paymentType?: string; onUpdated?: () => void }) {
   const [eligibility, setEligibility] = useState<RefundEligibility>(); const [history, setHistory] = useState<RefundRequest[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({}); const [reason, setReason] = useState<RefundReason>('damaged');
   const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
@@ -47,7 +48,9 @@ export function RefundRequestPanel({ orderId, onUpdated }: { orderId: string; on
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
     {!eligibility && !error && <p role="status">Loading refund details…</p>}
     {eligibility && !eligibility.requestsEnabled && <p className="text-sm text-gray-600 dark:text-gray-300">New refund requests are currently unavailable.</p>}
-    {eligibility && !eligibility.eligible && eligibility.reason !== 'active_request' && <p className="text-sm text-gray-600 dark:text-gray-300">{refundEligibilityLabels[eligibility.reason ?? ''] ?? 'This order is not eligible for a refund request.'}</p>}
+    {eligibility && !eligibility.eligible && eligibility.reason !== 'active_request' && (eligibility.reason === 'unsupported_payment' && paymentType === 'cash-on-delivery'
+      ? <CashOnDeliveryNotice />
+      : <p className="text-sm text-gray-600 dark:text-gray-300">{refundEligibilityMessage(eligibility.reason, paymentType)}</p>)}
     {eligibility?.eligible && eligibility.requestsEnabled && <>
       <p className="text-sm text-gray-600 dark:text-gray-300">Choose the item and tell us what went wrong.</p>
       <RefundRequestForm
@@ -59,6 +62,6 @@ export function RefundRequestPanel({ orderId, onUpdated }: { orderId: string; on
     </>}
     {uncertain && (!eligibility?.eligible || !eligibility.requestsEnabled) && <button type="button" disabled={busy} onClick={() => void submit()} className={refundButton}>Retry same request</button>}
     {history.length > 0 && <div className="space-y-4">{history.map(r => <RefundOrderCard key={r.id} request={r} inOrder />)}</div>}
-    <details className="text-sm text-gray-600 dark:text-gray-300"><summary className="flex min-h-12 cursor-pointer items-center gap-2 font-semibold"><Clock3 className="h-4 w-4" aria-hidden />Refund policy & shipping</summary><p className="max-w-prose leading-relaxed">Request within seven days of recorded delivery. Seller approval starts the refund; no return is required. Shipping is included only when all paid items are refunded for seller fault. Change of mind is only allowed while pending.</p>{eligibility?.deliveredAt && <p className="mt-2">Delivered {refundDate(eligibility.deliveredAt)}</p>}</details>
+    {paymentType !== 'cash-on-delivery' && <details className="text-sm text-gray-600 dark:text-gray-300"><summary className="flex min-h-12 cursor-pointer items-center gap-2 font-semibold"><Clock3 className="h-4 w-4" aria-hidden />Refund policy & shipping</summary><p className="max-w-prose leading-relaxed">Request within seven days of recorded delivery. Seller approval starts the refund; no return is required. Shipping is included only when all paid items are refunded for seller fault. Change of mind is only allowed while pending.</p>{eligibility?.deliveredAt && <p className="mt-2">Delivered {refundDate(eligibility.deliveredAt)}</p>}</details>}
   </section>;
 }

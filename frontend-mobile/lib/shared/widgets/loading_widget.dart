@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:toko_mart/shared/widgets/app_button.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -17,6 +18,8 @@ class LoadingWidget extends StatelessWidget {
 
 class EmptyWidget extends StatelessWidget {
   final String message;
+  /// When given, the empty state uses the favorites style: a bold title, this line under it, and an orange icon on a soft orange circle.
+  final String? description;
   final IconData icon;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -24,6 +27,7 @@ class EmptyWidget extends StatelessWidget {
   const EmptyWidget({
     super.key,
     required this.message,
+    this.description,
     this.icon = Icons.inbox_outlined,
     this.actionLabel,
     this.onAction,
@@ -38,23 +42,45 @@ class EmptyWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: AppColors.background,
+              width: description == null ? 80 : 88,
+              height: description == null ? 80 : 88,
+              decoration: BoxDecoration(
+                color: description != null
+                    ? context.primaryTint
+                    : context.isDark
+                        ? context.surfaceVariantColor
+                        : AppColors.background,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 40, color: AppColors.textMuted),
+              child: Icon(icon,
+                  size: description == null ? 40 : 44,
+                  color: description == null
+                      ? AppColors.textMuted
+                      : AppColors.primary),
             ),
-            const SizedBox(height: AppSizes.md),
+            SizedBox(height: description == null ? AppSizes.md : AppSizes.lg),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-              ),
+              style: description == null
+                  ? TextStyle(
+                      fontSize: 15,
+                      color: context.onSurfaceSecondary,
+                    )
+                  : TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: context.onSurfaceColor,
+                    ),
             ),
+            if (description != null) ...[
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                description!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: context.onSurfaceSecondary),
+              ),
+            ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSizes.md),
               SizedBox(
@@ -92,7 +118,7 @@ class ErrorWidget2 extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: context.onSurfaceSecondary),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSizes.md),

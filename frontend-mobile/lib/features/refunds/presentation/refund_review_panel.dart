@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
@@ -70,7 +71,7 @@ class _GroupChips extends StatelessWidget {
               decoration: BoxDecoration(
                   color: active
                       ? Colors.white.withAlpha(51)
-                      : AppColors.surfaceVariant,
+                      : context.surfaceVariantColor,
                   borderRadius: BorderRadius.circular(AppSizes.radiusFull)),
               child: Text('${state.counts[g.key] ?? 0}',
                   style: TextStyle(

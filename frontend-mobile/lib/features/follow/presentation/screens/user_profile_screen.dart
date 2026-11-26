@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_mart/core/theme/theme_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -107,7 +108,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   TabBar(
                     controller: _tabController,
                     labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
+                    unselectedLabelColor: context.onSurfaceSecondary,
                     indicatorColor: AppColors.primary,
                     indicatorSize: TabBarIndicatorSize.label,
                     labelStyle: const TextStyle(
@@ -176,7 +177,7 @@ class _ProfileHeader extends StatelessWidget {
                 )
               : CircleAvatar(
                   radius: 44,
-                  backgroundColor: AppColors.primaryLight,
+                  backgroundColor: context.primaryTint,
                   child: Text(
                     user.initials,
                     style: const TextStyle(
@@ -204,8 +205,10 @@ class _ProfileHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: user.isSeller
-                  ? const Color(0xFFFEF3C7)
-                  : AppColors.primaryLight,
+                  ? (context.isDark
+                      ? const Color(0xFFF59E0B).withAlpha(38)
+                      : const Color(0xFFFEF3C7))
+                  : context.primaryTint,
               borderRadius: BorderRadius.circular(AppSizes.radiusFull),
             ),
             child: Row(
@@ -312,9 +315,9 @@ class _StatChip extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.onSurfaceSecondary,
           ),
         ),
       ],
@@ -351,7 +354,7 @@ class _UserList extends StatelessWidget {
                 size: 48, color: AppColors.textMuted),
             const SizedBox(height: 8),
             Text(emptyMessage,
-                style: const TextStyle(color: AppColors.textSecondary)),
+                style: TextStyle(color: context.onSurfaceSecondary)),
           ],
         ),
       );
@@ -403,7 +406,7 @@ class _UserTile extends StatelessWidget {
           ? CircleAvatar(backgroundImage: NetworkImage(user.avatar!), radius: 22)
           : CircleAvatar(
               radius: 22,
-              backgroundColor: AppColors.primaryLight,
+              backgroundColor: context.primaryTint,
               child: Text(
                 user.initials,
                 style: const TextStyle(
@@ -419,7 +422,7 @@ class _UserTile extends StatelessWidget {
       ),
       subtitle: Text(
         user.isSeller ? AppStrings.sellerRole : AppStrings.buyerRole,
-        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 12, color: context.onSurfaceSecondary),
       ),
       trailing: isOwn
           ? null
@@ -447,7 +450,7 @@ class _UserTile extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: user.isFollowing
-                        ? AppColors.textSecondary
+                        ? context.onSurfaceSecondary
                         : Colors.white,
                   ),
                 ),
@@ -473,7 +476,7 @@ class _ErrorView extends StatelessWidget {
               size: 56, color: AppColors.textMuted),
           const SizedBox(height: 12),
           Text(message,
-              style: const TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: context.onSurfaceSecondary)),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => context.pop(),

@@ -28,9 +28,6 @@ class _MainShellState extends State<MainShell> {
   Set<String> _knownOrderIds = {};
   bool _initialized = false;
 
-  int _toReceiveCount = 0;
-  Timer? _ordersBadgeTimer;
-
   @override
   void initState() {
     super.initState();
@@ -42,46 +39,18 @@ class _MainShellState extends State<MainShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.instance.requestPermissions();
       // Defer polling start by 2s so the first-frame product/cart requests
-      // complete before we add seller-order or badge-count network traffic.
+      // complete before we add seller-order network traffic.
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
         _maybeStartPolling();
-        _maybeFetchToReceiveCount();
       });
     });
-    _ordersBadgeTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => _maybeFetchToReceiveCount(),
-    );
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _ordersBadgeTimer?.cancel();
     super.dispose();
-  }
-
-  void _maybeFetchToReceiveCount() {
-    if (!mounted) return;
-    final authState = context.read<AuthBloc>().state;
-    if (authState.status != AuthStatus.authenticated) return;
-    if (authState.user?.isSeller ?? false) {
-      return;
-    } // sellers use the seller dashboard
-    _fetchToReceiveCount();
-  }
-
-  Future<void> _fetchToReceiveCount() async {
-    try {
-      final res = await widget.dio.get('/orders');
-      final data = res.data;
-      final List<dynamic> orders =
-          data is Map ? (data['orders'] ?? data['data'] ?? []) : (data as List);
-      final count =
-          orders.whereType<Map>().where((o) => o['status'] == 'shipped').length;
-      if (mounted) setState(() => _toReceiveCount = count);
-    } catch (_) {}
   }
 
   void _maybeStartPolling() {
@@ -162,11 +131,8 @@ class _MainShellState extends State<MainShell> {
       listener: (_, authState) {
         if (authState.user?.isSeller == true) {
           _startPolling();
-          // Clear buyer badge when a seller account is active.
-          if (mounted) setState(() => _toReceiveCount = 0);
         } else {
           _stopPolling();
-          _maybeFetchToReceiveCount();
         }
       },
       child: Scaffold(
@@ -203,13 +169,7 @@ class _MainShellState extends State<MainShell> {
                                 icon: Icons.grid_view_outlined,
                                 activeIcon: Icons.grid_view_rounded,
                                 isActive: index == 1,
-                                badge: _toReceiveCount > 0
-                                    ? _toReceiveCount
-                                    : null,
-                                onTap: () {
-                                  _fetchToReceiveCount();
-                                  context.go('/orders');
-                                },
+                                onTap: () => context.go('/orders'),
                               ),
                               _NavItem(
                                 icon: Icons.favorite_border_rounded,
