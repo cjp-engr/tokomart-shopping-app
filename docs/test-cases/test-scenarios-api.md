@@ -7,7 +7,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 
 ---
 
-## Buyer — Cart (API)
+## Buyer — Cart (API) 
 
 ### TC-107: GET /api/cart returns authenticated buyer's own items
 **Scenario status**: Active  
