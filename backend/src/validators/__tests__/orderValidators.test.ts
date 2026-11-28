@@ -81,3 +81,54 @@ describe('createOrderRules (REQ-ORD-02)', () => {
     expect(result.body!.errors.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('createOrderRules, the shipping address fields (REQ-ORD-02, Open question 19)', () => {
+  const withAddress = (shippingAddress: unknown) => ({ ...validBody(), shippingAddress });
+  const full = { street: '1 Main', city: 'Town', state: 'ST', zipCode: '12345' };
+
+  it('accepts an address without a country (the model defaults it)', async () => {
+    expect((await check(withAddress(full))).passed).toBe(true);
+  });
+
+  it('accepts an address with a country and extra fields', async () => {
+    expect((await check(withAddress({ ...full, country: 'PH', phone: '555' }))).passed).toBe(true);
+  });
+
+  it.each([
+    ['an empty object', {}],
+    ['a list', []],
+    ['the number 0', 0],
+    ['text', 'somewhere'],
+    ['null', null],
+  ])('rejects an address that is %s with "Shipping address is required" or a missing-field message', async (_label, address) => {
+    const result = await check(withAddress(address));
+    expect(result.status).toBe(400);
+    expect(result.body!.message).toMatch(/^Shipping address/);
+  });
+
+  it.each(['street', 'city', 'state', 'zipCode'])('rejects an address with no %s, naming the field', async (field) => {
+    const { [field]: _omitted, ...rest } = full as Record<string, string>;
+    const result = await check(withAddress(rest));
+    expect(result.status).toBe(400);
+    expect(result.body!.message).toBe(`Shipping address ${field} is required`);
+  });
+
+  it.each(['street', 'city', 'state', 'zipCode'])('rejects an empty or space-only %s', async (field) => {
+    for (const value of ['', '   ']) {
+      const result = await check(withAddress({ ...full, [field]: value }));
+      expect(result.status).toBe(400);
+      expect(result.body!.message).toBe(`Shipping address ${field} is required`);
+    }
+  });
+
+  it.each([5, true, ['x'], { a: 1 }])('rejects a street that is not text (%j)', async (street) => {
+    const result = await check(withAddress({ ...full, street }));
+    expect(result.status).toBe(400);
+    expect(result.body!.message).toBe('Shipping address street is required');
+  });
+
+  it('keeps "Shipping address is required" for an empty object as the first problem only when the object itself is missing', async () => {
+    expect((await check(withAddress(undefined))).body!.message).toBe('Shipping address is required');
+    expect((await check(withAddress({}))).body!.message).toBe('Shipping address street is required');
+  });
+});

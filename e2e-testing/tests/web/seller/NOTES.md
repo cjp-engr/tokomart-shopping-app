@@ -47,6 +47,13 @@ Product is seeded via API in `beforeAll` with `shippingOptions` and `shippingFee
 
 ---
 
+### TC-049 — `seller-cancel-order.spec.ts`
+**A seller cancels a pending Cash on Delivery order with a reason**
+
+The one seller-cancel journey on web. The test creates a product as the seller this project is signed in as, the buyer places a Cash on Delivery order through the API, and the seller cancels it from the order detail page. The confirm button stays disabled until a reason is typed. It checks the badge, the reason shown, the stored order (`cancelledByRole` seller, with the reason), the stock, and, in a second browser context signed in as the buyer, "Cancelled by the seller" and the reason in the order list. Only the pending state is covered; cancelling a preparing or processing order is not tested here. The rules underneath are backend integration tests.
+
+---
+
 ### TC-054 — `seller-access.spec.ts`
 **Seller dashboard only shows the seller's own products**
 
@@ -69,7 +76,8 @@ web/seller/
 ├── seller-product-wizard.spec.ts         ← TC-042, TC-064
 ├── seller-simple-product-crud.spec.ts    ← TC-042, TC-044, TC-045, TC-046, TC-122
 ├── seller-variant-product-crud.spec.ts   ← TC-120, TC-121, TC-046
-└── seller-access.spec.ts                 ← TC-054
+├── seller-access.spec.ts                 ← TC-054
+└── seller-cancel-order.spec.ts           ← TC-049
 ```
 
 ## Key notes

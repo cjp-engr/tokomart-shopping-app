@@ -27,7 +27,7 @@ export async function signupFreshUser(
   request: APIRequestContext,
   prefix = 'user',
 ): Promise<{ token: string; userId: string }> {
-  const email = `${prefix}-${Date.now()}@test.com`;
+  const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.com`;
   const res = await request.post('/api/auth/signup', {
     data: { email, password: TEST_PASSWORD, firstName: 'Test', lastName: 'User' },
   });

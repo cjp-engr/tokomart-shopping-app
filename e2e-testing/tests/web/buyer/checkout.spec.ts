@@ -1,30 +1,21 @@
 // TC coverage: TC-022 — Checkout with Cash on Delivery
-//              TC-023 — Checkout with saved credit card
-//              TC-024 — Checkout with new card entry
-//              TC-025 — Multi-seller checkout creates separate orders (E2E leg; the API leg is in orders.api.spec.ts)
+//              TC-025 — Multi-seller checkout creates separate orders (the one UI journey; the split itself is an integration rule)
 //              TC-029 — Checkout blocked with missing address fields
 //              TC-500 — The Stripe card field renders on the payment step
 //
 // Every test creates its own in-stock product through the API, so it does not depend on which product is first in
 // the catalog or on its stock. TC-022 still finds its product through the product list, as a buyer would.
 //
-// Runs under either CHECKOUT_FLOW. Checks that only hold for the authorization flow (the payment is reserved,
-// not charged) run only when CHECKOUT_FLOW=manual_capture.
+// Cash on Delivery runs under either CHECKOUT_FLOW. The card journeys are in card-checkout-authorization.spec.ts
+// (CHECKOUT_FLOW=manual_capture); the saved-card and new-card tests that used to be here repeated them.
 
-import type { APIRequestContext } from '@playwright/test';
-
-import type { MyOrdersPage } from '../../../pages/my-orders/my-orders.page';
-import type { OrderDetailPage } from '../../../pages/order-detail.page';
 import { clearBuyerCart } from '../../../helpers/auth-state';
 import { API_URL, DEFAULT_SHIPPING_ADDRESS } from '../../../helpers/test-data';
 import {
-  IS_MANUAL_CAPTURE,
   SELLER_ACCEPT_WINDOW_MS,
-  STRIPE_TEST_CARDS,
   addProductsAndOpenCheckout,
   createCheckoutProduct,
   createProductsFromTwoSellers,
-  ensureSavedStripeCard,
   expectCartCleared,
   expectCartItemCount,
   expectNoNewOrders,
@@ -43,32 +34,6 @@ test.describe.configure({ mode: 'serial' });
 test.beforeEach(async ({ request }) => {
   await clearBuyerCart(request, API_URL);
 });
-
-/**
- * A card order is pending, is listed in the order history, shows its payment on the detail page, and under
- * manual_capture holds the payment. A saved card shows its last four digits. A new card is typed into Stripe's
- * secure frame, so the order keeps no last four digits and the page shows only the card type.
- */
-async function expectCardOrderPlaced(
-  pages: { request: APIRequestContext; myOrdersPage: MyOrdersPage; orderDetailPage: OrderDetailPage },
-  known: Set<string>,
-  productId: string,
-  last4: string | null,
-): Promise<void> {
-  const { request, myOrdersPage, orderDetailPage } = pages;
-  const order = await placedOrder(request, known, productId);
-  expect(order).toMatchObject({ status: 'pending', paymentMethod: { type: 'credit-card' } });
-  if (last4) expect(order.paymentMethod?.last4).toBe(last4);
-  if (IS_MANUAL_CAPTURE) {
-    expect(order).toMatchObject({ paymentFlowVersion: 'manual_capture', paymentStatus: 'authorized' });
-  }
-
-  await myOrdersPage.expectOrdersListed([order._id]);
-  await orderDetailPage.goto(order._id);
-  await orderDetailPage.expectCardPayment(last4);
-  if (IS_MANUAL_CAPTURE) await orderDetailPage.expectPaymentReserved();
-  await expectCartCleared(request);
-}
 
 test.describe('TC-022: Checkout COD', () => {
   test('buyer completes checkout with Cash on Delivery',
@@ -118,70 +83,6 @@ test.describe('TC-022: Checkout COD', () => {
 
       await test.step('The cart is cleared', async () => {
         await expectCartCleared(request);
-      });
-    });
-});
-
-test.describe('TC-023: Checkout with saved credit card', () => {
-  test('buyer completes checkout with saved credit card',
-    { tag: ['@TC-023', '@buyer', '@checkout', '@simple', '@smoke'] },
-    async ({ page, request, productDetailPage, cartPage, checkoutPage, myOrdersPage, orderDetailPage }) => {
-      const known = await knownOrderIds(request);
-      const product = await createCheckoutProduct(request, 'Checkout saved card');
-
-      await test.step('Ensure buyer has a saved card backed by a Stripe PaymentMethod', async () => {
-        await ensureSavedStripeCard(request);
-      });
-
-      await test.step('Add the product to the cart and open checkout', async () => {
-        await addProductsAndOpenCheckout({ request, productDetailPage, cartPage, checkoutPage }, [product.id]);
-      });
-
-      await test.step('Fill shipping address, select saved card, and place order', async () => {
-        await checkoutPage.fillNewShippingAddress(DEFAULT_SHIPPING_ADDRESS);
-        await checkoutPage.continueToPayment();
-        await checkoutPage.selectSavedCard();
-        await checkoutPage.continueToReview();
-        await checkoutPage.placeOrder();
-      });
-
-      await test.step('Verify redirect to orders page', async () => {
-        await expect(page).toHaveURL(/\/orders/, { timeout: 15_000 });
-        await myOrdersPage.expectLoaded();
-      });
-
-      await test.step('The order is pending and its detail page shows the saved card', async () => {
-        await expectCardOrderPlaced({ request, myOrdersPage, orderDetailPage }, known, product.id, '4242');
-      });
-    });
-});
-
-test.describe('TC-024: Checkout with new card entry', () => {
-  test('buyer completes checkout with new card entry',
-    { tag: ['@TC-024', '@buyer', '@checkout', '@simple', '@smoke'] },
-    async ({ page, request, productDetailPage, cartPage, checkoutPage, myOrdersPage, orderDetailPage }) => {
-      const known = await knownOrderIds(request);
-      const product = await createCheckoutProduct(request, 'Checkout new card');
-
-      await test.step('Add the product to the cart and open checkout', async () => {
-        await addProductsAndOpenCheckout({ request, productDetailPage, cartPage, checkoutPage }, [product.id]);
-      });
-
-      await test.step('Fill shipping address, enter new card details, and place order', async () => {
-        await checkoutPage.fillNewShippingAddress(DEFAULT_SHIPPING_ADDRESS);
-        await checkoutPage.continueToPayment();
-        await checkoutPage.fillStripeCard(STRIPE_TEST_CARDS.success);
-        await checkoutPage.continueToReview();
-        await checkoutPage.placeOrder();
-      });
-
-      await test.step('Verify redirect to orders page', async () => {
-        await expect(page).toHaveURL(/\/orders/, { timeout: 15_000 });
-        await myOrdersPage.expectLoaded();
-      });
-
-      await test.step('The order is pending and its detail page shows the card type', async () => {
-        await expectCardOrderPlaced({ request, myOrdersPage, orderDetailPage }, known, product.id, null);
       });
     });
 });

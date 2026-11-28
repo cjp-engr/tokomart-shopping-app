@@ -11,7 +11,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getStatusConfig } from '../utils/orderUtils';
 import { ordersInTab } from '../utils/orderTabs';
-import { canBuyerCancel } from '../utils/orderPayment';
+import { canBuyerCancel, shownCancelReason } from '../utils/orderPayment';
 import { fetchReviewStatuses, fetchSingleReview } from '../utils/reviewUtils';
 import type { ReviewData } from '../utils/reviewUtils';
 import {
@@ -407,9 +407,9 @@ export const OrderHistory: React.FC = () => {
                         <span className="text-xs font-medium text-red-600 dark:text-red-400 block">
                           {order.cancelledByRole === 'seller' ? 'Cancelled by the seller' : 'This order has been cancelled'}
                         </span>
-                        {order.cancelReason && (
+                        {shownCancelReason(order) && (
                           <span className="text-xs text-red-500 dark:text-red-400">
-                            Reason: {order.cancelReason}
+                            Reason: {shownCancelReason(order)}
                           </span>
                         )}
                       </div>

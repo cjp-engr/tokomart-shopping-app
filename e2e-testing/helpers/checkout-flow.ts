@@ -5,7 +5,7 @@ import type { CheckoutPage } from '../pages/checkout.page';
 import type { ProductDetailPage } from '../pages/product-detail.page';
 import { createSimpleProduct } from './product-factory';
 import { getBuyerToken } from './auth-state';
-import { API_URL } from './test-data';
+import { API_URL, DEFAULT_SHIPPING_ADDRESS } from './test-data';
 import { TEST_PASSWORD } from './api-client';
 
 // Must match the backend's CHECKOUT_FLOW for the run. Tests that need the authorization flow skip otherwise.
@@ -93,6 +93,8 @@ export interface BuyerOrder {
   tax?: number;
   shipping?: number;
   total?: number;
+  cancelReason?: string | null;
+  cancelledByRole?: string | null;
   items: Array<{ product: { _id?: string } | string }>;
 }
 
@@ -198,3 +200,44 @@ export async function buyerUserId(page: Page): Promise<string> {
 
 /** Same key the app uses for its per-buyer checkout attempt (frontend/src/utils/checkoutAttempt.ts). */
 export const checkoutAttemptKey = (userId: string): string => `checkout-attempt:${userId}`;
+
+/**
+ * Places a Cash on Delivery order for the product as the buyer, straight through the API, so a test that is about
+ * what happens to an order does not have to click through checkout again. Takes `quantity` units of stock.
+ */
+export async function placeCodOrderViaApi(request: APIRequestContext, productId: string, quantity = 1): Promise<BuyerOrder> {
+  const res = await request.post(`${API_URL}/api/orders`, {
+    headers: { Authorization: `Bearer ${getBuyerToken()}` },
+    data: {
+      items: [{ productId, quantity }],
+      shippingAddress: {
+        street: DEFAULT_SHIPPING_ADDRESS.street,
+        city: DEFAULT_SHIPPING_ADDRESS.city,
+        state: DEFAULT_SHIPPING_ADDRESS.state,
+        zipCode: DEFAULT_SHIPPING_ADDRESS.zip,
+        country: 'PH',
+      },
+      paymentMethod: { type: 'cash-on-delivery' },
+    },
+  });
+  if (!res.ok()) throw new Error(`Placing the order failed: ${res.status()} ${await res.text()}`);
+  const orders = (await res.json()).orders as BuyerOrder[];
+  if (orders.length !== 1) throw new Error(`Expected one order, got ${orders.length}`);
+  return orders[0];
+}
+
+/** The buyer's own view of one order. */
+export async function fetchBuyerOrder(request: APIRequestContext, orderId: string): Promise<BuyerOrder> {
+  const res = await request.get(`${API_URL}/api/orders/${orderId}`, {
+    headers: { Authorization: `Bearer ${getBuyerToken()}` },
+  });
+  if (!res.ok()) throw new Error(`Fetching order ${orderId} failed: ${res.status()}`);
+  return (await res.json()).order as BuyerOrder;
+}
+
+/** The stock a simple product has right now. */
+export async function fetchProductStock(request: APIRequestContext, productId: string): Promise<number> {
+  const res = await request.get(`${API_URL}/api/products/${productId}`);
+  if (!res.ok()) throw new Error(`Fetching product ${productId} failed: ${res.status()}`);
+  return (await res.json()).product.stock as number;
+}

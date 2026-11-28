@@ -839,13 +839,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Mobile  
 **Parity**: Both (web TC-024 + TC-098 combined)  
 **Automation**: Patrol  
-**Automation status**: Needs review  
-**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-103: buyer completes new credit checkout with variant product" in `frontend-mobile/patrol_test/2_buyer/variant_new_credit_checkout_test.dart` (updated on 2026-11-08); the buyer adds "E2E Test Variant Tee" in size M, then follows the new-card steps of TC-097; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`, and that the order item carries `Size: M`  
-**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because it repeated TC-097 and TC-101 (card checkout and the variant line).  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: 2026-11-08  
 **Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 37 s. The Patrol log is not kept and the Stripe PaymentIntent was not inspected.  
 **Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
-**Test File**: `frontend-mobile/patrol_test/2_buyer/variant_new_credit_checkout_test.dart`  
+**Test File**: None (removed 2026-11-28; was `frontend-mobile/patrol_test/2_buyer/variant_new_credit_checkout_test.dart`)  
 **Preconditions**: Buyer logged in (`b@test.com`); variant product in catalog (from TC-091 or seeded `E2E Test Variant Tee`); cart empty; no saved card selected  
 **Steps**:
 1. Open variant product detail → select required variant attributes (e.g. Size M)
@@ -875,13 +875,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Mobile  
 **Parity**: Both (web TC-023 + TC-098 combined)  
 **Automation**: Patrol  
-**Automation status**: Needs review  
-**Script mapping**: Verified by reading and by the run of 2026-11-08: test "TC-104: buyer completes saved credit checkout with variant product" in `frontend-mobile/patrol_test/2_buyer/variant_saved_credit_checkout_test.dart` (updated on 2026-11-08); the buyer adds "E2E Test Variant Tee" in size M, then follows the saved-card steps of TC-096; after the orders screen appears the API confirms exactly one new order with `paymentStatus: authorized` and `paymentFlowVersion: manual_capture`, and that the order item carries `Size: M`  
-**Latest result**: Passed (1 of 1, opt-in local run, in part: see Script mapping)  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because it repeated TC-096 and TC-101.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: 2026-11-08  
 **Run evidence**: Local run on 2026-11-08 on `emulator-5554` with Patrol CLI 4.7.0 and `patrol` 4.11.0, against the isolated backend on port 5001 (`CHECKOUT_FLOW=manual_capture`, database `tokomart_local_payments_20261017` on the 27018 replica set, Stripe test mode), selected only by its tag. passed 1 of 1, 38 s. Later the same day, run as the fifth test of a combined run (tags tc-083, tc-096, tc-097, tc-103, tc-104 in one build) it failed: after Submit the orders screen did not appear within 90 s and no order was created. Run alone again by tag it passed 1 of 1, 40 s. The cause of the combined-run failure is not known (it may depend on running after other card tests in one process). The Patrol log is not kept and the Stripe PaymentIntent was not inspected.    
 **Run baseline**: Branch `test/local_payment_settlement_test_update` at `def44b5`, with the uncommitted changes of 2026-11-08  
-**Test File**: `frontend-mobile/patrol_test/2_buyer/variant_saved_credit_checkout_test.dart`  
+**Test File**: None (removed 2026-11-28; was `frontend-mobile/patrol_test/2_buyer/variant_saved_credit_checkout_test.dart`)  
 **Preconditions**: Buyer logged in (`b@test.com`); ≥ 1 saved card on profile (`GET /api/auth/payment-methods`); variant product in catalog (from TC-091 or seeded `E2E Test Variant Tee`); cart empty  
 **Steps**:
 1. Open variant product detail → select required variant attributes (e.g. Size M)

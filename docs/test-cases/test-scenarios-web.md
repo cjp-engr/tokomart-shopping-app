@@ -820,13 +820,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: In progress (see Script mapping for what the test does not assert)  
-**Script mapping**: Verified by reading and by the run of 2026-11-04: test "buyer completes checkout with saved credit card" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-023`; it saves the Stripe test card first, then asserts the redirect and one new order with `status: pending`, card type credit-card and last four 4242, "ending in 4242" on the order detail page and an empty cart; under manual_capture it also asserts `paymentFlowVersion: manual_capture`, `paymentStatus: authorized`, the "reserved" payment notice and the acceptance deadline on the detail page; does not assert the Stripe `requires_capture` state, and the legacy-flow result (payment captured at once) is not asserted  
-**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because under manual_capture it repeated TC-144 (saved card). If `legacy` is what ships, bring one of TC-023 and TC-024 back.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: 2026-11-04  
 **Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
 **Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
-**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/buyer/checkout.spec.ts`)  
 **Preconditions**: User has saved card in profile  
 **Steps**:
 1. Checkout with items
@@ -853,13 +853,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: In progress (see Script mapping for what the test does not assert)  
-**Script mapping**: Verified by reading and by the run of 2026-11-04: test "buyer completes checkout with new card entry" in `e2e-testing/tests/web/buyer/checkout.spec.ts`, tagged `@TC-024`; it asserts the redirect and one new order with `status: pending` and card type credit-card (a card typed into Stripe's frame is stored without its last four digits, so the page shows only the card type) and an empty cart; under manual_capture it also asserts the same authorization checks as TC-023; does not assert the 16-digit card and CVV validation (Stripe's frame validates it) or the Stripe `requires_capture` state  
-**Latest result**: Passed (3 runs in a row, under manual_capture)  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because under manual_capture it repeated TC-143 (new card). If `legacy` is what ships, bring one of TC-023 and TC-024 back.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: 2026-11-04  
 **Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
 **Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
-**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/buyer/checkout.spec.ts`)  
 **Preconditions**: Logged in; no saved card selected  
 **Steps**:
 1. Checkout; choose credit card
@@ -1004,7 +1004,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: 2026-11-04  
 **Run evidence**: Local run on 2026-11-04 of `checkout.spec.ts` (`npx playwright test --project=web-buyer --workers=1`) against the running manual-capture stack (web on localhost:5173 built with `VITE_CHECKOUT_FLOW=manual_capture`, API on localhost:5001, the isolated database on the 27018 replica set, Stripe test mode). After the last changes (the order-in-history check and the TC-025 and TC-029 tests), 3 full runs in a row passed: the buyer login and all six tests, 7 of 7 each time. The legacy checkout flow was not run. No report file kept  
 **Run baseline**: Branch `test/update-checkout.spec` at `100f096`, with the uncommitted spec changes of 2026-11-04  
-**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts` (E2E leg), `e2e-testing/tests/api/orders.api.spec.ts` (API leg)  
+**Test File**: `e2e-testing/tests/web/buyer/checkout.spec.ts` (the API leg in `orders.api.spec.ts` was dropped on 2026-11-28: the split is an integration rule)  
 **Preconditions**: Two sellers, each with a product in stock (the test creates them through the API)  
 **Steps**:
 1. Add a product from each of the 2 sellers to the cart
@@ -1124,8 +1124,8 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (no test was ever written)  
+**Script mapping**: No script exists and none is planned: the buyer-cancel journey is TC-153.  
 **Latest result**: Not recorded  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
@@ -1154,13 +1154,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: API (TC-110)  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because the isolation rule is proved by API TC-110.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/mixed/order-isolation.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/mixed/order-isolation.spec.ts`)  
 **Preconditions**: Buyer1 has a placed order; buyer2 is a fresh account with no orders  
 **Steps**:
 1. Inject buyer2's auth into localStorage; reload
@@ -2011,13 +2011,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Automation status**: Automated (the one seller-cancel journey on web; the rules underneath are integration tests)  
+**Script mapping**: Verified by reading and by the run of 2026-11-28: test "the seller must give a reason, and the buyer then sees it" in `e2e-testing/tests/web/seller/seller-cancel-order.spec.ts`, tagged `@TC-049`; a pending Cash on Delivery order, the seller cancels it from the order detail page (the confirm button stays disabled without a reason), and the test checks the badge, the reason, the stored order (`cancelledByRole` seller), the stock, and the buyer's order list. Covers the pending state only; cancelling a preparing or processing order is not tested at this layer.  
+**Latest result**: Passed (2 of 2 runs)  
+**Last run**: 2026-11-28  
+**Run evidence**: Local run on 2026-11-28 of `seller-cancel-order.spec.ts` (`npx playwright test --project=web-seller --grep @TC-049`) against an isolated stack (web on localhost:5174, API on localhost:5055, the new database `tokomart_e2e_agent_test` on the 27018 replica set; nothing on ports 5000, 5173 or 27017), CHECKOUT_FLOW=legacy  
+**Run baseline**: Branch `feat/main-shift-left-testing-11282026` at `9905764`, with the uncommitted changes of 2026-11-28  
+**Test File**: `e2e-testing/tests/web/seller/seller-cancel-order.spec.ts`  
 **Preconditions**: Order in `pending` or `preparing`  
 **Steps**:
 1. Cancel from seller order detail
@@ -2327,13 +2327,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: TC-103 (mobile)  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because it repeated TC-143 and TC-098 (a variant order is the same card flow plus the variant line, which TC-098 checks).  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/variant-checkout.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/buyer/variant-checkout.spec.ts`)  
 **Preconditions**: Buyer logged in (`test@example.com`); variant product in catalog (seeded or created via API); cart empty; no saved card selected  
 **Steps**:
 1. Navigate to product detail; select a size variant (e.g. Size M)
@@ -2363,13 +2363,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: TC-104 (mobile)  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because it repeated TC-144 and TC-098.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/variant-checkout.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/buyer/variant-checkout.spec.ts`)  
 **Preconditions**: Buyer logged in; ≥ 1 saved card on profile (`GET /api/auth/payment-methods`); variant product in catalog; cart empty  
 **Steps**:
 1. Navigate to product detail; select a size variant (e.g. Size M)
@@ -2918,13 +2918,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Automation status**: Automated (the one buyer-cancel journey on web; the rules underneath are integration tests)  
+**Script mapping**: Verified by reading and by the run of 2026-11-28: test "cancelling from the order list marks the order cancelled and gives the stock back once" in `e2e-testing/tests/web/buyer/order-cancellation.spec.ts`, tagged `@TC-153`; the order is placed through the API, the buyer cancels it from `/orders` without a reason, and the test checks the card, the stored order, the detail page (no payment notice), the stock, and that a second cancel request returns no stock.  
+**Latest result**: Passed (second run; the first run found that the card showed the internal code `buyer_cancelled` as the reason, which was fixed in the web app)  
+**Last run**: 2026-11-28  
+**Run evidence**: Local run on 2026-11-28 of `order-cancellation.spec.ts` (`npx playwright test --project=web-buyer --grep @TC-153`) against an isolated stack (web on localhost:5174, API on localhost:5055, the new database `tokomart_e2e_agent_test` on the 27018 replica set; nothing on ports 5000, 5173 or 27017), CHECKOUT_FLOW=legacy  
+**Run baseline**: Branch `feat/main-shift-left-testing-11282026` at `9905764`, with the uncommitted changes of 2026-11-28  
+**Test File**: `e2e-testing/tests/web/buyer/order-cancellation.spec.ts`  
 **Preconditions**: A `pending` COD order  
 **Steps**:
 1. Cancel the order from `/orders` or the detail page without entering a reason
@@ -3272,13 +3272,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both (mobile TC-186)  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Automation status**: Automated, opt-in (Stripe test mode; the one refund journey on web)  
+**Script mapping**: Verified by reading and by the run of 2026-11-28: test "the buyer requests a refund for one unit, the seller approves it, and it settles" in `e2e-testing/tests/web/mixed/refund-journey.spec.ts`, tagged `@TC-164`; skipped unless `DELIVERED_REFUND_VERIFICATION=true`. `backend/scripts/seed-delivered-card-order.mjs` makes a delivered, captured card order in Stripe test mode; the buyer refunds one of two units ($10.80, no shipping), the seller approves the exact amount, and the test waits for "Refund completed and confirmed" and a partially refunded order. It does not check the money in Stripe's dashboard.  
+**Latest result**: Passed (second run; the first run failed only on the wording of my assertion)  
+**Last run**: 2026-11-28  
+**Run evidence**: Local opt-in run on 2026-11-28 of `refund-journey.spec.ts` (`npx playwright test --project=web-mixed --grep @TC-164`) against an isolated stack (web on localhost:5174, API on localhost:5055, the new database `tokomart_e2e_agent_test` on the 27018 replica set; nothing on ports 5000, 5173 or 27017), with DELIVERED_REFUNDS_ENABLED=true, SELLER_SEES_MANUAL_CAPTURE=true, CHECKOUT_FLOW=manual_capture and a Stripe test key  
+**Run baseline**: Branch `feat/main-shift-left-testing-11282026` at `9905764`, with the uncommitted changes of 2026-11-28  
+**Test File**: `e2e-testing/tests/web/mixed/refund-journey.spec.ts` (opt-in)  
 **Preconditions**: A requested refund (TC-162); Stripe test mode  
 **Steps**:
 1. Seller opens `/seller` → Return/Refund → In Progress

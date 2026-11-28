@@ -131,7 +131,7 @@ npm run report            # open the HTML report
 Run one test by its tag:
 
 ```bash
-npx playwright test --project=web-buyer --grep @TC-024
+npx playwright test --project=web-buyer --grep @TC-022
 ```
 
 Projects, in `playwright.config.ts`:
@@ -184,7 +184,7 @@ IDs are the `@TC-*` tags on each test. The scenario and strategy docs hold the f
 |------|--------|-------------|
 | `auth.api.spec.ts` | TC-132, TC-232, TC-233, TC-234 | Login, GET /me, invalid credentials |
 | `health.api.spec.ts` | TC-298 | API server health smoke |
-| `orders.api.spec.ts` | TC-025, TC-026, TC-033, TC-056, TC-257 | Order totals and coupons, seller-configured shipping, multi-seller split, cancel guard, stock validation |
+| `orders.api.spec.ts` | TC-026, TC-033, TC-056, TC-257 | Order totals and coupons, seller-configured shipping, cancel guard, stock validation |
 | `security.api.spec.ts` | TC-053, TC-132, TC-133, TC-134, TC-135, TC-136 | Protected routes return 401, tampered JWT rejected, seller order scoping (IDOR), buyer blocked from seller routes, weak password rejected |
 | `seller-access.api.spec.ts` | TC-048, TC-053, TC-054 | Buyer blocked from seller routes, cross-seller edit/delete blocked, invalid status transition |
 | `seller-products.api.spec.ts` | TC-058, TC-303 to TC-311 | Seller product create and update validation |
@@ -203,18 +203,20 @@ IDs are the `@TC-*` tags on each test. The scenario and strategy docs hold the f
 | `buyer/login.spec.ts` | TC-001 | Buyer login, authenticated navbar |
 | `buyer/product-browse.spec.ts` | TC-010, TC-011 | Search by keyword, filter by category |
 | `buyer/product-detail.spec.ts` | TC-012, TC-013, TC-014 | Sale price display, variant selection, add-to-cart guard |
-| `buyer/checkout.spec.ts` | TC-022, TC-023, TC-024, TC-025, TC-029, TC-500 | Checkout with COD, saved card and new card; multi-seller orders; missing address fields; Stripe card field |
+| `buyer/checkout.spec.ts` | TC-022, TC-025, TC-029, TC-500 | Checkout with COD; multi-seller orders; missing address fields; Stripe card field |
 | `buyer/card-checkout-authorization.spec.ts` | TC-143, TC-144, TC-146, TC-147, TC-148, TC-151, TC-400 | Authorization checkout: payment reserved, declined card, 3DS cancel and resume, expired checkout. Runs only with `CHECKOUT_FLOW=manual_capture` |
-| `buyer/variant-checkout.spec.ts` | TC-098, TC-105, TC-106 | Checkout with variant product across payment methods |
+| `buyer/variant-checkout.spec.ts` | TC-098 | Checkout with a variant product (Cash on Delivery) |
+| `buyer/order-cancellation.spec.ts` | TC-153 | A buyer cancels a pending Cash on Delivery order from the order list; the stock comes back once |
 | `buyer/local-payment-settlement.spec.ts` | none yet | Opt-in local verification of acceptance, cancellation and expiry. Skipped unless `LOCAL_PAYMENT_VERIFICATION=true` |
 | `seller/seller-product-wizard.spec.ts` | TC-064 | Seller creates variant product via wizard, verifies on detail page |
 | `seller/seller-simple-product-crud.spec.ts` | TC-042, TC-044, TC-045, TC-046, TC-122 | Simple product CRUD: create, edit, preview, delete, My Products list |
 | `seller/seller-variant-product-crud.spec.ts` | TC-046, TC-120, TC-121 | Variant product edit, buyer preview, delete |
 | `seller/seller-access.spec.ts` | TC-054 | Seller dashboard shows only own products |
+| `seller/seller-cancel-order.spec.ts` | TC-049 | A seller cancels a pending Cash on Delivery order with a required reason; the buyer sees it |
 | `mixed/cart-isolation.spec.ts` | TC-109 | Buyer2 sees own empty cart, not buyer1's items |
-| `mixed/order-isolation.spec.ts` | TC-112 | Buyer2 sees only own order history, not buyer1's orders |
 | `mixed/product-catalog-visibility.spec.ts` | TC-008, TC-065 | Guest browse, seller listing visible to buyer in catalog |
 | `mixed/role-switch.smoke.spec.ts` | none | Auth state switching smoke test |
+| `mixed/refund-journey.spec.ts` | TC-164 | A delivered card order is refunded: the buyer requests, the seller approves, the refund settles. Opt-in: skipped unless `DELIVERED_REFUND_VERIFICATION=true` (Stripe test mode) |
 
 | Folder | Type | Pattern |
 |--------|------|---------|

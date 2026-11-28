@@ -61,9 +61,8 @@ No TC ID — auth baseline smoke.
 | TC-028 | Free shipping when seller set free | `POST /api/orders` | `201` | *(no error — success)* |
 | TC-056 | Insufficient stock | `POST /api/orders` | `400` | `"Insufficient stock for: {product.name}"` or `"Insufficient stock for variant of: {product.name}"` |
 | TC-033 | Buyer cannot cancel processing order | `PUT /api/orders/:id/status` | `400` | `"You can only cancel pending or preparing orders"` |
-| TC-025 | Multi-seller checkout → 2 orders | `POST /api/orders` | `201` | *(no error — success)* |
 
-**Setup:** seller creates two products in `beforeAll` using `randomShipping()` from `helpers/test-data.ts`. TC-025 uses a second seller account promoted via `PUT /api/auth/profile`.
+**Setup:** seller creates two products in `beforeAll` using `randomShipping()` from `helpers/test-data.ts`. (TC-025's API leg was dropped on 2026-11-28: the multi-seller split is an integration rule and one web journey.)
 
 ---
 
@@ -162,7 +161,7 @@ tests/api/
 ├── NOTES.md                        ← this file
 ├── health.api.spec.ts              ← server smoke
 ├── auth.api.spec.ts                ← auth smoke
-├── orders.api.spec.ts              ← TC-025, TC-026, TC-027, TC-028, TC-033, TC-056
+├── orders.api.spec.ts              ← TC-026, TC-027, TC-028, TC-033, TC-056
 ├── seller-access.api.spec.ts       ← TC-048, TC-053, TC-054
 ├── reviews.api.spec.ts             ← TC-035, TC-036
 ├── coupons.api.spec.ts             ← TC-057

@@ -1,8 +1,10 @@
 // TC coverage: TC-026 (order total formula, incl. product discount + coupon),
 //              TC-257 (the seller's shipping settings and the chosen delivery option set the fee),
 //              TC-056 (insufficient stock → 400),
-//              TC-033 (buyer cancel processing order → 409 for COD),
-//              TC-025 (multi-seller checkout → 2 orders)
+//              TC-033 (buyer cancel processing order → 409 for COD)
+//
+// TC-025 (multi-seller checkout → 2 orders) is an integration rule (`orderService.cod.integration`) plus one web
+// journey (`web/buyer/checkout.spec.ts`); its API leg was dropped by the shift-left review of 2026-11-28.
 //
 // Shipping settings are required on every product, so the API can no longer create a product without them.
 // The flat $9.99 fallback (TC-027, TC-028, TC-263, TC-301, TC-302) only applies to older products and is
@@ -13,7 +15,6 @@ import type { APIRequestContext } from '@playwright/test';
 import {
   authHeaders, login, signupFreshUser,
   SELLER_EMAIL, TEST_PASSWORD,
-  BUYER_EMAIL,
 } from '../../helpers/api-client';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:5000';
@@ -25,14 +26,12 @@ const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1556821840-3a63f956
 let buyerToken: string;
 let sellerToken: string;
 let sellerId: string;
-let seller2Token: string;
 let cheapProductId: string;          // $20, seller's flat $9.99 fee
 let discountedProductId: string;     // $100 with 10% product discount, seller's flat $9.99 fee
 let freeProductId: string;           // $20, seller set free shipping
 let twoOptionProductId: string;      // $20, buyer pays: standard $5, express $15
 let couponId: string;
 let couponCode: string;
-let seller2ProductId: string;
 
 // Everything the run creates, removed in afterAll so repeated runs leave nothing behind
 const createdOrderIds: string[] = [];
@@ -149,15 +148,11 @@ test.afterAll(async () => {
       headers: authHeaders(buyerToken),
     });
     if (byBuyer.ok()) continue;
-    let cancelled = false;
-    for (const token of [sellerToken, seller2Token].filter(Boolean)) {
-      const bySeller = await ctx.put(`/api/seller/orders/${orderId}/status`, {
-        data: { status: 'cancelled', cancelReason: 'API test cleanup' },
-        headers: authHeaders(token),
-      });
-      if (bySeller.ok()) { cancelled = true; break; }
-    }
-    if (!cancelled) failures.push(`order ${orderId}`);
+    const bySeller = await ctx.put(`/api/seller/orders/${orderId}/status`, {
+      data: { status: 'cancelled', cancelReason: 'API test cleanup' },
+      headers: authHeaders(sellerToken),
+    });
+    if (!bySeller.ok()) failures.push(`order ${orderId}`);
   }
 
   for (const p of sellerProducts) {
@@ -318,63 +313,6 @@ test.describe('TC-033: Buyer cannot cancel a processing order', () => {
         expect(cancelRes.status()).toBe(409);
         const body = await cancelRes.json();
         expect(body.code).toBe('cancellation_conflict');
-      });
-    },
-  );
-});
-
-// ── TC-025 ──────────────────────────────────────────────────────────────────
-
-test.describe('TC-025: Multi-seller checkout creates separate orders', () => {
-  test.beforeAll(async () => {
-    const ctx = await pwRequest.newContext({ baseURL: API_URL });
-
-    // Promote the second account to seller (idempotent; shared with the other seller-access specs)
-    seller2Token = await login(ctx, BUYER_EMAIL, TEST_PASSWORD);
-    await ctx.put('/api/auth/profile', {
-      data: { role: 'seller' },
-      headers: authHeaders(seller2Token),
-    });
-
-    seller2ProductId = await createProduct(ctx, seller2Token, `Multi-Seller API Test Product ${Date.now()}`, '25', '20');
-    sellerProducts.push({ id: seller2ProductId, token: () => seller2Token });
-
-    await ctx.dispose();
-  });
-
-  test(
-    'cart with items from 2 sellers creates 2 separate orders',
-    { tag: ['@TC-025', '@api', '@orders', '@multi-seller'] },
-    async ({ request }) => {
-      await test.step('Place order with items from seller1 and seller2', async () => {
-        const orders = await placeOrder(request, [
-          { productId: cheapProductId,   quantity: 1 },
-          { productId: seller2ProductId, quantity: 1 },
-        ]);
-
-        await test.step('Assert two separate orders are created', async () => {
-          expect(orders).toHaveLength(2);
-          expect(orders[0]._id).not.toBe(orders[1]._id);
-        });
-
-        await test.step('Assert each order holds only its own seller\'s product and its own totals', async () => {
-          const productIdsPerOrder = orders.map(o =>
-            o.items.map((i: any) => i.product?._id ?? i.product?.toString()),
-          );
-          expect(productIdsPerOrder.every(ids => ids.length === 1)).toBe(true);
-          expect(productIdsPerOrder.flat().sort()).toEqual([cheapProductId, seller2ProductId].sort());
-
-          // Orders belong to different sellers
-          expect(new Set(orders.map(o => o.sellerId)).size).toBe(2);
-
-          // Each order is priced on its own: $20 and $25 are both under the free-shipping threshold
-          for (const o of orders) {
-            expect(o.shipping).toBe(9.99);
-            expectBreakdownConsistent(o);
-          }
-          const subtotals = orders.map(o => o.subtotal).sort((a, b) => a - b);
-          expect(subtotals).toEqual([20, 25]);
-        });
       });
     },
   );

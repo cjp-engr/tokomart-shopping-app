@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptanceDeadline, canBuyerCancel, canSellerCancel, cancelledBySellerNotice, hasShortAcceptanceWindow, paymentStatusNotice } from './orderPayment';
+import { acceptanceDeadline, canBuyerCancel, canSellerCancel, cancelledBySellerNotice, hasShortAcceptanceWindow, paymentStatusNotice, shownCancelReason } from './orderPayment';
 import type { Order } from '../types/order';
 
 function order(overrides: Partial<Order> = {}): Order {
@@ -149,5 +149,24 @@ describe('canBuyerCancel', () => {
   it('keeps cancellation for pending legacy orders', () => {
     expect(canBuyerCancel(order({ status: 'pending', paymentFlowVersion: 'legacy' }))).toBe(true);
     expect(canBuyerCancel(order({ status: 'preparing', paymentFlowVersion: 'legacy' }))).toBe(false);
+  });
+});
+
+describe('shownCancelReason', () => {
+  it('shows the reason a person typed', () => {
+    expect(shownCancelReason(order({ status: 'cancelled', cancelReason: 'Changed my mind' }))).toBe('Changed my mind');
+  });
+  it.each(['buyer_cancelled', 'seller_cancelled', 'seller_acceptance_timeout', 'authorization_expired'])(
+    'hides the internal code %s, which the server stores when nobody typed a reason',
+    (code) => {
+      expect(shownCancelReason(order({ status: 'cancelled', cancelReason: code }))).toBeUndefined();
+    },
+  );
+  it('shows nothing when there is no reason', () => {
+    expect(shownCancelReason(order({ status: 'cancelled' }))).toBeUndefined();
+    expect(shownCancelReason(order({ status: 'cancelled', cancelReason: '' }))).toBeUndefined();
+  });
+  it('still shows a typed reason that only contains a code as a word', () => {
+    expect(shownCancelReason(order({ status: 'cancelled', cancelReason: 'buyer_cancelled by phone' }))).toBe('buyer_cancelled by phone');
   });
 });
