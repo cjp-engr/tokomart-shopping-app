@@ -30,16 +30,16 @@ Role = Buyer or Both across web, mobile and API. Counts are recomputed from the 
 | ID | Layer | Tool | Target file |
 |----|-------|------|-------------|
 | TC-001 | E2E | Playwright | `login.spec.ts` |
-| TC-007 | E2E | Playwright | `login.spec.ts` |
+| TC-007 | Trim | — | `login.spec.ts` |
 | TC-008 | E2E | Playwright | `products/catalog.spec.ts` |
-| TC-013 | E2E | Playwright | `products/catalog.spec.ts` |
+| TC-013 | Trim | — | `products/catalog.spec.ts` |
 | TC-016 | E2E | Playwright | `cart.spec.ts` |
-| TC-018 | E2E | Playwright | `cart.spec.ts` |
-| TC-021 | E2E | Playwright | `cart.spec.ts` |
+| TC-018 | Unit | Vitest | `cart.spec.ts` |
+| TC-021 | Trim | — | `cart.spec.ts` |
 | TC-022 | E2E | Playwright | `checkout.spec.ts` |
 | TC-098 | E2E | Playwright | `variant-checkout.spec.ts` |
 | TC-025 | E2E | Playwright | `orders.api.spec.ts` + checkout |
-| TC-026 | API | Playwright-API | `orders.api.spec.ts` |
+| TC-026 | Unit | Vitest | `orders.api.spec.ts` |
 | TC-053 | API | Playwright-API | `seller.api.spec.ts` |
 | TC-055 | E2E | Playwright | `login.spec.ts` |
 | TC-065 | E2E | Playwright | `products/catalog.spec.ts` |
@@ -69,19 +69,19 @@ Role = Buyer or Both across web, mobile and API. Counts are recomputed from the 
 | TC-065–066 | E2E | Playwright | P0–P1 |
 | TC-016–024 | E2E | Playwright | P0–P1 |
 | TC-025 | E2E | Playwright | P0 |
-| TC-026 | API | Playwright-API | P0 |
+| TC-026 | Unit | Vitest | P0 |
 | TC-027–028 | Unit | Vitest | P1 |
 | TC-029–031 | E2E | Playwright | P1 |
 | TC-032 | Trim | — | P1 |
-| TC-033 | API | Playwright-API | P1 |
+| TC-033 | Integration | Vitest (integration) | P1 |
 | TC-034 | E2E | Playwright | P1 |
 | TC-035–036 | API | Playwright-API | P1 |
-| TC-037 | E2E | Playwright | P2 |
+| TC-037 | API | Playwright-API | P2 |
 | TC-038–040 | E2E | Playwright | P2 |
 | TC-050 | E2E | Playwright | P1 |
 | TC-053 | API | Playwright-API | P0 |
 | TC-055–057 | API/E2E | Mixed | P0–P1 |
-| TC-056 | API | Playwright-API | P1 |
+| TC-056 | Integration | Vitest (integration) | P1 |
 | TC-059–060 | E2E | Playwright | P2–P1 |
 | TC-062 | Blocked | — | P3 |
 | TC-063 | E2E | Playwright | P2 |

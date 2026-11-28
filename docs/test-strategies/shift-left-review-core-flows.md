@@ -3,14 +3,14 @@
 > **Date:** 2026-11-28. **Branch:** `feat/main-shift-left-testing-11282026` at `9905764` plus the uncommitted work of that day.
 > **Scope:** the 66 oldest scenarios (66 records read from `test-scenarios-web.md`, `-api.md` and `-mobile.md`): login and signup, browsing, the cart, vouchers, order history, reviews, the first seller flows and the first parity cases. Checkout (TC-022 to TC-032, TC-143 and later) and cancellations and refunds were reviewed earlier (`shift-left-review-checkout.md`, `shift-left-review-refunds-cancellations.md`); their rows here only point to those.
 > **How it was done:** the requirements (`tokomart-requirements`), `requirements-trace.md`, the scenario records, the strategy rows and the existing tests were read. Existing tests were found by name and topic, never run. Web, API and Patrol tests carry `@TC-` tags and were matched by tag; backend and web unit tests were matched by topic.
-> **Nothing was changed** in the strategy, the scenarios or any test. The assignments below are a recommendation for `/test-strategy`.
+> **The review itself changed nothing.** The owner then asked for it to be applied to the strategy (see section 7) and for the three questions at the end to be settled; those changes are marked below.
 
 ## The finding that shapes this review
 
 The web app has **no DOM test environment**: no `jsdom`, no `@testing-library/react`. Web component tests here render markup with `renderToStaticMarkup`, so they can test only components that take everything as props. A page that loads data, keeps state or reacts to a click (the login form, the signup form, the cart, the wizard, the product list) cannot be tested at the component layer today. That is why 53 of these 66 scenarios sit at E2E. Two ways down, in the order I recommend:
 
 1. **Extract the rule, then unit test it.** Most of the rules here are small pure functions inside a page or a context: the password rule, the cart quantity cap, the stale-product filter, the selected-lines filter, the stored theme, the payment and delivery labels, the wizard's step checks. This needs no new dependency, and it is what was done on 2026-11-28 for the buyer cancel button and dialog and the seller's refund decision buttons.
-2. **Add `jsdom` and `@testing-library/react` as dev dependencies.** This makes forms and pages testable (login error, signup rules, wizard validation, cart actions). It is a project decision, so I did not do it.
+2. **Add `jsdom` and `@testing-library/react` as dev dependencies.** This makes forms and pages testable (login error, signup rules, wizard validation, cart actions). **Done 2026-11-28 at the owner's word** (`jsdom`, `@testing-library/react`, `/dom`, `/jest-dom`, `/user-event`). A test opts in with `// @vitest-environment jsdom` on its first line and `import '../test/dom'` (see `src/test/dom.ts`); the existing static-render tests are unaffected. `src/pages/Signup.test.tsx` is the first one. **Rows below that say CMP for a page or form are now possible.**
 
 ## 1. Layer assignment
 
@@ -21,7 +21,7 @@ Codes: U unit, CMP component, I integration, API system API, E-WEB browser, Manu
 | 001 | Successful login with valid credentials | AUTH-03 | Web | E-WEB | **E-WEB** | Q6, R7 | The one login journey; smoke S1 needs it | The login endpoint is API TC-232; the form and the redirect are what only a browser shows | `login.spec.ts` (@TC-001); API TC-232 |
 | 002 | Login failure with invalid credentials | AUTH-04, AUTH-11 | Web | E-WEB | **E-WEB** | Q5, R2 | One failure message on the form. The rule (the same 401 for a wrong password and an unknown email, REQ-AUTH-04) is API; TC-233 covers the wrong password only, so add the unknown-email case there | The message text on the page needs the browser; the matrix of bad credentials does not | API TC-233 (`auth.api.spec.ts`, wrong password only) |
 | 003 | Successful signup as new buyer | AUTH-01 | Web | E-WEB | **E-WEB** | Q6, R7 | The one signup journey: form, terms box, logged-in navbar | Server rules are `authValidators` (U) and API TC-289; the wiring needs a browser | `authValidators.test.ts` (topic); API TC-289 |
-| 004 | Signup blocked by weak password (web rules) | AUTH-10 | Web | E-WEB | **U** | Q1, R3, R12 | The web password rule is a pure function. Today it lives inline in `Signup.tsx`; move it to `utils/validators.ts` and test it there | — | **none**: `validatePassword` in `utils/validators.ts` is not used by `Signup.tsx`, has no test, and states a weaker rule (see Open question 1) |
+| 004 | Signup blocked by weak password (web rules) | AUTH-10 | Web | E-WEB | **U** | Q1, R3, R12 | The web password rule is a pure function. It lived inline in `Signup.tsx` next to an unused, weaker copy; it is now the single `validatePassword` in `utils/validators.ts`, tested there (2026-11-28) | — | `validators.test.ts` (the rule) and `Signup.test.tsx` (the form), both added 2026-11-28; the rule is now one function, `validatePassword`, used by `Signup.tsx` |
 | 005 | Logout clears local session | AUTH-13 | Web | E-WEB | **E-WEB** | Q6 | Logout clears the token, the user and the cart storage, then the app shows the logged-out navbar | The storage clearing is inside `AuthContext` (needs React and a DOM); a browser is the cheapest proof today | none |
 | 006 | Cart restored after re-login | CART-01, CART-08 | Web | E-WEB | **API** | Q5, R6 | The cart is stored per user on the server (`GET /api/cart`); a fresh login reads it back. The merge of the local and the server cart is client logic: extract it for a unit test | The persistence needs the running server and auth | `cart.api.spec.ts` (topic) |
 | 007 | Checkout redirect when unauthenticated | PAR-01 | Web | E-WEB | **trim** | R7 | A subset of TC-055 (protected routes redirect an unauthenticated visitor to login) | — | TC-055 |
@@ -79,7 +79,7 @@ Codes: U unit, CMP component, I integration, API system API, E-WEB browser, Manu
 | 059 | Stale product removed from cart on load (web) | CART-06 | Web | E-WEB | **U** | Q1 | The cart drops a product whose stock is 0 when it loads. Extract the filter and test it | — | **none** |
 | 060 | Web guest browse — no login required for catalog | Alias of TC-008; see that case | Web | E-WEB | **N/A** | — | Alias of TC-008; counted once | — | — |
 | 061 | Seller wizard has 6 steps on web and mobile | SEL-06 | Web | E-WEB | **trim** | R7 | TC-042 and TC-064 walk through every wizard step, so a step count adds nothing | — | TC-042, TC-064 |
-| 062 | Wishlist not available on web | PAR-02 | Web | Manual | **Manual** | — | Nothing to automate: a feature that is absent on web. Keep it Manual or delete the scenario | — | none |
+| 062 | Wishlist not available on web | PAR-02 | Web | Manual | **Blocked** | — | Nothing to automate: a feature that is absent on web. The strategy keeps it Blocked; delete the scenario if you do not want it | — | none |
 | 063 | Web cart checkboxes decide which items go to checkout | CART-05 | Web | E-WEB | **E-WEB** | Q6, R11 | One case that checking and unchecking lines changes what checkout shows. The selection logic is U after extraction; mobile TC-602 is its own client case | The page passes the selection to checkout | none |
 | 064 | Seller creates product listing with variants (web) | SEL-03, SEL-06 | Web | E-WEB | **E-WEB** | Q6, R7 | Smoke S3: the one variant wizard journey | Variant rules are `productInput.test.ts` and API | `seller-product-wizard.spec.ts` (@TC-064) |
 | 065 | Buyer sees new seller listing in public catalog | CAT-01, CAT-07 | Web | E-WEB | **E-WEB** | Q6, R7 | The one cross-role journey: a seller lists, a buyer finds it | Two roles; the list rule itself is TC-010 / TC-015 at I | `product-catalog-visibility.spec.ts` (@TC-065) |
@@ -93,7 +93,7 @@ Codes: U unit, CMP component, I integration, API system API, E-WEB browser, Manu
 | REQ-CAT-03, REQ-CAT-04 search and category | E-WEB TC-010, TC-011, TC-066 | Three browser tests of one server query | ⚠️ | Move the matrix to an integration test of the list query; keep TC-065 as the only E2E |
 | REQ-CART-01 the cart | E-WEB TC-006, TC-016, TC-021; API `cart.api.spec.ts` | Add, change, remove, group by seller, restore after login | ⚠️ | Keep TC-016 as the one cart journey; TC-006 is API; TC-021 is part of TC-025 |
 | REQ-CPN-03, 04, 05 vouchers | E-WEB TC-019, TC-020, TC-050; API TC-057, TC-235 to TC-253 | Apply a code, a rejected code, create and apply | ⚠️ | Keep TC-050 as the one E2E (valid code and one invalid code); the discount math is a missing unit test; the reasons are API |
-| REQ-AUTH-10 password rule | E-WEB TC-004; U `authValidators.test.ts` (server rule); dead `validatePassword` | A client rule and a server rule that differ (mobile: 6 characters; web: 8 with a mix; the unused helper: 8) | ❌ | One tested client function; keep no E2E |
+| REQ-AUTH-10 password rule | E-WEB TC-004; U `authValidators.test.ts` (server rule, 6 characters); U `validators.test.ts` and CMP `Signup.test.tsx` (web rule, added 2026-11-28) | A client rule and a server rule that differ on purpose (API and mobile: 6 characters; web: 8 with a mix) | ✅ after the fix | One tested client function and one form test; no E2E |
 | REQ-REV-02, 03 reviews | E-WEB TC-034; API TC-035, TC-036; I `reviewController.integration.test.ts` | The same two rules at three layers | ⚠️ | Keep the integration tests and TC-034 as the one journey; the API duplicates can go or stay as one smoke |
 | REQ-CAN-01, 02 buyer cancel | I `orderController.cancel.integration.test.ts`; API TC-033; E-WEB TC-153 | The 409 and the legacy 400 at the route; the journey | ✅ | Keep TC-033 as the route smoke |
 | REQ-FUL-01 seller pipeline | U `sellerTransitions.test.ts`; API TC-048; E-WEB TC-047 | The allowed moves, one invalid move over HTTP, the buttons | ✅ | Keep all three |
@@ -115,12 +115,12 @@ Codes: U unit, CMP component, I integration, API system API, E-WEB browser, Manu
 **Requirements in scope with no scenario** (from `requirements-trace.md`): none in this range. TC-014, TC-029 and TC-051 have **no requirement** ("None yet"); TC-060 is an alias.
 **Rules whose lowest layer has no test:**
 - login with an **unknown email** returning the same message as a wrong password (REQ-AUTH-04; TC-233 covers only the wrong password),
-- the web password rule (the helper is unused and weaker than the rule in `Signup.tsx`),
+- ~~the web password rule~~ (closed 2026-11-28: one `validatePassword`, with unit and form tests),
 - coupon math and the minimum-amount check (`couponDiscountFor`, `validateCoupon`: no unit or integration test at all),
 - the product list query (search, category, own products hidden, stock filter),
 - the cart rules in `CartContext` (cap, stale products, selected lines) and the cart merge after login,
 - the wizard's step checks, the stored theme, the payment and delivery labels.
-**Data fixes in the scenario files:** TC-054's Test File points at a web spec that does not test the rule; TC-014, TC-029 and TC-051 need a `REQ-*` entry or a note.
+**Data fixes in the scenario files:** TC-054's Test File pointed at a web spec that does not test the rule (**fixed 2026-11-28**: it now names `seller-access.api.spec.ts`); TC-014, TC-029 and TC-051 still need a `REQ-*` entry or a note.
 
 ## 5. Pyramid summary
 
@@ -141,7 +141,8 @@ API        ████                          8
 I          ██████                        10
 CMP        ██                            3
 U          ███████                       13
-Manual     █                             2
+Manual     █                             1
+Blocked    █                             1
 trim       █████                         9
 N/A        █                             1
 ```
@@ -149,11 +150,11 @@ Today the block is an ice-cream cone: 53 of 66 scenarios (80%) are browser tests
 
 ## 6. Open questions
 
-1. **Which password rule is right?** `Signup.tsx` requires 8 characters with a lower case letter, an upper case letter and a digit. `validatePassword` in `utils/validators.ts` (unused) requires only 8 characters. The backend rule is in `authValidators` and mobile accepts 6 (TC-004's parity note). Decide the web rule, keep one copy, then test it.
-2. **Should the web get `jsdom` and Testing Library?** It would let forms and pages be component-tested (login, signup, cart, wizard). It is a new dev dependency, so it is the owner's call.
-3. **TC-054's Test File** names `seller-access.spec.ts` (web), which checks that the dashboard lists only the seller's own products, not that an edit by another seller is refused. The API spec `seller-access.api.spec.ts` holds the rule. Fix the field.
+1. ~~**Which password rule is right?**~~ **Resolved 2026-11-28** (the owner asked for the recommended option): the web rule stays as `Signup.tsx` had it, 8 characters with a lower case letter, an upper case letter and a digit (REQ-AUTH-10), now the single `validatePassword`; the unused, weaker copy is gone. The API and mobile keep 6 characters on purpose.
+2. ~~**Should the web get `jsdom` and Testing Library?**~~ **Done 2026-11-28** (see the finding above).
+3. ~~**TC-054's Test File**~~ **Fixed 2026-11-28.** The web spec `seller-access.spec.ts` still carries the `@TC-054` tag although it checks the dashboard list, not the rule; relabel its tag when you next touch it.
 4. **TC-014, TC-029, TC-051 have no requirement.** Add `REQ-*` entries (the code supports all three) or keep them as UI-only cases.
-5. **TC-052 and TC-062** stay Manual: a polling toast and an absent feature. Say if TC-062 should be deleted.
+5. **TC-052** stays Manual (a polling toast) and **TC-062** stays Blocked (an absent feature). Say if TC-062 should be deleted.
 
 ## 7. Hand-off for `/test-strategy`
 
@@ -164,6 +165,6 @@ Final layers to record (the recommended layer above), with these changes from th
 - **API:** TC-006, 020, 037, 044, 046 (and 048, 053, 054, which stay).
 - **E-WEB (keep):** TC-001, 002, 003, 005, 008, 016, 022, 025, 029, 034, 041, 042, 045, 047, 049, 050, 055, 063, 064, 065.
 - **Trim:** TC-007, 009, 013, 021, 039, 061 (and 023, 024, 032, already trimmed).
-- **Manual:** TC-052, TC-062.
+- **Manual:** TC-052. **Blocked (unchanged):** TC-062.
 
-The strategy rows for these have **not** been changed. Say the word and I will apply them the same way as for checkout, cancellations and refunds.
+**Applied to the strategy on 2026-11-28** (the owner asked for it): 34 rows changed layer in `test-strategy.md` and its four views; the rest already agreed. TC-062 stays Blocked. The scenario files are unchanged apart from TC-054's Test File. The tests of the six new trims are not removed: only TC-013 has one (in `product-detail.spec.ts`); remove it when you say so.

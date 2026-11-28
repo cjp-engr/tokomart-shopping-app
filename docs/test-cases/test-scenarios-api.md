@@ -572,13 +572,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: API  
 **Parity**: Both  
 **Automation**: Playwright-API  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/seller/seller-access.spec.ts`  
+**Automation status**: Automated  
+**Script mapping**: Verified by reading and by the runs of 2026-11-28: the describe blocks "TC-054: Seller cannot edit another sellers product" and "TC-054: Seller cannot delete another sellers product" in `e2e-testing/tests/api/seller-access.api.spec.ts`, tagged `@TC-054`; seller 1 sends `PUT` and `DELETE` for a product of seller 2 and expects 403. `e2e-testing/tests/web/seller/seller-access.spec.ts` also carries `@TC-054`, but it checks something else (the seller dashboard lists only the seller's own products), so it is not this scenario's test.  
+**Latest result**: Passed (3 runs in a row)  
+**Last run**: 2026-11-28  
+**Run evidence**: Local runs on 2026-11-28 of `seller-access.api.spec.ts` with three other API specs (`npx playwright test --project=api`, 20 tests per run) against an isolated stack (API on localhost:5055, the new database `tokomart_e2e_agent_test` on the 27018 replica set; nothing on ports 5000 or 27017)  
+**Run baseline**: Branch `feat/main-shift-left-testing-11282026` at `9905764`, with the uncommitted changes of 2026-11-28  
+**Test File**: `e2e-testing/tests/api/seller-access.api.spec.ts` (the web spec `seller-access.spec.ts` shares the tag but tests the dashboard list, not this rule)  
 **Preconditions**: Two seller accounts  
 **Steps**:
 1. Seller A attempts update/delete Seller B product

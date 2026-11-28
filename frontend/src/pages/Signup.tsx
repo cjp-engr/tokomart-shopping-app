@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { validatePassword } from '../utils/validators';
 import { UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 
 export const Signup: React.FC = () => {
@@ -27,8 +28,10 @@ export const Signup: React.FC = () => {
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address';
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) newErrors.password = 'Password must contain uppercase, lowercase, and number';
+    else {
+      const password = validatePassword(formData.password);
+      if (!password.valid) newErrors.password = password.message!;
+    }
     if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
     else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!acceptTerms) newErrors.terms = 'You must accept the terms and conditions';

@@ -3,12 +3,19 @@ export const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
+/**
+ * The web signup rule (REQ-AUTH-10): 8 characters or more, with a lower case letter, an upper case letter and a digit.
+ * It is stricter than the API, which only asks for 6 characters (the mobile app follows the API).
+ */
 export const validatePassword = (password: string): {
   valid: boolean;
   message?: string
 } => {
   if (password.length < 8) {
-    return { valid: false, message: 'Password must be at least 8 characters long' };
+    return { valid: false, message: 'Password must be at least 8 characters' };
+  }
+  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+    return { valid: false, message: 'Password must contain uppercase, lowercase, and number' };
   }
   return { valid: true };
 };

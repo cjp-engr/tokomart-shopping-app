@@ -53,12 +53,12 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 |----|-------|-------|-------|
 | TC-042 | Simple product listing (6-step wizard) | E2E | 2 |
 | TC-064 | Variant product listing | E2E | 2 |
-| TC-043 | Wizard validation | E2E | 5 |
-| TC-044 | Edit price/stock | E2E | 5 |
+| TC-043 | Wizard validation | Unit | Vitest |
+| TC-044 | Edit price/stock | API | Playwright-API |
 | TC-045 | My Products preview | E2E | 5 |
-| TC-046 | Delete product | E2E | 5 |
-| TC-058 | Description max 200 | API | 3 |
-| TC-015 | Own products hidden (seller view) | E2E | 4 |
+| TC-046 | Delete product | API | Playwright-API |
+| TC-058 | Description max 200 | Unit | Vitest |
+| TC-015 | Own products hidden (seller view) | Integration | Vitest (integration) |
 
 ### Mobile product listing strategy
 
@@ -82,7 +82,7 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 
 | ID | Final layer | Tool | Priority |
 |----|-------------|------|----------|
-| TC-015 | E2E | Playwright | P1 |
+| TC-015 | Integration | Vitest (integration) | P1 |
 | TC-041 | E2E | Playwright | P0 |
 | TC-042 | E2E | Playwright | P0 |
 | TC-064 | E2E | Playwright | P0 |
@@ -91,11 +91,11 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 | TC-048 | API | Playwright-API | P1 |
 | TC-049 | E2E | Playwright | P1 |
 | TC-050 | E2E | Playwright | P1 |
-| TC-051 | E2E | Playwright | P1 |
+| TC-051 | Unit | Vitest | P1 |
 | TC-052 | Manual | Manual | P2 |
 | TC-054 | API | Playwright-API | P1 |
-| TC-058 | API | Playwright-API | P2 |
-| TC-061 | E2E | Playwright | P2 |
+| TC-058 | Unit | Vitest | P2 |
+| TC-061 | Trim | — | P2 |
 
 ### Mobile seller assignments
 

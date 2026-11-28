@@ -52,57 +52,57 @@
 | TC-001 | E2E | Playwright | P0 |
 | TC-002 | E2E | Playwright | P1 |
 | TC-003 | E2E | Playwright | P1 |
-| TC-004 | E2E | Playwright | P1 |
+| TC-004 | Unit | Vitest | P1 |
 | TC-005 | E2E | Playwright | P1 |
-| TC-006 | E2E | Playwright | P1 |
-| TC-007 | E2E | Playwright | P0 |
+| TC-006 | API | Playwright-API | P1 |
+| TC-007 | Trim | — | P0 |
 | TC-008 | E2E | Playwright | P0 |
-| TC-009 | E2E | Playwright | P1 |
-| TC-010 | E2E | Playwright | P1 |
-| TC-011 | E2E | Playwright | P1 |
-| TC-012 | E2E | Playwright | P1 |
-| TC-013 | E2E | Playwright | P0 |
-| TC-014 | E2E | Playwright | P1 |
-| TC-015 | E2E | Playwright | P1 |
+| TC-009 | Trim | — | P1 |
+| TC-010 | Integration | Vitest (integration) | P1 |
+| TC-011 | Integration | Vitest (integration) | P1 |
+| TC-012 | Component | Vitest (component) | P1 |
+| TC-013 | Trim | — | P0 |
+| TC-014 | Component | Vitest (component) | P1 |
+| TC-015 | Integration | Vitest (integration) | P1 |
 | TC-065 | E2E | Playwright | P0 |
-| TC-066 | E2E | Playwright | P1 |
+| TC-066 | Integration | Vitest (integration) | P1 |
 | TC-016 | E2E | Playwright | P0 |
-| TC-017 | E2E | Playwright | P1 |
-| TC-018 | E2E | Playwright | P0 |
-| TC-019 | E2E | Playwright | P1 |
-| TC-020 | Multi | Playwright + API | P1 |
-| TC-021 | E2E | Playwright | P0 |
+| TC-017 | Unit | Vitest | P1 |
+| TC-018 | Unit | Vitest | P0 |
+| TC-019 | Unit | Vitest | P1 |
+| TC-020 | API | Playwright-API | P1 |
+| TC-021 | Trim | — | P0 |
 | TC-022 | E2E | Playwright | P0 |
 | TC-023 | Trim | — | P1 |
 | TC-024 | Trim | — | P1 |
 | TC-105 | Trim | — | P1 |
 | TC-106 | Trim | — | P1 |
 | TC-025 | E2E | Playwright | P0 |
-| TC-026 | API | Playwright-API | P0 |
+| TC-026 | Unit | Vitest | P0 |
 | TC-027 | Unit | Vitest | P1 |
 | TC-028 | Unit | Vitest | P1 |
 | TC-029 | E2E | Playwright | P1 |
 | TC-030 | Unit | Vitest | P1 |
-| TC-031 | E2E | Playwright | P1 |
+| TC-031 | Integration | Vitest (integration) | P1 |
 | TC-032 | Trim | — | P1 |
-| TC-033 | API | Playwright-API | P1 |
+| TC-033 | Integration | Vitest (integration) | P1 |
 | TC-034 | E2E | Playwright | P1 |
-| TC-035 | API | Playwright-API | P1 |
-| TC-036 | API | Playwright-API | P1 |
-| TC-037 | E2E | Playwright | P2 |
-| TC-038 | E2E | Playwright | P2 |
-| TC-039 | E2E | Playwright | P1 |
-| TC-040 | E2E | Playwright | P2 |
+| TC-035 | Integration | Vitest (integration) | P1 |
+| TC-036 | Integration | Vitest (integration) | P1 |
+| TC-037 | API | Playwright-API | P2 |
+| TC-038 | Unit | Vitest | P2 |
+| TC-039 | Trim | — | P1 |
+| TC-040 | Component | Vitest (component) | P2 |
 | TC-041 | E2E | Playwright | P0 |
 | TC-042 | E2E | Playwright | P0 |
 | TC-064 | E2E | Playwright | P0 |
-| TC-043 | E2E | Playwright | P1 |
-| TC-044 | E2E | Playwright | P1 |
+| TC-043 | Unit | Vitest | P1 |
+| TC-044 | API | Playwright-API | P1 |
 | TC-120 | E2E | Playwright | P1 |
 | TC-122 | E2E | Playwright | P1 |
 | TC-045 | E2E | Playwright | P2 |
 | TC-121 | E2E | Playwright | P2 |
-| TC-046 | E2E | Playwright | P2 |
+| TC-046 | API | Playwright-API | P2 |
 | TC-123 | E2E | Playwright | P1 |
 | TC-124 | E2E | Playwright | P1 |
 | TC-125 | E2E | Playwright | P1 |
@@ -116,17 +116,17 @@
 | TC-048 | API | Playwright-API | P1 |
 | TC-049 | E2E | Playwright | P1 |
 | TC-050 | E2E | Playwright | P1 |
-| TC-051 | E2E | Playwright | P1 |
+| TC-051 | Unit | Vitest | P1 |
 | TC-052 | Manual | Manual | P2 |
 | TC-053 | API | Playwright-API | P0 |
 | TC-054 | API | Playwright-API | P1 |
 | TC-055 | E2E | Playwright | P0 |
-| TC-056 | API | Playwright-API | P1 |
-| TC-057 | API | Playwright-API | P1 |
-| TC-058 | API | Playwright-API | P2 |
-| TC-059 | E2E | Playwright | P2 |
+| TC-056 | Integration | Vitest (integration) | P1 |
+| TC-057 | Integration | Vitest (integration) | P1 |
+| TC-058 | Unit | Vitest | P2 |
+| TC-059 | Unit | Vitest | P2 |
 | TC-060 | E2E | Playwright | P1 |
-| TC-061 | E2E | Playwright | P2 |
+| TC-061 | Trim | — | P2 |
 | TC-062 | Blocked | — | P3 |
 | TC-063 | E2E | Playwright | P2 |
 

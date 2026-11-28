@@ -21,6 +21,7 @@ The **2026-11-28 update** applies the two shift-left reviews (checkout: 37 scena
 - **8 Multi rows lose their API leg** and stay E2E (TC-025, TC-049, TC-083, TC-146, TC-148, TC-153, TC-164, TC-180), and **4 Multi rows keep one API smoke** on top of Integration (TC-196, TC-205, TC-209, TC-214),
 - **Assumption:** the E2E reference flow is `CHECKOUT_FLOW=manual_capture`, so TC-143 and TC-144 are the card journeys and TC-023 and TC-024 are trimmed. If `legacy` ships, keep one of TC-023 or TC-024 (Open question 7 in `tokomart-requirements`),
 - nine scenarios were added to the scenario files the same day for requirements that had none: TC-312 to TC-316 (API: cancellation gives back stock, sold count and coupon use; a Cash on Delivery order is not refundable; refund amounts follow the allocation; a unit is not refunded twice; a cancelled or expired card order never leaves a charge) and TC-501 to TC-504 (the Cash on Delivery notes on web and mobile). They have **no row in the tables below yet** (the strategy still has 339 rows); each record carries its recommended layer under `Suggested Layer`, mostly Integration, Unit or Component. Run `/test-strategy` to assign them,
+- the **core-flows review (TC-001 to TC-066, 2026-11-28)** is applied too: 34 rows changed layer (20 E2E rows to Unit, Integration, Component or API; 6 more are trimmed; 8 other rows moved too; see §6a). The older E2E block is now 47 E2E Web rows plus 59 mobile, not 73 plus 59. It also found and closed two gaps in the app: the web password rule had two copies (one unused and weaker), now one tested `validatePassword`; and the web had no way to test a form or page, so `jsdom` and Testing Library were added as dev dependencies (first test: `Signup.test.tsx`),
 - the three missing E2E journeys were built and run on 2026-11-28 on an isolated local stack: TC-049 (seller cancel) and TC-153 (buyer cancel) pass, and TC-164 (refund, opt-in, Stripe test mode) passes. Running them found and fixed a leak (the order card showed the internal reason `buyer_cancelled`) and two stale spots in the automation (the Cash on Delivery selector and a fresh-user email collision),
 - the stock decrement of Cash on Delivery orders is guarded and a failed order gives back its stock, and `createOrderRules` now checks the four required address fields (Open questions 18 and 19 in `tokomart-requirements`).
 
@@ -32,7 +33,7 @@ The **2026-11-28 update** applies the two shift-left reviews (checkout: 37 scena
 | Patrol mobile | `frontend-mobile/patrol_test/` — 19 tests (auth, seller CRUD, buyer checkout incl. manual-capture) |
 | Unit | **Exists** — backend Vitest (37 unit files, recounted 2026-11-28), web Vitest (24 files incl. utils) |
 | Integration | **Exists** — backend `vitest.integration.config.ts` (29 files, recounted 2026-11-28; replica set only, Stripe mocked) and `npm run test:contracts` |
-| Component | **Exists** — web RTL (refund components) and Flutter widget tests (36 files) |
+| Component | **Exists** — web: static-render tests for props-driven components, and DOM tests with `jsdom` + Testing Library since 2026-11-28 (a test opts in with `// @vitest-environment jsdom` and `import '../test/dom'`; first one `src/pages/Signup.test.tsx`); Flutter widget tests (36 files) |
 | Patrol keys | **Partial** — `auth`, `products`, `orders`, `seller`, `cart.checkoutButton` exist; refund screens, saved-address/payment-methods, offline have none |
 
 **Key strategy choices:**
@@ -52,17 +53,17 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 
 | Layer | Count | Focus | Tool |
 |-------|-------|-------|------|
-| Unit | 20 | Pure rules: payment notices, deadlines, button visibility, refund validators and shipping, query rules, order-creation and auth validators | Vitest (backend, web) |
-| Integration | 31 | Acceptance deadline, races, hold release, capture, cancellation and refund state, webhooks, flag off, order creation and history, stored pricing | Vitest, `vitest.integration.config.ts` (replica set, Stripe mocked) |
-| API | 100 | Orders, coupons, auth, reviews, rate limiting, routing and role checks, checkout-session contract, one smoke per flow | Playwright `request` |
-| Component / widget | 18 | Refund panels, chips, tabs, notices, offline banner, seller dialogs, cancel and refund screens | Vitest + RTL, `flutter_test` |
-| E2E Web | 73 | Auth, cart, checkout, seller wizard, catalog, pagination, saved addresses, Stripe checkout; seller and buyer cancel, refund journey (TC-049, TC-153, TC-164 opt-in, built 2026-11-28) | Playwright `page` |
+| Unit | 30 | Pure rules: payment notices, deadlines, button visibility, refund validators and shipping, query rules, order-creation, auth and password validators, cart quantity cap and stale-product filter, wizard step checks | Vitest (backend, web) |
+| Integration | 41 | Acceptance deadline, races, hold release, capture, cancellation and refund state, webhooks, flag off, order creation and history, stored pricing, the product list query, reviews, confirm receipt, coupon validation | Vitest, `vitest.integration.config.ts` (replica set, Stripe mocked) |
+| API | 98 | Routing and role checks, auth, rate limiting, ownership of products, seller pipeline smoke, voucher reasons, follow, product update and delete, one smoke per flow | Playwright `request` |
+| Component / widget | 21 | Refund panels, chips, tabs, notices, offline banner, seller dialogs, cancel and refund screens, price display, variant guard, loading and empty states | Vitest + Testing Library (jsdom), `flutter_test` |
+| E2E Web | 47 | One journey per area: login, signup, logout, guest, cart, COD checkout, multi-seller, address check, review, become a seller, seller wizard (simple and variant), seller pipeline, voucher, route guards, cart selection, catalog, seller cancel, buyer cancel, refund (opt-in) | Playwright `page` |
 | E2E Mobile | 59 | Auth gate, cart checkbox, checkout, 6-step wizard, seller CRUD, new settings screens | Patrol |
-| Multi (≥ 2 layers) | 22 | Web 6 · Mobile 3 · API 13: card authorization, capture, multi-seller, with the API leg limited to one smoke | Mixed |
-| Trim | 8 | Remove, covered elsewhere: TC-023, TC-024, TC-032, TC-103, TC-104, TC-105, TC-106, TC-112 (removed 2026-11-28; TC-032 never had a test) | — |
+| Multi (≥ 2 layers) | 21 | Web 5 · Mobile 3 · API 13: card authorization, capture, multi-seller, with the API leg limited to one smoke | Mixed |
+| Trim | 14 | Remove, covered elsewhere: TC-023, TC-024, TC-032, TC-103, TC-104, TC-105, TC-106, TC-112 (removed 2026-11-28; TC-032 never had a test); core flows: TC-007, TC-009, TC-013, TC-021, TC-039, TC-061 (only TC-013 has a test, still in `product-detail.spec.ts`) | — |
 | Manual / Blocked | 8 | Manual: TC-052, TC-178, TC-270, TC-300, TC-604, TC-605 · Blocked: TC-062, TC-603 | — |
 
-*After the 2026-11-28 review, E2E is 132 of 339 (39%) by primary layer, plus 9 Multi rows with an E2E leg, and 8 scenarios are marked Trim. Before it, E2E was 134 (40%) plus 25 Multi rows with an E2E leg. The net E2E count falls by only 2 because 8 Multi rows lost their API leg and became plain E2E; the real changes are the 8 trims, the Multi count (44 to 22) and the 24 scenarios that now sit in Integration. Only the checkout, cancellation and refund block was reviewed, so the older E2E block (TC-001–066) is still a candidate for pushing logic down; see §8.*
+*After the 2026-11-28 reviews (checkout, cancellations, refunds, core flows), E2E is 106 of 339 (31%) by primary layer (47 web, 59 mobile), plus 8 Multi rows with an E2E leg, and 14 scenarios are marked Trim. Before them, E2E was 134 (40%) plus 25 Multi rows with an E2E leg. The mobile block (59) was not part of the core-flows review and is now the largest E2E block left; review it next. Only checkout, cancellations, refunds and TC-001 to TC-066 were reviewed.*
 
 ---
 
@@ -87,71 +88,71 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 | TC-001 | Successful login | E2E | Playwright | Web | P0 | `login-form`, `login-submit-btn` | Auth smoke | |
 | TC-002 | Login failure | E2E | Playwright | Web | P1 | `login-error-alert` | UI error display | |
 | TC-003 | Successful signup | E2E | Playwright | Web | P1 | `signup-form` | Web password rules | |
-| TC-004 | Signup weak password | E2E | Playwright | Web | P1 | `signup-form` | Client validation | |
+| TC-004 | Signup weak password | Unit | Vitest | Web | P1 | `signup-form` | Client validation. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-005 | Logout clears session | E2E | Playwright | Web | P1 | `nav-signout-btn` | Session + redirect | |
-| TC-006 | Cart restored on re-login | E2E | Playwright | Web | P1 | `GET /api/cart` | Server cart sync | |
-| TC-007 | Checkout auth redirect | E2E | Playwright | Web | P0 | `/login?redirect=/checkout` | Protected route | |
+| TC-006 | Cart restored on re-login | API | Playwright-API | Web | P1 | `GET /api/cart` | Server cart sync. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-007 | Checkout auth redirect | Trim | — | Web | P0 | `/login?redirect=/checkout` | Protected route. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-055 (the guard journey; add `/checkout` as an assertion there). | yes |
 | TC-008 | Guest browse products | E2E | Playwright | Web | P0 | `products-page` | Web-only guest | |
-| TC-009 | Guest view cart | E2E | Playwright | Web | P1 | `cart-page` | Guest cart | |
-| TC-010 | Search products | E2E | Playwright | Web | P1 | `product-search-input` | Catalog filter | |
-| TC-011 | Filter by category | E2E | Playwright | Web | P1 | `category-filter-{slug}` | Category enum | |
-| TC-012 | Sale strikethrough price | E2E | Playwright | Web | P1 | `product-price` | UI display; Component deferred | |
-| TC-013 | Variant selection add to cart | E2E | Playwright | Web | P0 | `variant-value-*` | Variant happy path | |
-| TC-014 | Add blocked without variant | E2E | Playwright | Web | P1 | `add-to-cart-btn` | Validation UX | |
-| TC-015 | Own products hidden | E2E | Playwright | Web | P1 | `products-grid` | Listing visibility rule | |
+| TC-009 | Guest view cart | Trim | — | Web | P1 | `cart-page` | Guest cart. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-055 (add `/cart` for a guest as an assertion there). | yes |
+| TC-010 | Search products | Integration | Vitest (integration) | Web | P1 | `product-search-input` | Catalog filter. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-011 | Filter by category | Integration | Vitest (integration) | Web | P1 | `category-filter-{slug}` | Category enum. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-012 | Sale strikethrough price | Component | Vitest (component) | Web | P1 | `product-price` | UI display; Component deferred. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-013 | Variant selection add to cart | Trim | — | Web | P0 | `variant-value-*` | Variant happy path. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-098 (select variant M, add to cart and check out). Its test is still in `product-detail.spec.ts`; the owner removes it. | yes |
+| TC-014 | Add blocked without variant | Component | Vitest (component) | Web | P1 | `add-to-cart-btn` | Validation UX. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-015 | Own products hidden | Integration | Vitest (integration) | Web | P1 | `products-grid` | Listing visibility rule. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-065 | Buyer sees seller listing | E2E | Playwright | Web | P0 | `product-card-{id}` | Catalog visibility | |
-| TC-066 | Find listing search/filter | E2E | Playwright | Web | P1 | `product-search-input` | Discoverability | |
+| TC-066 | Find listing search/filter | Integration | Vitest (integration) | Web | P1 | `product-search-input` | Discoverability. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-016 | Cart qty update/remove | E2E | Playwright | Web | P0 | `qty-increment`, `cart-item-{id}` | Cart smoke | |
-| TC-017 | Qty capped at stock | E2E | Playwright | Web | P1 | `qty-increment` | Stock UI cap | |
-| TC-018 | Per-seller delivery | E2E | Playwright | Web | P0 | `cart-seller-group-{id}` | Multi-seller cart | |
-| TC-019 | Apply valid voucher | E2E | Playwright | Web | P1 | `select-voucher-btn-{id}` | Coupon UI | |
-| TC-020 | Invalid voucher | Multi | Playwright + Playwright-API | Web | P1 | `POST /api/coupons/validate` | API for codes; E2E for error UX | |
-| TC-021 | Multi-seller cart groups | E2E | Playwright | Web | P0 | `cart-seller-group-{id}` | Structural rule | |
+| TC-017 | Qty capped at stock | Unit | Vitest | Web | P1 | `qty-increment` | Stock UI cap. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-018 | Per-seller delivery | Unit | Vitest | Web | P0 | `cart-seller-group-{id}` | Multi-seller cart. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-019 | Apply valid voucher | Unit | Vitest | Web | P1 | `select-voucher-btn-{id}` | Coupon UI. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-020 | Invalid voucher | API | Playwright-API | Web | P1 | `POST /api/coupons/validate` | API for codes; E2E for error UX. Shift-left review 2026-11-28 (core flows): moved from Multi; see `shift-left-review-core-flows.md`. | yes |
+| TC-021 | Multi-seller cart groups | Trim | — | Web | P0 | `cart-seller-group-{id}` | Structural rule. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-025 (a cart with one product from each seller). No test exists to remove. | yes |
 | TC-022 | Checkout COD | E2E | Playwright | Web | P0 | `place-order-btn` | P0 checkout smoke. Reads the new order back (`pending`, `not_required`, seller, 24-hour deadline, cart cleared). The backend rule has its own row, TC-262 (API; integration candidate `orderService.cod.integration.test.ts`), so this E2E does not have to cover every COD field | |
 | TC-023 | Checkout saved card | Trim | — | Web | P1 | `payment-section` | Saved payment; result depends on `CHECKOUT_FLOW` (legacy charges, `manual_capture` holds, see TC-144). Runs under either flow; the authorization checks run only under `manual_capture`, where it overlaps TC-144 on purpose (TC-023 is the flow-independent smoke, TC-144 the authorization case). The legacy flow has not been run. Shift-left review 2026-11-28: **trim**; covered by TC-144. The test was removed on 2026-11-28. | yes |
 | TC-024 | Checkout new card | Trim | — | Web | P1 | `payment-section` | The new-card path places a pending order. The card is typed into Stripe's frame, which validates it, so card-number and CVV validation is not asserted, and the order keeps no last four digits. Under `manual_capture` it overlaps TC-143 on purpose. Shift-left review 2026-11-28: **trim**; covered by TC-143. The test was removed on 2026-11-28. | yes |
 | TC-098 | Checkout COD with variant product | E2E | Playwright | Web | P0 | `variant-value-*`, `variant-checkout.spec.ts` | API setup + buyer COD; order variant assert | |
 | TC-025 | Multi-seller → 2 orders | E2E | Playwright | Web | P0 | `POST /api/orders` | API split (`orders.api.spec.ts`) + E2E history (`checkout.spec.ts`, Cash on Delivery, two sellers); both legs exist. Shift-left review 2026-11-28: the API leg is dropped and the journey stays E2E; see `shift-left-review-checkout.md`. | yes |
-| TC-026 | Order total formula | API | Playwright-API | Web | P0 | `POST /api/orders`, `orderService.ts` | Pricing truth source | |
+| TC-026 | Order total formula | Unit | Vitest | Web | P0 | `POST /api/orders`, `orderService.ts` | Pricing truth source. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
 | TC-027 | Shipping is a flat $9.99 when the seller set no shipping fee | Unit | Vitest | Web | P1 | `POST /api/orders` | Older products only: the API can no longer create a product without shipping settings, so the unit tests assert the flat $9.99 (`checkoutPricing.test.ts`) | |
 | TC-028 | A large order still pays the flat shipping fee | Unit | Vitest | Web | P1 | `POST /api/orders` | Older products only: the API can no longer create a product without shipping settings, so the unit tests assert the flat $9.99; only a seller-set `free` ships free (see TC-257) | |
 | TC-029 | Missing address blocked | E2E | Playwright | Web | P1 | `shipping-section` | Empty fields are blocked by the browser's own required check; the app's messages show only for spaces. Both are tested in `checkout.spec.ts` | |
 | TC-030 | Order history tabs | Unit | Vitest | Web | P1 | `order-tab-{key}` | Status filters; tabs now include Return/Refund and All; filter logic already unit-tested (`utils/orderTabs.test.ts`), so keep one E2E. Shift-left review 2026-11-28: moved from E2E; see `shift-left-review-checkout.md`. | yes |
-| TC-031 | Confirm receipt | E2E | Playwright | Web | P1 | `confirm-received-btn` | Buyer action | |
+| TC-031 | Confirm receipt | Integration | Vitest (integration) | Web | P1 | `confirm-received-btn` | Buyer action. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-032 | Buyer cancel pending | Trim | — | Web | P1 | `PUT /api/orders/:id/status`; `orderCancellation.integration.test.ts` | E2E UX + API stock restore; pending-only, confirm dialog; card/COD detail in TC-152, TC-153. Shift-left review 2026-11-28: **trim**; covered by TC-153. No test was ever written. | yes |
-| TC-033 | Cancel processing blocked | API | Playwright-API | Web | P1 | `PUT /api/orders/:id/status` | Pending-only rule: 400 on legacy-shape orders, 409 `cancellation_conflict` on manual-capture/COD (see TC-206) | |
+| TC-033 | Cancel processing blocked | Integration | Vitest (integration) | Web | P1 | `PUT /api/orders/:id/status` | Pending-only rule: 400 on legacy-shape orders, 409 `cancellation_conflict` on manual-capture/COD (see TC-206). Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
 | TC-034 | Leave review | E2E | Playwright | Web | P1 | `review-btn-{id}` | Post-delivery UX | |
-| TC-035 | Duplicate review blocked | API | Playwright-API | Web | P1 | `POST /api/reviews` | 409 unique index | |
-| TC-036 | Review before delivery | API | Playwright-API | Web | P1 | `POST /api/reviews` | 403 eligibility | |
-| TC-037 | Follow/unfollow seller | E2E | Playwright | Web | P2 | `/users/:id` | Social UX | |
-| TC-038 | Dark mode toggle | E2E | Playwright | Web | P2 | `theme-toggle-btn` | Web-only | |
-| TC-039 | Order card persisted total | E2E | Playwright | Web | P1 | `order-card-{id}` | Display rule | |
-| TC-040 | Products loading/empty | E2E | Playwright | Web | P2 | `products-loading` | UI states | |
+| TC-035 | Duplicate review blocked | Integration | Vitest (integration) | Web | P1 | `POST /api/reviews` | 409 unique index. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
+| TC-036 | Review before delivery | Integration | Vitest (integration) | Web | P1 | `POST /api/reviews` | 403 eligibility. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
+| TC-037 | Follow/unfollow seller | API | Playwright-API | Web | P2 | `/users/:id` | Social UX. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-038 | Dark mode toggle | Unit | Vitest | Web | P2 | `theme-toggle-btn` | Web-only. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-039 | Order card persisted total | Trim | — | Web | P1 | `order-card-{id}` | Display rule. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-022 (assert the card total against the stored total there) and TC-026. No test exists to remove. | yes |
+| TC-040 | Products loading/empty | Component | Vitest (component) | Web | P2 | `products-loading` | UI states. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-041 | Become seller | E2E | Playwright | Web | P0 | `PUT /api/auth/profile` | Role promotion | |
 | TC-042 | Simple product listing | E2E | Playwright | Web | P0 | `add-product-btn`, 6-step wizard | P0 seller listing | |
 | TC-064 | Variant product listing | E2E | Playwright | Web | P0 | `variant-value-*` | Variant listing | |
-| TC-043 | Wizard validation | E2E | Playwright | Web | P1 | wizard steps | Negative UX | |
-| TC-044 | Edit product price/stock | E2E | Playwright | Web | P1 | `edit-product-{id}` | Seller CRUD | |
+| TC-043 | Wizard validation | Unit | Vitest | Web | P1 | wizard steps | Negative UX. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
+| TC-044 | Edit product price/stock | API | Playwright-API | Web | P1 | `edit-product-{id}` | Seller CRUD. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-120 | Edit variant product — price, stock, new option | E2E | Playwright | Web | P1 | `edit-product-{id}`, `wizard-variant-row-{i}-price`, `variant-value-{attr}-{value}` | Variant CRUD | |
 | TC-122 | My Products list view | E2E | Playwright | Web | P1 | `my-products-page`, `product-card-{id}` | Web-only | |
 | TC-045 | My Products preview | E2E | Playwright | Web | P2 | `/my-products` | Web-only | |
 | TC-121 | My Products preview — variant product | E2E | Playwright | Web | P2 | `my-products-page`, `variant-value-{attr}-{value}` | Web-only | |
-| TC-046 | Delete product | E2E | Playwright | Web | P2 | `delete-product-{id}` | Seller CRUD | |
+| TC-046 | Delete product | API | Playwright-API | Web | P2 | `delete-product-{id}` | Seller CRUD. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-047 | Order status pipeline | E2E | Playwright | Web | P0 | `seller-order-action-btn` | Seller smoke; `pending → preparing` is now the acceptance/capture step (TC-155) | |
 | TC-048 | Invalid status transition | API | Playwright-API | Web | P1 | `PUT /api/seller/orders/:id/status` | Transition matrix; `shipped → cancelled` removed (TC-212); unit exists (`sellerTransitions.test.ts`) | |
 | TC-049 | Seller cancel order | E2E | Playwright | Web | P1 | `seller-cancel-order-btn`; TC-209–213 | Rule is split by state (pending needs a reason and the server flag; later COD only); backend rules go to API/integration. Shift-left review 2026-11-28: the API leg is dropped and the journey stays E2E; see `shift-left-review-refunds-cancellations.md`. | yes |
 | TC-050 | Voucher create + apply E2E | E2E | Playwright | Web | P1 | `POST /api/coupons` | End-to-end coupon | |
-| TC-051 | Payment/delivery labels | E2E | Playwright | Web | P1 | `seller-order-detail-page` | Display formatting | |
+| TC-051 | Payment/delivery labels | Unit | Vitest | Web | P1 | `seller-order-detail-page` | Display formatting. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-052 | New order toast | Manual | Manual | Web | P2 | `seller-dashboard` polling | Timing-sensitive; optional Playwright | yes |
 | TC-053 | Buyer blocked seller API | API | Playwright-API | Web | P0 | `PUT /api/seller/orders/:id/status` | 403 requireSeller | |
 | TC-054 | Cross-seller edit/delete blocked | API | Playwright-API | Web | P1 | `PUT /api/products/:id`, `DELETE /api/products/:id` | 403 ownership (edit + delete) | |
 | TC-055 | Protected routes auth | E2E | Playwright | Web | P0 | `/orders`, `/profile`, `/seller` | Auth gate | |
-| TC-056 | Insufficient stock 400 | API | Playwright-API | Web | P1 | `POST /api/orders` | Stock validation | |
-| TC-057 | Coupon min order 400 | API | Playwright-API | Web | P1 | `POST /api/coupons/validate` | Coupon rules | |
-| TC-058 | Description max 200 | API | Playwright-API | Web | P2 | `POST /api/products` | Field validation | |
-| TC-059 | Stale cart cleanup | E2E | Playwright | Web | P2 | `cart-page` | Web stale removal | |
+| TC-056 | Insufficient stock 400 | Integration | Vitest (integration) | Web | P1 | `POST /api/orders` | Stock validation. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
+| TC-057 | Coupon min order 400 | Integration | Vitest (integration) | Web | P1 | `POST /api/coupons/validate` | Coupon rules. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
+| TC-058 | Description max 200 | Unit | Vitest | Web | P2 | `POST /api/products` | Field validation. Shift-left review 2026-11-28 (core flows): moved from API; see `shift-left-review-core-flows.md`. | yes |
+| TC-059 | Stale cart cleanup | Unit | Vitest | Web | P2 | `cart-page` | Web stale removal. Shift-left review 2026-11-28 (core flows): moved from E2E; see `shift-left-review-core-flows.md`. | yes |
 | TC-060 | Guest catalog access | E2E | Playwright | Web | P1 | public routes | Overlaps TC-008 | |
-| TC-061 | Web 6-step wizard parity | E2E | Playwright | Web | P2 | `add-product-btn` | Parity doc only | |
+| TC-061 | Web 6-step wizard parity | Trim | — | Web | P2 | `add-product-btn` | Parity doc only. Shift-left review 2026-11-28 (core flows): **trim**; covered by TC-042 and TC-064, which walk through every wizard step. No test exists to remove. | yes |
 | TC-062 | Wishlist N/A on web | Blocked | — | Web | P3 | N/A | Mobile-only feature | |
 | TC-063 | All cart items checkout | E2E | Playwright | Web | P2 | `checkout-btn` | Web vs mobile parity | |
 | TC-107 | Cart GET returns own items | API | Playwright-API | Web | P1 | `GET /api/cart` | Server-side cart smoke | |
@@ -473,24 +474,24 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 ### Phase 2 — P0 seller + catalog
 6. **E2E Web:** `seller/onboarding.spec.ts` — TC-041
 7. **E2E Web:** `seller/product-wizard.spec.ts` — S3 / TC-042, TC-064
-8. **E2E Web:** `products/catalog.spec.ts` — TC-065, TC-008, TC-013
+8. **E2E Web:** `products/catalog.spec.ts` — TC-065, TC-008, TC-013 *(2026-11-28 core-flows review: TC-013 is trimmed; TC-065 stays the one catalog journey, TC-008 the guest one.)*
 9. **E2E Web:** `seller/orders.spec.ts` — TC-047, S4 (E2E leg)
 
 ### Phase 3 — P1 API batch
 10. **API:** `orders.api.spec.ts` — TC-033, TC-048, TC-056, TC-032 (API leg) *(2026-11-28: TC-032 is trimmed, covered by TC-153; skip its API leg.)*
-11. **API:** `reviews.api.spec.ts` — TC-035, TC-036
-12. **API:** `products.api.spec.ts` — TC-054, TC-058
+11. **API:** `reviews.api.spec.ts` — TC-035, TC-036 *(2026-11-28: TC-035 and TC-036 are integration tests now (`reviewController.integration.test.ts`); keep one API case as the route smoke.)*
+12. **API:** `products.api.spec.ts` — TC-054, TC-058 *(2026-11-28: TC-058 is a unit test on the product validator.)*
 13. **API:** `coupons.api.spec.ts` — TC-020 (API leg) = TC-238; the rest of the coupon rules are TC-235 to TC-253 (Phase 9, item 48a)
 
 ### Phase 4 — P1 E2E remainder
 14. **E2E Web:** `checkout.spec.ts` — TC-023, TC-024, TC-029 and the E2E leg of TC-025 (all in the file, written and run 2026-11-04); TC-025's API leg is in `orders.api.spec.ts`, and a two-seller card checkout is covered by TC-148 *(2026-11-28: under `manual_capture` TC-023 and TC-024 are trimmed, they repeat TC-144 and TC-143; keep one only if `legacy` ships. TC-025's API leg is dropped.)*
-15. **E2E Web:** `cart.spec.ts` — TC-019, TC-020 (E2E leg), TC-017
+15. **E2E Web:** `cart.spec.ts` — TC-019, TC-020 (E2E leg), TC-017 *(2026-11-28: TC-017 is a unit test; TC-019 is a unit test and TC-020 an API case, with one valid and one invalid code asserted inside TC-050.)*
 16. **E2E Web:** `orders/buyer.spec.ts` — TC-030, TC-031, TC-032, TC-034, TC-039 *(2026-11-28: TC-030 moves to a unit test and TC-032 is trimmed; TC-153, the buyer-cancel journey, was built on 2026-11-28 in `order-cancellation.spec.ts`.)*
 17. **E2E Web:** `seller/vouchers.spec.ts` — TC-050
-18. **E2E Web:** `auth.spec.ts` — TC-002, TC-003, TC-004, TC-005, TC-006
+18. **E2E Web:** `auth.spec.ts` — TC-002, TC-003, TC-004, TC-005, TC-006 *(2026-11-28: TC-004 is a unit test plus a form test (done); TC-006 is an API case; TC-002, TC-003 and TC-005 stay E2E.)*
 
 ### Phase 5 — P2/P3 + manual
-19. **E2E Web:** remaining P2 — TC-037, TC-038, TC-040, TC-043–046, TC-051, TC-059, TC-061, TC-063, TC-066
+19. **E2E Web:** remaining P2 — TC-037, TC-038, TC-040, TC-043–046, TC-051, TC-059, TC-061, TC-063, TC-066 *(2026-11-28 core-flows review: TC-037 and TC-046 are API, TC-038, TC-043, TC-051 and TC-059 are unit tests, TC-040 a component test, TC-066 an integration test and TC-061 is trimmed; only TC-045 and TC-063 stay E2E here.)*
 20. **Manual:** TC-052 (toast polling)
 21. **Blocked:** TC-062 (wishlist — mobile only)
 
@@ -531,6 +532,7 @@ These need no Playwright or Patrol and can be done by an agent under AGENTS.md. 
 44. **Component (web, Vitest + RTL):** new tests for TC-145 (`card-authorization-panel` copy) and TC-171 (`OfflineBanner`, `useOnlineStatus`). Optional: extract the saved-address edit card from `Profile.tsx` so TC-139 can be tested without a browser.
 45. **Widget (mobile, `flutter_test`):** new tests for TC-188 (`ConnectivityCubit`, `offline_banner.dart`) and optionally TC-175 (`payment_methods_screen.dart`) and the saved-address sheet (TC-173).
 45a. **From the 2026-11-28 reviews.** Move to Integration (backend, replica set): TC-151, TC-152, TC-157, TC-159, TC-162, TC-165, TC-166, TC-177, TC-189, TC-195, TC-197, TC-206, TC-208, TC-210, TC-217, TC-218, TC-220 to TC-223, TC-226, TC-231, TC-256, TC-262. Move to Unit: TC-030, TC-194, TC-207, TC-212, TC-213, TC-224, TC-255, TC-400. Move to Component: TC-084, TC-154, TC-158, TC-169, TC-183, TC-185, TC-186. Already written (2026-11-28): `orderService.createOrders.integration.test.ts`, `orderService.history.integration.test.ts`, `reviewController.integration.test.ts`, `orderValidators.test.ts`, `authValidators.test.ts`. Still missing: unit tests for `createRefundRules` and `decideRefundRules`, the buyer 500-character reason limit, an integration test for the buyer cancel route (`409 cancellation_conflict` and the legacy "only pending" message), a web buyer cancel button test, and a web seller Return/Refund tab test. Run only the file being changed.
+45b. **From the core-flows review (2026-11-28).** Done: `validators.test.ts` and `Signup.test.tsx` (web password rule, TC-004), the DOM test setup (`src/test/dom.ts`). To do (app side, no Playwright or Patrol): extract and unit test the cart quantity cap (TC-017), the stale-product filter (TC-059), the selected-lines filter (TC-063), the stored theme (TC-038), the payment and delivery labels (TC-051), the wizard step checks (TC-043) and the coupon discount (`couponDiscountFor`, TC-019); integration tests for the product list query (TC-010, TC-011, TC-015, TC-066), `validateCoupon` (TC-057) and confirm receipt (TC-031); component tests for the price block, the variant guard and the loading and empty states (TC-012, TC-014, TC-040). Run only the file being changed.
 
 ### Phase 9 — 2026-10 features: API (Playwright-API) — owner
 
@@ -607,6 +609,23 @@ Rows below record where the reviews changed a decision above. The layer in the a
 | TC-030, TC-194, TC-207, TC-212, TC-213, TC-224, TC-255, TC-400 | API or E2E | **Unit** | Pure validators and rules |
 | TC-084, TC-154, TC-158, TC-169, TC-183, TC-185, TC-186 | E2E, API, Unit or Multi | **Component** | What one page or widget shows |
 
+#### Core flows (TC-001 to TC-066), 2026-11-28
+
+Details in `shift-left-review-core-flows.md`. 34 rows changed; the other 32 already agreed.
+
+| ID | Before | Now | Reason |
+|----|--------|-----|--------|
+| TC-004, TC-017, TC-018, TC-038, TC-043, TC-051, TC-059 | E2E Web | **Unit** | A pure rule inside a page or context; extract it and test it (TC-004 is done, with a form test) |
+| TC-019 | E2E Web | **Unit** | The discount amount is arithmetic (`couponDiscountFor`), untested today; TC-050 stays the one voucher journey |
+| TC-026, TC-058 | API | **Unit** | The order total is `computeSellerTotals`; the description limit is a validator rule (TC-026 keeps one API case for the stored total) |
+| TC-010, TC-011, TC-015, TC-066, TC-031 | E2E Web | **Integration** | The product list query (search, category, own products hidden) and confirm receipt depend on the database; TC-065 and TC-047 stay the E2E journeys |
+| TC-033, TC-035, TC-036, TC-056, TC-057 | API | **Integration** | A route test, a unique index, a stored-state check, a guarded decrement and a coupon read; each keeps at most one API case as the route smoke |
+| TC-012, TC-014, TC-040 | E2E Web | **Component** | A props-driven price block, the variant guard and the loading and empty states |
+| TC-006, TC-037, TC-044, TC-046 | E2E Web | **API** | The rule is the route (cart per user, follow, product update, product delete) |
+| TC-020 | Multi | **API** | The reasons are the API matrix TC-238 to TC-241; one invalid code is asserted inside TC-050 |
+| TC-007, TC-009, TC-013, TC-021, TC-039, TC-061 | E2E Web | **Trim** | Covered by TC-055, TC-055, TC-098, TC-025, TC-022 and TC-026, TC-042 and TC-064 |
+| TC-062 | Blocked | **Blocked** (unchanged) | There is no web wishlist; nothing to automate. Delete the scenario if you do not want it |
+
 ## 7. Gaps
 
 Rules or behaviours with no assigned or verified test. "Harness exists" means the layer is available in the repo; the test itself still has to be written.
@@ -631,9 +650,15 @@ Rules or behaviours with no assigned or verified test. "Harness exists" means th
 | Buyer cancel route answers `409 cancellation_conflict`, and the legacy flow says "only pending" | §12 Cancellations | Integration | **Closed 2026-11-28**: `controllers/__tests__/orderController.cancel.integration.test.ts` |
 | Web buyer cancel button and the seller Return/Refund tab | §12 / §13 | Component | No component test found |
 | Requirements with no scenario: REQ-CAN-04, REQ-REF-02, REQ-REF-04, REQ-ORD-13, REQ-ORD-14 | `requirements-trace.md` | Scenario first | **Closed 2026-11-28**: scenarios TC-312 to TC-316 and TC-501 to TC-504 were written. They still need a strategy row |
+| Product list query: search, category filter, own products hidden, stock filter (`productController.getProducts`) | §2 Catalog | Integration | **No test at any layer** except TC-010, TC-011 and TC-065 in the browser (core-flows review) |
+| Coupon validation and discount (`validateCoupon`, `couponDiscountFor`) | §6 | Unit + Integration | No unit or integration test; only API TC-057 (updates the older gap above) |
+| Login with an unknown email gives the same message as a wrong password (REQ-AUTH-04) | §1 Auth | API | TC-233 covers the wrong password only; add the unknown-email case |
+| Cart rules in `CartContext` (quantity cap, stale products, selected lines, merge after login) | §4 Cart | Unit | Inside a React context; extract them first (TC-017, TC-059, TC-063, TC-006) |
+| Wizard step checks, stored theme, payment and delivery labels (web) | §2 / §8 | Unit | Inside pages; extract them first (TC-043, TC-038, TC-051) |
+| TC-014, TC-029, TC-051 have no `REQ-*` entry | `requirements-trace.md` | — | Add requirements or mark them UI-only |
 | A COD order takes stock before `Order.create`, outside a transaction | `tokomart-requirements` Open question 18 | Integration | The refused-order case and the race for the last unit are fixed and tested (2026-11-28: compensation and a guarded decrement in `createOrders`). A crash between the steps can still leave stock taken; making the order atomic needs a replica set (owner decision) |
 
-Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker. Closed 2026-11-28: no integration test for order creation, order history or reviews, and no unit test for the auth and order validators (see item 45a for the files).
+Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker. Closed 2026-11-28: no integration test for order creation, order history or reviews, and no unit test for the auth and order validators (see item 45a for the files). Closed 2026-11-28 (core flows): the web password rule had two copies and no test (now one `validatePassword` with unit and form tests), and there was no way to test a web form or page (`jsdom` and Testing Library added).
 
 ---
 
@@ -641,7 +666,7 @@ Closed since the last version: pure 8% tax and pricing math (candidate `checkout
 
 | Issue | Status | Action |
 |-------|--------|--------|
-| E2E is 132 of 339 scenarios (39%) by primary layer, plus 9 Multi rows with an E2E leg (134 and 25 before the 2026-11-28 review), and 8 more are marked Trim | **Risk, smaller** | The checkout, cancellation and refund block is reviewed. The older block (TC-001–066 validation and display rules) is not; no new logic-only scenario should be E2E |
+| E2E is 106 of 339 scenarios (31%) by primary layer (47 web, 59 mobile), plus 8 Multi rows with an E2E leg (134 and 25 before the 2026-11-28 reviews), and 14 more are marked Trim | **Risk, much smaller on web** | Web is reviewed end to end. The mobile E2E block (59) was not reviewed and is next; no new logic-only scenario should be E2E |
 | Money state machines (capture, release, refund, webhooks) tested only through the UI | Avoid | Integration first; one E2E per smoke flow (S5–S7) |
 | Flag-dependent scenarios run without declaring the flag | **Risk** | Every S5–S7 and TC-143–231 run states `CHECKOUT_FLOW`, `SELLER_SEES_MANUAL_CAPTURE`, `DELIVERED_REFUNDS_ENABLED` (see the scenarios master) |
 | Specs whose ids are not in the scenario docs, or that have none | Existing | Map or rename them (§10) so coverage can be traced to scenarios |
