@@ -121,7 +121,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/validators.test.ts`; form `frontend/src/pages/Signup.test.tsx`  
 **Preconditions**: None  
 **Steps**:
 1. Navigate to `/signup`
@@ -307,13 +307,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
+**Automation status**: Moved down by the shift-left review of 2026-11-28 (the browser test was removed; see Test File)  
 **Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Latest result**: Not applicable to the removed browser test; the lower-layer tests passed on 2026-11-28  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/product-browse.spec.ts`  
+**Test File**: None at the browser layer (the Playwright test `e2e-testing/tests/web/buyer/product-browse.spec.ts` was removed 2026-11-28 as a duplicate); New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/productController.list.integration.test.ts`  
 **Preconditions**: Seeded products exist  
 **Steps**:
 1. Navigate to `/products`
@@ -338,13 +338,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
+**Automation status**: Moved down by the shift-left review of 2026-11-28 (the browser test was removed; see Test File)  
 **Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Latest result**: Not applicable to the removed browser test; the lower-layer tests passed on 2026-11-28  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/product-browse.spec.ts`  
+**Test File**: None at the browser layer (the Playwright test `e2e-testing/tests/web/buyer/product-browse.spec.ts` was removed 2026-11-28 as a duplicate); New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/productController.list.integration.test.ts`  
 **Preconditions**: Products in multiple categories seeded  
 **Steps**:
 1. Open filters panel
@@ -368,13 +368,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
+**Automation status**: Moved down by the shift-left review of 2026-11-28 (the browser test was removed; see Test File)  
 **Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Latest result**: Not applicable to the removed browser test; the lower-layer tests passed on 2026-11-28  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/product-detail.spec.ts`  
+**Test File**: None at the browser layer (the Playwright test `e2e-testing/tests/web/buyer/product-detail.spec.ts` was removed 2026-11-28 as a duplicate); New 2026-11-28 (not tagged with a TC id; matched by topic): component `frontend/src/pages/ProductDetails.test.tsx`  
 **Preconditions**: Product or variant with discount > 0  
 **Steps**:
 1. Open discounted product detail
@@ -398,13 +398,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Automation status**: Trimmed by the shift-left review of 2026-11-28 (the test was removed)  
+**Script mapping**: The test was removed on 2026-11-28 because TC-098 selects a variant and checks out, and `frontend/src/pages/ProductDetails.test.tsx` checks the variant price and the Add to Cart guard.  
+**Latest result**: Not applicable: the test no longer exists  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/product-detail.spec.ts`  
+**Test File**: None (removed 2026-11-28; was `e2e-testing/tests/web/buyer/product-detail.spec.ts`)  
 **Preconditions**: Product with variants (e.g. size/color)  
 **Steps**:
 1. Open product detail
@@ -430,13 +430,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: Web  
 **Parity**: Both  
 **Automation**: Playwright  
-**Automation status**: Needs review  
+**Automation status**: Moved down by the shift-left review of 2026-11-28 (the browser test was removed; see Test File)  
 **Script mapping**: Unverified  
-**Latest result**: Not recorded  
+**Latest result**: Not applicable to the removed browser test; the lower-layer tests passed on 2026-11-28  
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/buyer/product-detail.spec.ts`  
+**Test File**: None at the browser layer (the Playwright test `e2e-testing/tests/web/buyer/product-detail.spec.ts` was removed 2026-11-28 as a duplicate); New 2026-11-28 (not tagged with a TC id; matched by topic): component `frontend/src/pages/ProductDetails.test.tsx`  
 **Preconditions**: Product with required variants  
 **Steps**:
 1. Open variant product without selecting options
@@ -466,7 +466,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/productController.list.integration.test.ts`; page `frontend/src/pages/Products.test.tsx`  
 **Preconditions**: Logged in as seller who owns listed products  
 **Steps**:
 1. Navigate to `/products`
@@ -533,7 +533,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/productController.list.integration.test.ts`  
 **Preconditions**: Seller published product with known unique name and category (e.g. `Electronics`)  
 **Steps**:
 1. As Buyer (not seller): open `/products`
@@ -604,7 +604,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/cartRules.test.ts`  
 **Preconditions**: Product with known stock (e.g. stock = 3)  
 **Steps**:
 1. Add to cart; increment qty beyond stock
@@ -665,7 +665,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `backend/src/services/__tests__/couponRules.test.ts`; integration `backend/src/controllers/__tests__/couponController.validate.integration.test.ts`  
 **Preconditions**: Active seller coupon; cart meets min order  
 **Steps**:
 1. Open cart for seller group
@@ -695,7 +695,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/couponController.validate.integration.test.ts` (the refusal reasons)  
 **Preconditions**: Cart with items  
 **Steps**:
 1. Apply expired or wrong-seller coupon code
@@ -1099,7 +1099,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/services/__tests__/orderDelivery.integration.test.ts`  
 **Preconditions**: Order in `shipped` status  
 **Steps**:
 1. Open order detail
@@ -1259,7 +1259,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): component `frontend/src/context/ThemeContext.test.tsx`  
 **Preconditions**: None  
 **Steps**:
 1. Click theme toggle in navbar
@@ -1319,7 +1319,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): component `frontend/src/pages/Products.test.tsx` and `frontend/src/pages/ProductDetails.test.tsx`  
 **Preconditions**: None  
 **Steps**:
 1. Load `/products`; observe loading spinner
@@ -1468,7 +1468,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/wizardRules.test.ts` (the client rule; the server rule is API TC-304 to TC-311)  
 **Preconditions**: Seller on add product wizard  
 **Steps**:
 1. Attempt next/submit without name, images, or shipping options
@@ -2079,7 +2079,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/orderUtils.test.ts`  
 **Preconditions**: Order with COD and express delivery  
 **Steps**:
 1. Open `/seller/orders/:id`
@@ -2175,7 +2175,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/cartRules.test.ts`  
 **Preconditions**: Cart contains deleted product  
 **Steps**:
 1. Load `/cart` after product deleted
@@ -2299,7 +2299,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: Unmapped  
+**Test File**: New 2026-11-28 (not tagged with a TC id; matched by topic): unit `frontend/src/utils/cartRules.test.ts` (the selection rule only)  
 **Preconditions**: Cart with multiple items; the checkboxes start ticked  
 **Steps**:
 1. Untick one cart line

@@ -97,8 +97,6 @@ test('...', async ({ page, productListPage, productDetailPage, cartPage, checkou
 | File | TC IDs | Description |
 |------|--------|-------------|
 | `buyer/login.spec.ts` | TC-001 | Buyer login, authenticated navbar |
-| `buyer/product-browse.spec.ts` | TC-010, TC-011 | Search by keyword, filter by category |
-| `buyer/product-detail.spec.ts` | TC-012, TC-013, TC-014 | Sale price display, variant selection, add-to-cart guard |
 | `buyer/checkout.spec.ts` | TC-022, TC-025, TC-029, TC-500 | Checkout COD; multi-seller orders; missing address fields; Stripe card field |
 | `buyer/variant-checkout.spec.ts` | TC-098 | Checkout with a variant product (Cash on Delivery) |
 | `buyer/order-cancellation.spec.ts` | TC-153 | A buyer cancels a pending Cash on Delivery order from the order list; the stock comes back once |

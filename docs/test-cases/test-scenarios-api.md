@@ -638,7 +638,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/api/coupons.api.spec.ts`  
+**Test File**: `e2e-testing/tests/api/coupons.api.spec.ts`; New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/couponController.validate.integration.test.ts`  
 **Preconditions**: Coupon with `minOrderAmount` > cart subtotal  
 **Steps**:
 1. Validate coupon via API

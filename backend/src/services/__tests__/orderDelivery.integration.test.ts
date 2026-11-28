@@ -144,6 +144,21 @@ describe('order delivery timestamps (replica set)', () => {
       expect(stored!.deliveredAt).toEqual(delivered.deliveredAt);
     });
 
+    it.each(['pending', 'preparing', 'processing', 'cancelled'])('confirmOrderReceived refuses an order that is %s, with the shipped message (TC-031)', async (status) => {
+      const order = await makeOrder({ status, shippedAt: undefined });
+      await expect(confirmOrderReceived(order.id, buyer.toString())).rejects.toMatchObject({
+        statusCode: 400, message: 'Order must be shipped before confirming receipt',
+      });
+      const stored = await Order.findById(order._id).lean();
+      expect(stored!.status).toBe(status);
+      expect(stored!.deliveredAt).toBeUndefined();
+    });
+
+    it('confirmOrderReceived answers 404 for an unknown order (TC-031)', async () => {
+      await expect(confirmOrderReceived(new mongoose.Types.ObjectId().toString(), buyer.toString()))
+        .rejects.toMatchObject({ statusCode: 404, message: 'Order not found' });
+    });
+
     it('confirmOrderReceived still refuses a foreign buyer', async () => {
       const order = await makeOrder();
       await expect(confirmOrderReceived(order.id, stranger.toString())).rejects.toMatchObject({ statusCode: 403 });

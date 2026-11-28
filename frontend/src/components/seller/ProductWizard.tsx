@@ -3,6 +3,7 @@ import type { Product } from '../../types/product';
 import sellerService from '../../services/sellerService';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
+import { validateWizardStep } from '../../utils/wizardRules';
 import {
   X, Upload, Plus, AlertCircle, ImageOff,
   ChevronLeft, ChevronRight, Check, Tag, Truck, Package, Layers,
@@ -228,42 +229,8 @@ export const ProductWizard: React.FC<ProductWizardProps> = ({ product, onClose, 
     });
   };
 
-  const validate = (): string | null => {
-    if (step === 1) {
-      if (!data.name.trim()) return 'Product name is required.';
-      if (!data.category) return 'Category is required.';
-    }
-    if (step === 2) {
-      if (data.hasVariants) {
-        const valid = data.variantAttributes.filter(a => a.name.trim() && a.values.length > 0);
-        if (valid.length === 0) return 'Add at least one attribute with values, or disable variants.';
-      } else {
-        if (!data.price || Number(data.price) <= 0) return 'Price must be greater than 0.';
-        if (data.stock === '' || Number(data.stock) < 0) return 'Stock quantity is required.';
-      }
-    }
-    if (step === 3) {
-      if (!data.description.trim()) return 'Description is required.';
-    }
-    if (step === 4) {
-      const ok = data.imageMode === 'url'
-        ? !!data.imageUrl.trim()
-        : imageFiles.length > 0 || existingUrls.length > 0;
-      if (!ok) return 'Please add at least one product image.';
-    }
-    if (step === 5) {
-      if (data.shippingOptions.length === 0) return 'Please select at least one delivery option.';
-      if (!data.shippingFee) return 'Please select a shipping fee option.';
-      if (data.shippingFee === 'buyer_pays') {
-        for (const opt of data.shippingOptions) {
-          const val = (data.shippingFeeAmounts[opt] ?? '').trim();
-          if (!val) return 'Enter a shipping fee amount for each selected delivery option.';
-          if (isNaN(Number(val))) return 'Enter a valid fee amount for each delivery option.';
-        }
-      }
-    }
-    return null;
-  };
+  const validate = (): string | null =>
+    validateWizardStep(step, data, { fileCount: imageFiles.length, existingUrlCount: existingUrls.length });
 
   const next = () => {
     const err = validate();

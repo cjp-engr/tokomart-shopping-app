@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import type { Cart, CartItem, SelectedVariant } from '../types/cart';
 import type { Product } from '../types/product';
-import { STORAGE_KEYS, TAX_RATE } from '../utils/constants';
+import { STORAGE_KEYS } from '../utils/constants';
+import { addLine, buildCartKey, calculateCartTotals, cartItemKey, setLineQuantity, setLineSelected, staleCartKeys, stockOf } from '../utils/cartRules';
 import storageService from '../services/storageService';
 import { API_ENDPOINTS, getHeaders } from '../config/api';
 
@@ -32,27 +33,9 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- pure helper used alongside the cart provider
-export const buildCartKey = (productId: string, variantKey?: string): string =>
-  variantKey ? `${productId}|${variantKey}` : productId;
-
-const cartItemKey = (item: CartItem): string =>
-  buildCartKey(item.product.id, item.selectedVariant?.key);
-
-const getEffectivePrice = (price: number, discount?: number | null): number =>
-  discount && discount > 0 ? price * (1 - discount / 100) : price;
-
-const calculateCartTotals = (items: CartItem[]): Cart => {
-  const subtotal = items.reduce((sum, item) => {
-    const sv = item.selectedVariant;
-    const price = sv ? getEffectivePrice(sv.price, sv.discount) : item.product.price;
-    return sum + price * item.quantity;
-  }, 0);
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const tax = subtotal * TAX_RATE;
-
-  return { items, totalItems, subtotal, tax, shipping: 0, total: subtotal + tax };
-};
+// The cart rules live in utils/cartRules.ts (pure, tested); the pages still import the key builder from here.
+// eslint-disable-next-line react-refresh/only-export-components -- re-export of a pure helper used alongside the cart provider
+export { buildCartKey };
 
 const getAuthToken = () => localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
@@ -237,25 +220,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, []);
 
   const addToCart = (product: Product, quantity: number = 1, selectedVariant?: SelectedVariant) => {
-    setCart(prevCart => {
-      const key = buildCartKey(product.id, selectedVariant?.key);
-      const effectiveStock = selectedVariant?.stock ?? product.stock;
-      const existingIndex = prevCart.items.findIndex(i => cartItemKey(i) === key);
-      let newItems: CartItem[];
-      if (existingIndex >= 0) {
-        newItems = prevCart.items.map((item, idx) =>
-          idx === existingIndex
-            ? { ...item, quantity: Math.min(item.quantity + quantity, effectiveStock) }
-            : item
-        );
-      } else {
-        newItems = [
-          ...prevCart.items,
-          { product, quantity: Math.min(quantity, effectiveStock), selectedVariant, isSelected: true },
-        ];
-      }
-      return calculateCartTotals(newItems);
-    });
+    setCart(prevCart => calculateCartTotals(addLine(prevCart.items, product, quantity, selectedVariant)));
   };
 
   const removeFromCart = (productId: string, variantKey?: string) => {
@@ -265,25 +230,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const updateQuantity = (productId: string, quantity: number, variantKey?: string) => {
     if (quantity <= 0) { removeFromCart(productId, variantKey); return; }
-    const key = buildCartKey(productId, variantKey);
-    setCart(prev =>
-      calculateCartTotals(
-        prev.items.map(i => {
-          if (cartItemKey(i) !== key) return i;
-          const effectiveStock = i.selectedVariant?.stock ?? i.product.stock;
-          return { ...i, quantity: Math.min(quantity, effectiveStock) };
-        })
-      )
-    );
+    setCart(prev => calculateCartTotals(setLineQuantity(prev.items, productId, quantity, variantKey)));
   };
 
   const setItemSelected = (productId: string, isSelected: boolean, variantKey?: string) => {
-    const key = buildCartKey(productId, variantKey);
-    setCart(prev =>
-      calculateCartTotals(
-        prev.items.map(i => cartItemKey(i) === key ? { ...i, isSelected } : i)
-      )
-    );
+    setCart(prev => calculateCartTotals(setLineSelected(prev.items, productId, isSelected, variantKey)));
   };
 
   const clearCart = () => setCart(calculateCartTotals([]));
@@ -315,11 +266,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             if (!r.ok) return { id: item.product.id, remove: true };
             const data = await r.json();
             const p = data.product ?? data;
-            const variantId = item.selectedVariant?._id;
-            const stock = variantId
-              ? (p.variants?.find((v: { _id?: string; stock?: number }) =>
-                  v._id?.toString() === variantId.toString())?.stock ?? 0)
-              : (p.stock ?? 0);
+            const stock = stockOf(p, item.selectedVariant?._id);
             return { id: item.product.id, variantKey: item.selectedVariant?.key, remove: stock <= 0 };
           })
           .catch(() => ({ id: item.product.id, variantKey: undefined, remove: true }))
@@ -332,7 +279,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     if (staleItems.length === 0) return 0;
 
-    const staleKeys = new Set(staleItems.map(s => buildCartKey(s.id, s.variantKey)));
+    const staleKeys = staleCartKeys(staleItems);
     setCart(prev => calculateCartTotals(
       prev.items.filter(i => !staleKeys.has(cartItemKey(i)))
     ));
