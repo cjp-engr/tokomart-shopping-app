@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { refundButton, refundField, refundSecondary } from '../orders/RefundPresentation';
+import { refundSecondary } from '../orders/RefundPresentation';
+import { RefundDecision } from './RefundDecision';
 import { RefundOrderCard } from '../orders/RefundOrderCard';
 import { useLoadMoreSentinel } from '../../hooks/useLoadMoreSentinel';
 import { refundService } from '../../services/refundService';
@@ -136,34 +137,15 @@ export function RefundRequestReview({ onUpdated }: { onUpdated?: () => void }) {
       <div className="space-y-4">
         {state.items.map(request => (
           <RefundOrderCard key={request.id} request={request} viewer="seller">
-            {request.state === 'requested' && request.canDecide && (
-              <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
-                <p className="mb-4 text-xs leading-relaxed text-gray-600 dark:text-gray-300">Approval starts the refund immediately. The buyer keeps the item.</p>
-                {rejecting === request.id && (
-                  <label className="mb-4 block text-sm font-semibold">
-                    Reason for rejecting
-                    <textarea
-                      aria-label={`Rejection reason for ${request.id}`} disabled={!!busy || loading} maxLength={1000}
-                      value={reasons[request.id] ?? ''} onChange={e => setReasons(v => ({ ...v, [request.id]: e.target.value }))}
-                      className={refundField} autoFocus
-                    />
-                  </label>
-                )}
-                <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button" className={refundSecondary}
-                    disabled={!!busy || loading || (rejecting === request.id && !reasons[request.id]?.trim())}
-                    onClick={() => rejecting === request.id ? void decide(request.id, 'reject') : setRejecting(request.id)}
-                  >{rejecting === request.id ? 'Confirm rejection' : 'Reject request'}</button>
-                  <button type="button" className={refundButton} disabled={!!busy || loading} onClick={() => setApproving(request.id)}>
-                    Approve {refundMoney(request.amountMinor, request.currency)}
-                  </button>
-                </div>
-              </div>
-            )}
-            {request.state === 'requested' && !request.canDecide && (
-              <p className="border-t border-gray-100 px-5 py-3 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">Refund decisions are currently unavailable.</p>
-            )}
+            <RefundDecision
+              request={request}
+              rejecting={rejecting === request.id}
+              reason={reasons[request.id] ?? ''}
+              disabled={!!busy || loading}
+              onReasonChange={reason => setReasons(v => ({ ...v, [request.id]: reason }))}
+              onReject={() => rejecting === request.id ? void decide(request.id, 'reject') : setRejecting(request.id)}
+              onApprove={() => setApproving(request.id)}
+            />
           </RefundOrderCard>
         ))}
       </div>

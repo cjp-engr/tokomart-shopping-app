@@ -134,6 +134,15 @@ Full steps, expected results, and selectors: **`docs/test-cases/test-scenarios.m
 
 ---
 
+## Added 2026-11-28
+
+| TC | Scenario | Priority | Automation |
+|----|----------|----------|------------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | P1 | Integration |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | P0 | Integration |
+
+---
+
 ## P0 Seller Smoke
 
 **Web:** TC-041 → TC-042 → TC-064 → TC-047  

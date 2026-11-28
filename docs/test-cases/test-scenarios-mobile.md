@@ -2522,3 +2522,68 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Suggested Layer**: Widget + Manual  
 
 ---
+
+## Cash on Delivery notes (Mobile) — added 2026-11-28
+
+### TC-502: The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then (mobile)
+**Scenario status**: Active  
+**Category**: UI State  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Mobile  
+**Parity**: Both (web TC-501)  
+**Automation**: Widget  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `cash_on_delivery_notice_test.dart` (the wording of the note).  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: Logged in; items in the cart; the payment step of checkout  
+**Steps**:
+1. Choose Cash on Delivery
+2. Choose a card
+3. Choose Cash on Delivery again
+
+**Expected Results**:
+- (1) the note "Inspect before you pay" is shown with the same wording as on web
+- (2) the note is not shown for a card
+- (3) the note is shown again
+
+**Requirement(s)**: REQ-ORD-14  
+**Business Rule**: §4 Payment methods  
+**Selectors/API**: `CashOnDeliveryNoticeCard` in `checkout_screen.dart`  
+**Suggested Layer**: Widget  
+
+---
+
+### TC-504: A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy (mobile)
+**Scenario status**: Active  
+**Category**: UI State  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Mobile  
+**Parity**: Both (web TC-503; the rule is TC-313)  
+**Automation**: Widget  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `cash_on_delivery_notice_test.dart`; the refund panel tests under `frontend-mobile/test/features/refunds`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: A delivered Cash on Delivery order of the buyer  
+**Steps**:
+1. Open the order detail
+2. Look at the refund section
+
+**Expected Results**:
+- (2) the refund section shows the "Inspect before you pay" note; there is no refund policy text and no request form
+
+**Requirement(s)**: REQ-REF-02  
+**Business Rule**: Delivered-item refund spec §Clients  
+**Selectors/API**: `CashOnDeliveryNoticeCard` in `refund_request_panel.dart`  
+**Suggested Layer**: Widget  
+
+---

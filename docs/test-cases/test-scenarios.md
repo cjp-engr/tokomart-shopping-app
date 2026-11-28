@@ -15,7 +15,7 @@
 - `Scenario status: Active` identifies executable scenario definitions, including ones currently blocked by tooling. Alias records retain historical IDs and point to a canonical case; execute, import and count that behavior under the canonical ID, not twice.
 - `Requirement(s)` lists the `REQ-*` IDs (from the `tokomart-requirements` skill) that a case checks. `docs/test-cases/requirements-trace.md` shows the same links in the other direction, the requirements with no case, and the cases with no requirement.
 - A `Business Rule` line that starts with `§` cites a section of `business-rules.md`, a skill document that was retired on 2026-11-28 because it was out of date (it remains in the `aiSkills` git history). Treat those lines as legacy labels and use `Requirement(s)` instead.
-- TC-060 is an alias of TC-008; TC-613 is an alias of TC-102. There are **339 retained top-level case IDs, of which 337 are active canonical cases and 2 are aliases** (Web 109 active + 1 alias; Mobile 78 active + 1 alias; API 150 active).
+- TC-060 is an alias of TC-008; TC-613 is an alias of TC-102. There are **348 retained top-level case IDs, of which 346 are active canonical cases and 2 are aliases** (Web 111 active + 1 alias; Mobile 80 active + 1 alias; API 155 active).
 - Subcases such as TC-167-A and TC-186-B share their parent's metadata but need independent run results and fixtures. Import them as child records when separate execution tracking is needed; a parent is Passed only when every required subcase passes. Do not add alias or subcase rows to the top-level count.
 - Use a fresh fixture for each independent outcome; wait for confirmed asynchronous state before its assertion. Automated Stripe checks mock the provider; real Stripe test-mode checks are separate owner-run manual verification. Do not treat a live provider outcome as a deterministic automated fixture.
 
@@ -32,9 +32,9 @@
 
 | Platform | File | Coverage |
 |----------|------|----------|
-| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400, TC-500** |
-| API | [test-scenarios-api.md](test-scenarios-api.md) | TC-026–028, TC-033, TC-035–036, TC-048, TC-053–054, TC-056–058, TC-107–108, TC-110–111, TC-113–119, TC-132–136, **TC-190–311** |
-| Mobile | [test-scenarios-mobile.md](test-scenarios-mobile.md) | TC-067–097, TC-101–104, TC-600–624, **TC-172–189** |
+| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400, TC-500, TC-501, TC-503** |
+| API | [test-scenarios-api.md](test-scenarios-api.md) | TC-026–028, TC-033, TC-035–036, TC-048, TC-053–054, TC-056–058, TC-107–108, TC-110–111, TC-113–119, TC-132–136, **TC-190–316** |
+| Mobile | [test-scenarios-mobile.md](test-scenarios-mobile.md) | TC-067–097, TC-101–104, TC-600–624, **TC-172–189, TC-502, TC-504** |
 
 ---
 
@@ -105,7 +105,9 @@ Counts below are recomputed from the `### TC-` headings in the platform files on
 | **TC-400** | 1 | **New** Web card checkout: an expired checkout session is not resumed and its stored attempt is cleared (it had no scenario; its test was titled `TC-AUTH-06`), added 2026-11-04 |
 | **TC-401** | 1 | **New** Mobile order detail: an order the seller never accepted shows "Reservation released" (its test had no id), added 2026-11-08 |
 | **TC-500** | 1 | **New** Web card checkout UI state: the Stripe card field renders on the payment step (its test was titled `TC-STRIPE-04`), added 2026-11-05 |
-| **Total** | **339** | Web 110 · Mobile 79 · API 150 (178 added between 2026-10-24 and 2026-11-08) |
+| **TC-312–316** | 5 | **New** Cancellation, refund and order invariants API (stock, sold count and coupon use come back once; a Cash on Delivery order is not refundable; refund amounts follow the allocation; a unit is not refunded twice; a cancelled or expired card order never leaves a charge), added 2026-11-28 for requirements that had no case |
+| **TC-501–504** | 4 | **New** Cash on Delivery notes: the "Inspect before you pay" note at checkout (web TC-501, mobile TC-502) and on a delivered Cash on Delivery order instead of the refund policy (web TC-503, mobile TC-504), added 2026-11-28 |
+| **Total** | **348** | Web 112 · Mobile 81 · API 155 (178 added between 2026-10-24 and 2026-11-08, 9 on 2026-11-28) |
 
 **Automation split of the new TCs (178):** Playwright / Playwright-API 151, Patrol 16 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
 

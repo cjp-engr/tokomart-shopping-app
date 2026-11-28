@@ -3592,3 +3592,70 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Suggested Layer**: E2E Web  
 
 ---
+
+## Cash on Delivery notes (Web) — added 2026-11-28
+
+### TC-501: The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then
+**Scenario status**: Active  
+**Category**: UI State  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Web  
+**Parity**: Both (mobile TC-502)  
+**Automation**: Component + one Playwright check  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `CashOnDeliveryNotice.test.tsx` (the wording of the note); a Playwright check on TC-022 would cover when it shows.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: Logged in; a product in the cart; the payment step of checkout  
+**Steps**:
+1. Choose Cash on Delivery
+2. Choose Credit Card
+3. Choose Cash on Delivery again
+
+**Expected Results**:
+- (1) a note titled "Inspect before you pay" is shown, telling the buyer to inspect the items before accepting and paying, and that damaged or missing items cannot be refunded in the app
+- (2) the note is not shown for a card
+- (3) the note is shown again
+
+**Requirement(s)**: REQ-ORD-14  
+**Business Rule**: §4 Payment methods  
+**Selectors/API**: `cod-inspect-notice`, `payment-option-cod`  
+**Suggested Layer**: Component + E2E Web  
+
+---
+
+### TC-503: A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy
+**Scenario status**: Active  
+**Category**: UI State  
+**Priority**: P2  
+**Role**: Buyer  
+**Platform**: Web  
+**Parity**: Both (mobile TC-504; the rule is TC-313)  
+**Automation**: Component  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `RefundRequestPanel.test.tsx` ("is not shown for Cash on Delivery orders"), `CashOnDeliveryNotice.test.tsx`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: A delivered Cash on Delivery order of the buyer  
+**Steps**:
+1. Open `/orders/:id`
+2. Look at the refund section
+3. Open a delivered card order for comparison
+
+**Expected Results**:
+- (2) the section is titled "Item refunds" and shows the "Inspect before you pay" note; there is no refund policy text and no request form
+- (3) the card order shows the refund policy
+
+**Requirement(s)**: REQ-REF-02  
+**Business Rule**: Delivered-item refund spec §Clients  
+**Selectors/API**: `cod-inspect-notice`, `RefundRequestPanel`  
+**Suggested Layer**: Component  
+
+---

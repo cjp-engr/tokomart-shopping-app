@@ -256,6 +256,22 @@ Full steps and selectors: **`docs/test-cases/test-scenarios.md`**
 
 ---
 
+## Added 2026-11-28
+
+| TC | Scenario | Priority | Automation |
+|----|----------|----------|------------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | P1 | Integration |
+| TC-313 | A delivered Cash on Delivery order cannot be refunded in the app | P1 | Integration + Playwright-API |
+| TC-314 | A refund for chosen units follows the order's allocation of price, discount and tax | P0 | Unit + Integration |
+| TC-315 | A unit already requested or refunded cannot be requested again | P1 | Integration |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | P0 | Integration |
+| TC-501 | "Inspect before you pay" note at checkout under Cash on Delivery (web) | P2 | Component + Playwright |
+| TC-502 | "Inspect before you pay" note at checkout under Cash on Delivery (mobile) | P2 | Widget |
+| TC-503 | Delivered Cash on Delivery order shows the note instead of the refund policy (web) | P2 | Component |
+| TC-504 | Delivered Cash on Delivery order shows the note instead of the refund policy (mobile) | P2 | Widget |
+
+---
+
 ## P0 Buyer Smoke
 
 **Web:** TC-001 → TC-013 → TC-016 → TC-022 → TC-098 → TC-030  

@@ -4802,3 +4802,190 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Suggested Layer**: API + Unit  
 
 ---
+
+## Cancellation, refund and order invariants (API) — added 2026-11-28
+
+### TC-312: Cancelling an order gives back stock, sold count and coupon use, once
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Both  
+**Platform**: API  
+**Parity**: Both  
+**Automation**: Integration (Vitest, Stripe mocked)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `orderCancellation.integration.test.ts`, `sellerCancellation.integration.test.ts`, `legacyPayments.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: A product with stock S and sold count C; a seller coupon with use count U; a pending order of 2 units that used the coupon (Cash on Delivery, or a card order under manual capture)  
+**Steps**:
+1. Place the order and note the stock, the sold count and the coupon use count
+2. Cancel it as the buyer (`PUT /api/orders/:id/status`); on a second order cancel as the seller with a reason (`PUT /api/seller/orders/:id/status`); on a third let the acceptance deadline pass
+3. Cancel the same order again, or repeat the seller cancellation
+4. Repeat step 2 for an order of a variant product
+
+**Expected Results**:
+- After placing: stock S − 2, sold count C + 2, coupon use U + 1
+- After the cancellation, by any of the three actors: stock S, sold count C, coupon use U; the order is `cancelled`
+- A card order also releases its hold (`release_pending`, then `released`; see TC-316)
+- A repeated cancel returns the order unchanged and gives nothing back a second time; stock, sold count and coupon use stay as in step 2
+- A variant order gives back the stock of its variant, not of the product
+- The coupon use count never goes below 0
+- **Old-shape orders** (cash on delivery with no payment status, placed before acceptance deadlines existed): the buyer cancel gives back **stock only**, not the sold count or the coupon use. This is Open question 20 in `tokomart-requirements`; decide whether it is intended before writing a test for it
+
+**Requirement(s)**: REQ-CAN-04, REQ-INV-06, REQ-CPN-10  
+**Business Rule**: §5 Cancellation  
+**Selectors/API**: `PUT /api/orders/:id/status`, `PUT /api/seller/orders/:id/status`; `restoreOrderReservations` in `orderCancellation.ts`  
+**Suggested Layer**: Integration  
+
+---
+
+### TC-313: A delivered Cash on Delivery order cannot be refunded in the app
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both (UI: web TC-503, mobile TC-504)  
+**Automation**: Integration (Vitest) + one Playwright-API case  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundEligibility.integration.test.ts`, `refundRequest.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; a delivered Cash on Delivery order of the buyer (`status: delivered`, delivery date recorded)  
+**Steps**:
+1. `GET /api/orders/:id/refund-eligibility`
+2. `POST /api/orders/:id/refund-requests` with a valid body (one line, a reason code, a description, an idempotency key)
+3. Repeat step 2 with `DELIVERED_REFUNDS_ENABLED` off
+4. Repeat step 1 as another buyer
+
+**Expected Results**:
+- (1) **200** `eligible: false`, `reason: unsupported_payment`, no lines
+- (2) **409** `refund_conflict` "Refund unavailable: unsupported_payment"; no refund request is created and the order is unchanged
+- (3) **409** `delivered_refunds_disabled`: the flag is checked before eligibility
+- (4) **404** `refund_not_found`
+- The reasons are checked in order and the first one wins: a Cash on Delivery order that is not delivered yet answers `not_delivered`, not `unsupported_payment`
+
+**Requirement(s)**: REQ-REF-02, REQ-REF-01  
+**Business Rule**: Delivered-item refund spec §Eligibility  
+**Selectors/API**: `GET /api/orders/:id/refund-eligibility`, `POST /api/orders/:id/refund-requests`; `getRefundEligibility` in `refundEligibility.ts`  
+**Suggested Layer**: Integration + API  
+
+---
+
+### TC-314: A refund for chosen units follows the order's own allocation of price, discount and tax
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P0  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both (UI: web TC-162, mobile TC-185)  
+**Automation**: Integration (Vitest) + Unit  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundAllocation.test.ts`, `refundShipping.test.ts`, `refundRequest.integration.test.ts`, `deliveredRefund.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; a delivered card order paid and captured in full, with 2 units of one product, a coupon discount, 8% tax and shipping (for example 2 × $10.00, tax $1.60, shipping $5.00, total $26.60)  
+**Steps**:
+1. `GET /api/orders/:id/refund-eligibility` and read the amount of each available unit
+2. `POST /api/orders/:id/refund-requests` for 1 of the 2 units, reason `damaged`
+3. Send the request for all units instead
+4. Send the same request with an `amount` field added
+
+**Expected Results**:
+- Each unit is worth its share of the price after discount plus its share of the tax, in whole cents (in the example $10.80 each); the shares of all units add up to the price after discount plus tax
+- (2) **201**; the request amount is that unit's value and no shipping (shipping is refunded only when every unit is selected, TC-167)
+- (3) the amount is both units plus the shipping (for a seller-fault reason)
+- The amount is always computed by the server; the request carries none (4: the extra field is refused with **400** `refund_validation`)
+- The amounts of all units plus shipping never add up to more than the captured amount
+
+**Requirement(s)**: REQ-REF-04, REQ-REF-03  
+**Business Rule**: Delivered-item refund spec §Allocation  
+**Selectors/API**: `POST /api/orders/:id/refund-requests`; `ensureRefundAllocation`, `refundableUnits` in `refundAllocation.ts`  
+**Suggested Layer**: Unit + Integration  
+
+---
+
+### TC-315: A unit already requested or refunded cannot be requested again, and the refunds never exceed the payment
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both  
+**Automation**: Integration (Vitest)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundRequest.integration.test.ts`, `refundEligibility.integration.test.ts`, `deliveredRefund.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; the delivered card order of TC-314 (2 units)  
+**Steps**:
+1. Request unit 1 (state `requested`)
+2. While that request is open, request unit 2, and read the eligibility
+3. The seller approves request 1 and the refund settles; then request 2 units at once
+4. Request the remaining unit with a new idempotency key
+5. Request again when no unit is left
+6. Send the same request twice with the same idempotency key, then with the same key and a different body
+
+**Expected Results**:
+- (2) **409** `refund_conflict` "Refund unavailable: active_request"; the eligibility reason is `active_request` (one open request per order)
+- (3) **409** `refund_conflict` "Requested quantities are not available": the refunded unit is not offered again
+- (4) **201**; once it settles, every unit of the order has been refunded
+- (5) the eligibility reason is `no_units_left` and a request answers **409**
+- (6) the same key and body is a replay (**200**, the same request, nothing created twice); the same key with another body is **409** "Idempotency key was already used for a different request"
+- The refunded amount plus the reserved amount never exceeds the captured amount: a request that would is refused with **409**
+
+**Requirement(s)**: REQ-REF-04, REQ-REF-06  
+**Business Rule**: Delivered-item refund spec §Allocation and Idempotency  
+**Selectors/API**: `POST /api/orders/:id/refund-requests`, `GET /api/orders/:id/refund-eligibility`; `submitRefundRequest` in `refundRequestService.ts`  
+**Suggested Layer**: Integration  
+
+---
+
+### TC-316: A card order that is cancelled or expires never leaves a charge
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P0  
+**Role**: Both  
+**Platform**: API  
+**Parity**: Both (UI: mobile TC-401; web notice TC-157)  
+**Automation**: Integration (Vitest, Stripe mocked)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `orderCancellation.integration.test.ts`, `sellerCancellation.integration.test.ts`, `acceptanceScanner.integration.test.ts`, `orderAcceptance.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `CHECKOUT_FLOW=manual_capture`; three pending card orders whose payment is `authorized` (a hold, not a charge)  
+**Steps**:
+1. The buyer cancels the first order
+2. The seller cancels the second with a reason
+3. The acceptance deadline of the third passes and the scanner runs
+4. Race the seller's acceptance against the buyer's cancel on a fourth order
+
+**Expected Results**:
+- Orders 1 to 3: `cancelled`; payment status `release_pending`, then `released`; the PaymentIntent is cancelled and never captured; the amount received stays 0
+- The capture is never attempted for them, and no refund is needed because nothing was charged
+- The buyer's order page says "Reservation released" (web TC-157, mobile TC-401)
+- Order 4: exactly one wins. If the seller wins, the order is charged normally and the buyer's cancel answers **409** `cancellation_conflict`; if the buyer wins, the acceptance is refused and there is no charge
+- An expired authorization (`authorization_expired`) is released the same way
+
+**Requirement(s)**: REQ-ORD-13, REQ-PAY-05, REQ-PAY-04  
+**Business Rule**: Authorize-capture §Release and Recovery  
+**Selectors/API**: `PUT /api/orders/:id/status`, `PUT /api/seller/orders/:id/status`; `cancelPendingOrder`, `releaseIntentOperation`  
+**Suggested Layer**: Integration  
+
+---

@@ -11,10 +11,10 @@
 | | Count |
 |---|---|
 | Requirements | 143 |
-| Requirements with at least one test case | 113 |
-| Requirements with no test case | 30 |
-| Test case records | 339 (337 active, 2 aliases) |
-| Active test cases mapped to at least one requirement | 312 |
+| Requirements with at least one test case | 119 |
+| Requirements with no test case | 24 |
+| Test case records | 348 (346 active, 2 aliases) |
+| Active test cases mapped to at least one requirement | 321 |
 | Active test cases with no requirement yet | 25 |
 
 Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of TC-102.
@@ -77,8 +77,8 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 | REQ-INV-02 | A cash-on-delivery order checks stock when it is placed. | TC-056, TC-099, TC-260 |
 | REQ-INV-03 | A card checkout reserves stock for every item when the session is created (`manual_capture`). | TC-099, TC-198 |
 | REQ-INV-04 | A checkout session reserves all items for all sellers or none. | TC-198 |
-| REQ-INV-05 | Reservation never oversells under concurrency. | **none** |
-| REQ-INV-06 | Stock comes back, once only, when an order is cancelled or a checkout is abandoned, expires or fails. | TC-260 |
+| REQ-INV-05 | A card checkout session never oversells under concurrency. | **none** |
+| REQ-INV-06 | Stock comes back, once only, when an order is cancelled or a checkout is abandoned, expires or fails. | TC-260, TC-312 |
 | REQ-INV-07 | The web cart never holds more of an item than its stock. | TC-017, TC-614 |
 
 ### 5. Cart
@@ -108,7 +108,7 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 | REQ-CPN-07 | A buyer lists the usable coupons of a seller with `GET /api/coupons?sellerId=…[&orderAmount=…]`. | TC-251 |
 | REQ-CPN-08 | A coupon is used up by a placed order, never by validation. | TC-252, TC-259 |
 | REQ-CPN-09 | In a card checkout session the coupon use is reserved atomically with the stock. | **none** |
-| REQ-CPN-10 | A cancelled order gives its coupon use back, once only. | **none** |
+| REQ-CPN-10 | A cancelled order gives its coupon use back, once only. | TC-312 |
 
 ### 7. Checkout & orders
 
@@ -126,8 +126,8 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 | REQ-ORD-10 | `POST /api/checkout/sessions/:id/confirm` places all the orders in one transaction, only when every… | TC-023, TC-024, TC-096, TC-097, TC-103, TC-104, TC-105, TC-106, TC-143, TC-144 |
 | REQ-ORD-11 | Unfinished checkouts are invisible. | TC-231 |
 | REQ-ORD-12 | Order history lists the buyer's own orders, newest first. | TC-030, TC-084, TC-110, TC-112 |
-| REQ-ORD-13 | A card order that was cancelled or expired never leaves a charge. | **none** |
-| REQ-ORD-14 | Checkout shows a note under Cash on Delivery: inspect the items before accepting and paying. | **none** |
+| REQ-ORD-13 | A card order that was cancelled or expired never leaves a charge. | TC-316 |
+| REQ-ORD-14 | Checkout shows a note under Cash on Delivery: inspect the items before accepting and paying. | TC-501, TC-502 |
 | REQ-ORD-15 | Prices always come from the server. | TC-195 |
 
 ### 8. Payments
@@ -137,8 +137,8 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 | REQ-PAY-01 | Stripe is used in test mode only. | **none** |
 | REQ-PAY-02 | A card is **authorised** (money held) at checkout and **charged** only when the seller accepts. | TC-023, TC-024, TC-143, TC-144, TC-145, TC-149, TC-150, TC-155, TC-176, TC-179, TC-182, TC-199 |
 | REQ-PAY-03 | The seller must accept within 24 hours of placing. | TC-156, TC-200, TC-201, TC-202 |
-| REQ-PAY-04 | An order the seller did not accept by its deadline is cancelled by the system. | TC-203, TC-401 |
-| REQ-PAY-05 | A cancelled or expired card order releases its hold. | TC-152, TC-157 |
+| REQ-PAY-04 | An order the seller did not accept by its deadline is cancelled by the system. | TC-203, TC-316, TC-401 |
+| REQ-PAY-05 | A cancelled or expired card order releases its hold. | TC-152, TC-157, TC-316 |
 | REQ-PAY-06 | Captures, releases and refunds are durable operations with stable idempotency keys. | **none** |
 | REQ-PAY-07 | Stripe webhooks need a valid signature and are processed from an inbox. | TC-229, TC-230 |
 | REQ-PAY-08 | Saved cards: add, list, delete and set a default. | TC-023, TC-142 |
@@ -164,7 +164,7 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 | REQ-CAN-01 | A buyer cancels an order with `PUT /api/orders/:id/status` (cancellation is its only use) and an… | TC-032, TC-180, TC-205, TC-207, TC-208 |
 | REQ-CAN-02 | A buyer can cancel only while the order is still waiting for the seller. | TC-032, TC-033, TC-152, TC-153, TC-154, TC-181, TC-205, TC-206 |
 | REQ-CAN-03 | Exactly one of: seller accepts, buyer cancels, seller cancels, deadline expires. | TC-154, TC-204 |
-| REQ-CAN-04 | A cancelled order puts back stock, sold count and coupon use, and releases the card hold. | **none** |
+| REQ-CAN-04 | A cancelled order puts back stock, sold count and coupon use, and releases the card hold. | TC-312 |
 | REQ-CAN-05 | A seller cancels a pending order with a reason of 1 to 1000 characters. | TC-049, TC-157, TC-158, TC-159, TC-183, TC-209, TC-210, TC-211, TC-212 |
 | REQ-CAN-06 | A seller cannot cancel a card order after acceptance. | TC-160 |
 | REQ-CAN-07 | The cancel buttons only appear where cancelling is possible. | TC-184, TC-213 |
@@ -173,14 +173,14 @@ Aliases are not mapped: TC-060 is an alias of TC-008, and TC-613 is an alias of 
 
 | Requirement | What it says | Test cases |
 |---|---|---|
-| REQ-REF-01 | `GET /api/orders/:id/refund-eligibility` says whether a delivered order can be refunded and why not. | TC-161, TC-169, TC-214, TC-215, TC-219 |
-| REQ-REF-02 | Cash-on-delivery orders cannot be refunded in the app. | **none** |
-| REQ-REF-03 | A refund request lists the items (1 to 1000, each a line id and a positive whole quantity), a reason… | TC-162, TC-163, TC-185, TC-216, TC-220 |
-| REQ-REF-04 | The refund for chosen units comes from the order's own allocation of price, discount and tax. | **none** |
+| REQ-REF-01 | `GET /api/orders/:id/refund-eligibility` says whether a delivered order can be refunded and why not. | TC-161, TC-169, TC-214, TC-215, TC-219, TC-313 |
+| REQ-REF-02 | Cash-on-delivery orders cannot be refunded in the app. | TC-313, TC-503, TC-504 |
+| REQ-REF-03 | A refund request lists the items (1 to 1000, each a line id and a positive whole quantity), a reason… | TC-162, TC-163, TC-185, TC-216, TC-220, TC-314 |
+| REQ-REF-04 | The refund for chosen units comes from the order's own allocation of price, discount and tax. | TC-314, TC-315 |
 | REQ-REF-08 | Shipping is refunded only with the last paid units, and only for a seller-fault reason. | TC-167 |
 | REQ-REF-09 | An order can have only one unresolved refund request. | TC-166, TC-218 |
 | REQ-REF-05 | A seller decides each request: approve, or reject with a reason of 1 to 1000 characters. | TC-164, TC-165, TC-170, TC-186, TC-222, TC-224, TC-226 |
-| REQ-REF-06 | A request moves `requested` → `rejected`, or `requested` → `processing` → `refunded` or `needs_review`. | TC-164, TC-168, TC-187, TC-217, TC-223 |
+| REQ-REF-06 | A request moves `requested` → `rejected`, or `requested` → `processing` → `refunded` or `needs_review`. | TC-164, TC-168, TC-187, TC-217, TC-223, TC-315 |
 | REQ-REF-07 | A buyer sees their own requests for an order and their completed requests. | TC-221 |
 
 ### 12. Reviews
@@ -269,7 +269,7 @@ These are requirements the test cases do not cover. Each one is a candidate for 
 **4. Stock**
 
 - REQ-INV-01: Stock is a whole number of 0 or more, on the product and on each variant.
-- REQ-INV-05: Reservation never oversells under concurrency.
+- REQ-INV-05: A card checkout session never oversells under concurrency.
 
 **5. Cart**
 
@@ -281,12 +281,6 @@ These are requirements the test cases do not cover. Each one is a candidate for 
 
 - REQ-CPN-06: Validating a coupon shows the discount but does not use it up.
 - REQ-CPN-09: In a card checkout session the coupon use is reserved atomically with the stock.
-- REQ-CPN-10: A cancelled order gives its coupon use back, once only.
-
-**7. Checkout & orders**
-
-- REQ-ORD-13: A card order that was cancelled or expired never leaves a charge.
-- REQ-ORD-14: Checkout shows a note under Cash on Delivery: inspect the items before accepting and paying.
 
 **8. Payments**
 
@@ -298,15 +292,6 @@ These are requirements the test cases do not cover. Each one is a candidate for 
 
 - REQ-FUL-03: A seller changes only orders of their own.
 - REQ-FUL-07: A shipped order the buyer never confirms counts as delivered 48 hours after it shipped.
-
-**10. Cancellations**
-
-- REQ-CAN-04: A cancelled order puts back stock, sold count and coupon use, and releases the card hold.
-
-**11. Delivered-item refunds**
-
-- REQ-REF-02: Cash-on-delivery orders cannot be refunded in the app.
-- REQ-REF-04: The refund for chosen units comes from the order's own allocation of price, discount and tax.
 
 **13. Seller tools**
 

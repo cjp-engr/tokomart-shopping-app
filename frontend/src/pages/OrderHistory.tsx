@@ -11,7 +11,9 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getStatusConfig } from '../utils/orderUtils';
 import { ordersInTab } from '../utils/orderTabs';
-import { canBuyerCancel, shownCancelReason } from '../utils/orderPayment';
+import { shownCancelReason } from '../utils/orderPayment';
+import { CancelOrderButton } from '../components/orders/CancelOrderButton';
+import { CancelOrderDialog } from '../components/orders/CancelOrderDialog';
 import { fetchReviewStatuses, fetchSingleReview } from '../utils/reviewUtils';
 import type { ReviewData } from '../utils/reviewUtils';
 import {
@@ -422,11 +424,7 @@ export const OrderHistory: React.FC = () => {
                       <Eye className="w-4 h-4 mr-1.5" /> View Details
                     </Button>
                     <div className="flex-1" />
-                    {canBuyerCancel(order) && (
-                      <Button variant="danger" size="sm" onClick={() => handleCancelOrder(order.id)}>
-                        Cancel Order
-                      </Button>
-                    )}
+                    <CancelOrderButton order={order} onCancel={() => handleCancelOrder(order.id)} />
                     {order.status === 'shipped' && (
                       <Button
                         variant="success"
@@ -473,32 +471,15 @@ export const OrderHistory: React.FC = () => {
         onCancel={() => setReceiveDialogOrderId(null)}
       />
 
-      {cancelDialog.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Cancel Order</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Are you sure you want to cancel this order? This action cannot be undone.
-            </p>
-            {cancelError && <p role="alert" className="text-sm text-red-600">{cancelError}</p>}
-            <textarea
-              value={cancelDialog.reason}
-              onChange={e => setCancelDialog(d => ({ ...d, reason: e.target.value }))}
-              placeholder="Reason for cancellation (optional)"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-red-400 mb-4"
-            />
-            <div className="flex gap-3 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setCancelDialog({ open: false, orderId: null, reason: '', loading: false })} disabled={cancelDialog.loading}>
-                Keep Order
-              </Button>
-              <Button variant="danger" size="sm" loading={cancelDialog.loading} onClick={confirmCancelOrder}>
-                Yes, Cancel Order
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CancelOrderDialog
+        open={cancelDialog.open}
+        reason={cancelDialog.reason}
+        loading={cancelDialog.loading}
+        error={cancelError}
+        onReasonChange={reason => setCancelDialog(d => ({ ...d, reason }))}
+        onKeep={() => setCancelDialog({ open: false, orderId: null, reason: '', loading: false })}
+        onConfirm={confirmCancelOrder}
+      />
 
       {reviewModal && (
         <ReviewModal
