@@ -78,6 +78,37 @@ async function restoreStock(items: Array<{ product: unknown; variantId?: string;
   await Promise.all(updates);
 }
 
+/** Stock, sold count and coupon use that `createOrders` has taken for one seller's order so far. */
+interface Reservation {
+  sellerKey: string;
+  lines: Array<{ productId: unknown; variantId?: string; quantity: number }>;
+  couponCode?: string;
+}
+
+/**
+ * Undoes a failed `createOrders` call: removes the orders it already made (never returned to the buyer) and gives
+ * back the stock, sold count and coupon use it took. It uses increments, so it is safe next to other buyers' orders.
+ * It never throws: the caller's original error is the one the buyer must see.
+ */
+async function rollbackOrderCreation(reservations: Reservation[], createdOrderIds: unknown[]) {
+  try {
+    if (createdOrderIds.length) await Order.deleteMany({ _id: { $in: createdOrderIds } });
+    for (const { sellerKey, lines, couponCode } of reservations) {
+      await Promise.all(lines.map(({ productId, variantId, quantity }) => (variantId
+        ? Product.findOneAndUpdate(
+          { _id: productId as string, 'variants._id': variantId },
+          { $inc: { 'variants.$.stock': quantity, soldCount: -quantity } },
+        )
+        : Product.findByIdAndUpdate(productId, { $inc: { stock: quantity, soldCount: -quantity } }))));
+      if (couponCode) {
+        await Coupon.updateOne({ code: couponCode, sellerId: sellerKey, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
+      }
+    }
+  } catch (rollbackError) {
+    console.error('[createOrders] could not give back stock after a failed order', rollbackError instanceof Error ? rollbackError.message : rollbackError);
+  }
+}
+
 export async function createOrders(params: CreateOrderParams) {
   const { userId, items, shippingAddress, paymentMethod, sellerMessages = {}, couponCodes = {}, deliverySelections = {}, paymentIntentId } = params;
 
@@ -147,87 +178,103 @@ export async function createOrders(params: CreateOrderParams) {
       ? { placedAt, acceptBy: new Date(placedAt.getTime() + SELLER_ACCEPT_WINDOW_MS) }
       : undefined;
 
-  const createdOrders = [];
+  const createdOrders: InstanceType<typeof Order>[] = [];
+  // What this call has taken so far. There is no transaction here (cash-on-delivery checkout must keep
+  // working on a standalone database), so a failure puts these back by hand.
+  const reservations: Reservation[] = [];
 
-  for (const [sellerKey, groupItems] of sellerGroups) {
-    let subtotal = 0;
-    let productDiscount = 0;
+  try {
+    for (const [sellerKey, groupItems] of sellerGroups) {
+      let subtotal = 0;
+      let productDiscount = 0;
 
-    const orderItems = groupItems.map(({ productDoc, variantId, selectedAttributes, quantity }) => {
-      const line = priceLine(productDoc as unknown as ProductLike, variantId, quantity);
-      subtotal += line.gross;
-      productDiscount += line.itemDiscount;
-      return {
-        product: line.product,
-        variantId,
-        selectedAttributes,
-        productName: line.productName,
-        productPrice: line.productPrice,
-        productImage: line.productImage,
-        variantImages: line.variantImages,
-        variantSku: line.variantSku,
-        discountPercent: line.discountPercent,
-        variantDiscount: line.variantDiscount,
-        quantity,
-      };
-    });
+      const orderItems = groupItems.map(({ productDoc, variantId, selectedAttributes, quantity }) => {
+        const line = priceLine(productDoc as unknown as ProductLike, variantId, quantity);
+        subtotal += line.gross;
+        productDiscount += line.itemDiscount;
+        return {
+          product: line.product,
+          variantId,
+          selectedAttributes,
+          productName: line.productName,
+          productPrice: line.productPrice,
+          productImage: line.productImage,
+          variantImages: line.variantImages,
+          variantSku: line.variantSku,
+          discountPercent: line.discountPercent,
+          variantDiscount: line.variantDiscount,
+          quantity,
+        };
+      });
 
-    // Deduct stock in parallel — variant stock or product stock
-    await Promise.all(
-      groupItems.map(({ productDoc, variantId, quantity }) => {
-        if (variantId) {
-          return Product.findOneAndUpdate(
-            { _id: productDoc._id, 'variants._id': variantId },
-            { $inc: { 'variants.$.stock': -quantity, soldCount: quantity } },
-          );
-        }
-        return Product.findByIdAndUpdate(productDoc._id, {
-          $inc: { stock: -quantity, soldCount: quantity },
-        });
-      }),
-    );
+      // Deduct stock in parallel — variant stock or product stock. Each line that went through is recorded, so a
+      // failure in one of them (or later) can give back exactly what was taken.
+      const reservation: Reservation = { sellerKey, lines: [] };
+      reservations.push(reservation);
+      const deductions = await Promise.allSettled(
+        groupItems.map(async ({ productDoc, variantId, quantity }) => {
+          if (variantId) {
+            await Product.findOneAndUpdate(
+              { _id: productDoc._id, 'variants._id': variantId },
+              { $inc: { 'variants.$.stock': -quantity, soldCount: quantity } },
+            );
+          } else {
+            await Product.findByIdAndUpdate(productDoc._id, {
+              $inc: { stock: -quantity, soldCount: quantity },
+            });
+          }
+          reservation.lines.push({ productId: productDoc._id, variantId, quantity });
+        }),
+      );
+      const failedDeduction = deductions.find((d): d is PromiseRejectedResult => d.status === 'rejected');
+      if (failedDeduction) throw failedDeduction.reason;
 
-    const effectiveSubtotal = subtotal - productDiscount;
+      const effectiveSubtotal = subtotal - productDiscount;
 
-    const { discount, couponCode } = couponCodes[sellerKey]
-      ? await applyCoupon(couponCodes[sellerKey], sellerKey, effectiveSubtotal)
-      : { discount: 0, couponCode: undefined };
+      const { discount, couponCode } = couponCodes[sellerKey]
+        ? await applyCoupon(couponCodes[sellerKey], sellerKey, effectiveSubtotal)
+        : { discount: 0, couponCode: undefined };
+      reservation.couponCode = couponCode;
 
-    const { tax, shipping, total, selectedDeliveryOption } = computeSellerTotals({
-      sellerKey,
-      subtotal,
-      productDiscount,
-      couponDiscount: discount,
-      firstProduct: groupItems[0].productDoc as unknown as ProductLike,
-      deliverySelections,
-    });
+      const { tax, shipping, total, selectedDeliveryOption } = computeSellerTotals({
+        sellerKey,
+        subtotal,
+        productDiscount,
+        couponDiscount: discount,
+        firstProduct: groupItems[0].productDoc as unknown as ProductLike,
+        deliverySelections,
+      });
 
-    const order = await Order.create({
-      userId,
-      items: orderItems,
-      shippingAddress,
-      paymentMethod,
-      subtotal,
-      productDiscount,
-      discount,
-      couponCode,
-      tax,
-      shipping,
-      total,
-      estimatedDelivery,
-      sellerMessages: sellerMessages[sellerKey] ? { [sellerKey]: sellerMessages[sellerKey] } : {},
-      deliverySelections: selectedDeliveryOption ? { [sellerKey]: selectedDeliveryOption } : {},
-      selectedDeliveryOption,
-      paymentIntentId: isCardPayment ? paymentIntentId : undefined,
-      ...(acceptance && {
-        paymentStatus: 'not_required' as const,
-        placedAt: acceptance.placedAt,
-        acceptBy: acceptance.acceptBy,
-        ...(mongoose.isValidObjectId(sellerKey) && { sellerId: sellerKey }),
-      }),
-    });
+      const order = await Order.create({
+        userId,
+        items: orderItems,
+        shippingAddress,
+        paymentMethod,
+        subtotal,
+        productDiscount,
+        discount,
+        couponCode,
+        tax,
+        shipping,
+        total,
+        estimatedDelivery,
+        sellerMessages: sellerMessages[sellerKey] ? { [sellerKey]: sellerMessages[sellerKey] } : {},
+        deliverySelections: selectedDeliveryOption ? { [sellerKey]: selectedDeliveryOption } : {},
+        selectedDeliveryOption,
+        paymentIntentId: isCardPayment ? paymentIntentId : undefined,
+        ...(acceptance && {
+          paymentStatus: 'not_required' as const,
+          placedAt: acceptance.placedAt,
+          acceptBy: acceptance.acceptBy,
+          ...(mongoose.isValidObjectId(sellerKey) && { sellerId: sellerKey }),
+        }),
+      });
 
-    createdOrders.push(order);
+      createdOrders.push(order);
+    }
+  } catch (error) {
+    await rollbackOrderCreation(reservations, createdOrders.map(order => order._id));
+    throw error;
   }
 
   // Remove ordered items from the user's server-side cart

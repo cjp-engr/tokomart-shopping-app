@@ -624,12 +624,12 @@ Rules or behaviours with no assigned or verified test. "Harness exists" means th
 | COD buyers are not told about the 24-hour deadline on mobile (web hides it for any non-manual-capture order) | Open items §9 | Component | Decide intended behaviour; TC-179 records it |
 | Test traceability for the Stripe/manual-capture specs | — | — | `local-payment-settlement.spec.ts` still uses `TC-AUTH-03`, which has no scenario entry, and `role-switch.smoke.spec.ts` has no id (§10); the Patrol local files (the four `local_*` tests split from `local_payment_settlement_test.dart`, and the card checkout tests TC-096, TC-097, TC-103, TC-104 and TC-083) carry scenario ids in their titles since 2026-11-08 |
 | Patrol keys for refund screens, save-address toggle, payment-methods, offline banner | §11 | E2E Mobile | Add `ValueKey`s before any Patrol test for TC-172–175, TC-185–188 |
-| Validators `createRefundRules` and `decideRefundRules` | Refund requests | Unit | No test exists (refunds review, 2026-11-28) |
-| Buyer cancel reason is limited to 500 characters | §12 Cancellations | Unit | No test exists |
-| Buyer cancel route answers `409 cancellation_conflict`, and the legacy flow says "only pending" | §12 Cancellations | Integration | No test exists |
+| Validators `createRefundRules` and `decideRefundRules` | Refund requests | Unit | **Closed 2026-11-28**: `validators/__tests__/refundValidators.test.ts`. `sellerRefundListRules` already had tests in the same file |
+| Buyer cancel reason is limited to 500 characters | §12 Cancellations | Unit | **Closed 2026-11-28**: `services/__tests__/orderService.cancelReason.test.ts` (unit) and the route test below |
+| Buyer cancel route answers `409 cancellation_conflict`, and the legacy flow says "only pending" | §12 Cancellations | Integration | **Closed 2026-11-28**: `controllers/__tests__/orderController.cancel.integration.test.ts` |
 | Web buyer cancel button and the seller Return/Refund tab | §12 / §13 | Component | No component test found |
 | Requirements with no scenario: REQ-CAN-04, REQ-REF-02, REQ-REF-04, REQ-ORD-13, REQ-ORD-14 | `requirements-trace.md` | Scenario first | Run `/create-scenarios` for them, then assign a layer |
-| A COD order takes stock before `Order.create`, outside a transaction; a refused order keeps the stock taken | `tokomart-requirements` Open question 18 | Integration | Recorded as `it.fails` in `orderService.createOrders.integration.test.ts`; fixing the code is the owner's decision |
+| A COD order takes stock before `Order.create`; the stock decrement has no `stock >= quantity` guard | `tokomart-requirements` Open question 18 | Integration | The refused-order case is fixed and tested (2026-11-28, compensation in `createOrders`); the race for the last unit is open and has no test |
 
 Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker. Closed 2026-11-28: no integration test for order creation, order history or reviews, and no unit test for the auth and order validators (see item 45a for the files).
 

@@ -1,8 +1,9 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import mongoose from 'mongoose';
 import Product from '../../models/Product.js';
 import Order from '../../models/Order.js';
 import Cart from '../../models/Cart.js';
+import Coupon from '../../models/Coupon.js';
 import { createOrders } from '../orderService.js';
 import { connectIntegrationDb } from './integrationDb.js';
 
@@ -48,11 +49,11 @@ describe('createOrders refusals change nothing (REQ-ORD-03, REQ-INV-02; replica 
   });
 
   beforeEach(async () => {
-    await Promise.all([Product.deleteMany({}), Order.deleteMany({}), Cart.deleteMany({})]);
+    await Promise.all([Product.deleteMany({}), Order.deleteMany({}), Cart.deleteMany({}), Coupon.deleteMany({})]);
   });
 
   afterEach(async () => {
-    await Promise.all([Product.deleteMany({}), Order.deleteMany({}), Cart.deleteMany({})]);
+    await Promise.all([Product.deleteMany({}), Order.deleteMany({}), Cart.deleteMany({}), Coupon.deleteMany({})]);
   });
 
   afterAll(async () => {
@@ -145,16 +146,75 @@ describe('createOrders refusals change nothing (REQ-ORD-03, REQ-INV-02; replica 
     expect(after.products[0].variants).toEqual([1]);
   });
 
-  // KNOWN DEFECT (found by this test on 2026-11-28, not fixed): createOrders takes the stock and applies the coupon
-  // before Order.create runs, outside any transaction. POST /api/orders accepts shippingAddress: {} (the route rule only
-  // checks that the value is not empty), so Order.create then fails on the required address fields and the stock and
-  // sold count stay changed. It must start failing here, and then become a plain `it`, once the order is made atomic.
-  it.fails('KNOWN DEFECT: an order refused for a missing address field still leaves the stock taken', async () => {
-    const product = await makeProduct();
-    const before = await snapshot([product._id]);
+  // POST /api/orders accepts shippingAddress: {} (the route rule only checks that the value is not empty), so
+  // Order.create fails on the required address fields after the stock was taken. A refused order must give
+  // the stock, the sold count and the coupon use back (Open question 18; it was a known defect until 2026-11-28).
+  describe('an order refused after the stock was taken gives everything back', () => {
+    it('restores stock and sold count when the address is missing a required field', async () => {
+      const product = await makeProduct();
+      const before = await snapshot([product._id]);
 
-    await expect(place([{ productId: product._id.toString(), quantity: 2 }], {})).rejects.toBeDefined();
+      await expect(place([{ productId: product._id.toString(), quantity: 2 }], {})).rejects.toBeDefined();
 
-    expect(await snapshot([product._id])).toEqual(before);
+      expect(await snapshot([product._id])).toEqual(before);
+    });
+
+    it('restores the stock of a variant line', async () => {
+      const product = await makeVariantProduct(3);
+      const variantId = String((product.variants as unknown as Array<{ _id: mongoose.Types.ObjectId }>)[0]._id);
+      const before = await snapshot([product._id]);
+
+      await expect(place([{ productId: product._id.toString(), variantId, quantity: 2 }], {})).rejects.toBeDefined();
+
+      const after = await snapshot([product._id]);
+      expect(after).toEqual(before);
+      expect(after.products[0].variants).toEqual([3]);
+    });
+
+    it('does not use up a coupon for an order that was refused', async () => {
+      const product = await makeProduct();
+      await Coupon.create({ code: 'SAVE10', sellerId: seller, discountType: 'percentage', discountValue: 10, usageLimit: 5, usedCount: 1, isActive: true });
+      const before = await snapshot([product._id]);
+
+      await expect(createOrders({
+        userId: buyer.toString(),
+        items: [{ productId: product._id.toString(), quantity: 2 }],
+        shippingAddress: {},
+        paymentMethod: cod,
+        couponCodes: { [seller.toString()]: 'SAVE10' },
+      })).rejects.toBeDefined();
+
+      expect(await snapshot([product._id])).toEqual(before);
+      expect((await Coupon.findOne({ code: 'SAVE10' }).lean())!.usedCount).toBe(1);
+    });
+
+    it('removes the orders already made when a later seller\'s order fails (all or nothing)', async () => {
+      const otherSeller = new mongoose.Types.ObjectId();
+      const a = await makeProduct();
+      const b = await makeProduct({ sellerId: otherSeller });
+      const before = await snapshot([a._id, b._id]);
+
+      const realCreate = Order.create.bind(Order) as (...args: unknown[]) => Promise<unknown>;
+      let calls = 0;
+      const spy = vi.spyOn(Order, 'create').mockImplementation(((...args: unknown[]) => {
+        calls += 1;
+        return calls === 2 ? Promise.reject(new Error('second order failed')) : realCreate(...args);
+      }) as never);
+      try {
+        await expect(place([
+          { productId: a._id.toString(), quantity: 2 },
+          { productId: b._id.toString(), quantity: 3 },
+        ])).rejects.toThrow('second order failed');
+      } finally { spy.mockRestore(); }
+
+      expect(calls).toBe(2);
+      expect(await snapshot([a._id, b._id])).toEqual(before);
+    });
+
+    it('keeps the original error when the order fails, not an error from the clean-up', async () => {
+      const product = await makeProduct();
+
+      await expect(place([{ productId: product._id.toString(), quantity: 2 }], {})).rejects.toMatchObject({ name: 'ValidationError' });
+    });
   });
 });

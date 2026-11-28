@@ -135,3 +135,15 @@ The scenario docs are a steep ice-cream cone, but the code is a proper pyramid. 
 * **Keep:** TC-033 (API), TC-180 (E-MOB).
 * **Trim:** TC-032.
 * **Gaps to add:** scenarios for REQ-CAN-04, REQ-REF-02 and REQ-REF-04.
+
+## 8. Follow-up (2026-11-28)
+
+Tests added for three gaps in section 4. Each was run on its own; the full suites were not run.
+
+| Gap | New test | Layer | Result |
+|---|---|---|---|
+| `createRefundRules` and `decideRefundRules` (REQ-REF-03, REQ-REF-05) | `backend/src/validators/__tests__/refundValidators.test.ts` | U | 55 new tests pass (64 in the file with the 9 that already existed) |
+| Buyer cancel reason limit of 500 characters (REQ-CAN-01) | `backend/src/services/__tests__/orderService.cancelReason.test.ts` | U | 5 tests pass |
+| Buyer cancel route: `409 cancellation_conflict`, legacy "only pending" (REQ-CAN-01, REQ-CAN-02) | `backend/src/controllers/__tests__/orderController.cancel.integration.test.ts` | I | 12 tests pass |
+
+The seller list filters (`sellerRefundListRules`) already had tests in the same file, which are kept. The web buyer cancel button and the seller Return/Refund tab are still untested.
