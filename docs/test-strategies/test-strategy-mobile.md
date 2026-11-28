@@ -3,7 +3,8 @@
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
 **Platform filter:** Mobile (79 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
-**Updated:** 2026-10-24; TC-401 added 2026-11-08
+**Updated:** 2026-10-24; TC-401 added 2026-11-08  
+**Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
 ---
 
@@ -60,12 +61,12 @@
 | TC-082 | Voucher via route extra | E2E | Patrol | P1 | `extra['voucherSelections']` | Coupon UI |
 | TC-095 | **COD checkout** | E2E | Patrol | P0 | `CheckoutScreen` | P0 checkout smoke |
 | TC-101 | **COD checkout — variant product** | E2E | Patrol | P0 | `products_variantValue_*` | Variant path smoke |
-| TC-083 | Multi-seller → 2 orders | Multi | Patrol + API | P0 | `POST /api/orders` + checkout | S4 mobile |
+| TC-083 | E2E | Patrol | Patrol + API | P0 | `POST /api/orders` + checkout | S4 mobile |
 | TC-096 | Saved card checkout | E2E | Patrol | P1 | Saved card selector | Card payment |
 | TC-097 | New card checkout | E2E | Patrol | P1 | Card entry fields | Card entry |
-| TC-103 | New card checkout — variant | E2E | Patrol | P1 | `products_variantValue_*` + card entry | Variant + new card |
-| TC-104 | Saved card checkout — variant | E2E | Patrol | P1 | `products_variantValue_*` + saved card | Variant + saved card |
-| TC-084 | Order history + detail | E2E | Patrol | P1 | `/orders`, `/orders/:id` | Buyer orders |
+| TC-103 | New card checkout — variant | Trim | — | P1 | `products_variantValue_*` + card entry | Variant + new card |
+| TC-104 | Saved card checkout — variant | Trim | — | P1 | `products_variantValue_*` + saved card | Variant + saved card |
+| TC-084 | Order history + detail | Component | flutter_test (widget) | P1 | `/orders`, `/orders/:id` | Buyer orders |
 | TC-085 | Confirm receipt | E2E | Patrol | P1 | Confirm action | Post-shipped |
 | TC-612 | Invalid login | E2E | Patrol | P1 | `auth_loginButton` | Error UX |
 | TC-613 | Variant required | E2E | Patrol | P1 | Product detail | Validation |
@@ -197,19 +198,19 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-174 | Deleting a saved address asks for confirmation (mobile) | E2E | Patrol | P2 |
 | TC-175 | Payment Methods screen — list, set default, delete a card (mobile) | E2E | Patrol | P1 |
 | TC-176 | Card checkout reserves the amount and explains it (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-177 | Declined card places no order (mobile) | Component | flutter_test | P1 |
+| TC-177 | Declined card places no order (mobile) | Integration | Vitest (integration) | P1 |
 | TC-178 | 3-D Secure card on mobile | Manual | Manual | P1 |
 | TC-179 | Buyer order detail shows payment notices (mobile) | Component | flutter_test | P1 |
-| TC-180 | Buyer cancels a pending order (mobile) | Multi | Playwright-API + Patrol | P0 |
+| TC-180 | Buyer cancels a pending order (mobile) | E2E | Patrol | P0 |
 | TC-181 | No cancel after the seller accepts (mobile) | Component | flutter_test | P2 |
 | TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-183 | Seller cancels a pending order with a required reason (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-183 | Seller cancels a pending order with a required reason (mobile) | Component | flutter_test (widget) | P0 |
 | TC-184 | Cancel is hidden when the seller may not cancel (mobile) | Component | flutter_test | P2 |
-| TC-185 | Buyer requests a refund for a delivered order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-186 | Seller approves or rejects a refund request (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-185 | Buyer requests a refund for a delivered order (mobile) | Component | flutter_test (widget) | P0 |
+| TC-186 | Seller approves or rejects a refund request (mobile) | Component | flutter_test (widget) | P0 |
 | TC-187 | Return/Refund tab and Complete tab behaviour (mobile) | Component | flutter_test | P1 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
-| TC-189 | Interrupted card checkout resumes (mobile) | Manual | Manual | P2 |
+| TC-189 | Interrupted card checkout resumes (mobile) | Integration | Vitest (integration) | P2 |
 | TC-401 | An order the seller never accepted shows "Reservation released" (mobile) | E2E | Patrol | P2 |
 | TC-621 | Initial product list loads first 20 products | E2E | Patrol | P1 |
 | TC-622 | Scrolling to the bottom loads more products | E2E | Patrol | P1 |

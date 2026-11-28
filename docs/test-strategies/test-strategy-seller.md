@@ -3,7 +3,8 @@
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
 **Role filter:** Seller | Both  
-**Platform:** Web + Mobile
+**Platform:** Web + Mobile  
+**Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
 ---
 
@@ -128,37 +129,37 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-134 | Seller order list is scoped to own account (IDOR) | API | Playwright-API | P1 |
 | TC-155 | Seller accepts a pending card order — payment is captured | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
 | TC-156 | Seller sees the acceptance deadline only while the order is pending | Unit | Vitest | P2 |
-| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-158 | Seller pending cancellation needs a valid reason | API | Playwright-API | P1 |
-| TC-159 | Seller cancels a pending COD order without any Stripe request | Multi | Vitest (integration) + Playwright | P1 |
+| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Integration | Vitest (integration) | P0 |
+| TC-158 | Seller pending cancellation needs a valid reason | Component | Vitest (component) | P1 |
+| TC-159 | Seller cancels a pending COD order without any Stripe request | Integration | Vitest (integration) | P1 |
 | TC-160 | Seller cannot cancel from shipped, and cannot cancel card orders after pending | Unit | Vitest + Playwright-API | P1 |
-| TC-164 | Seller approves a refund request — refund settles | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-165 | Seller rejects a refund request with a required explanation | Component | Vitest + RTL | P1 |
+| TC-164 | Seller approves a refund request — refund settles | E2E | Playwright | P0 |
+| TC-165 | Seller rejects a refund request with a required explanation | Integration | Vitest (integration) | P1 |
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | P2 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
 | TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-183 | Seller cancels a pending order with a required reason (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-183 | Seller cancels a pending order with a required reason (mobile) | Component | flutter_test (widget) | P0 |
 | TC-184 | Cancel is hidden when the seller may not cancel (mobile) | Component | flutter_test | P2 |
-| TC-186 | Seller approves or rejects a refund request (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-186 | Seller approves or rejects a refund request (mobile) | Component | flutter_test (widget) | P0 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
 | TC-199 | Seller accept captures exactly the held amount | Multi | Vitest (integration) + Playwright-API | P0 |
 | TC-200 | Repeat or late accept returns 409 `order_not_pending` | API | Playwright-API | P1 |
 | TC-201 | Another seller cannot accept or cancel the order | API | Playwright-API | P0 |
 | TC-202 | Accept after the deadline is refused | Integration | Vitest | P1 |
 | TC-204 | Accept racing cancel has exactly one winner | Integration | Vitest | P1 |
-| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-210 | Seller cancel validation and ownership errors | API | Playwright-API | P1 |
+| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API (1 smoke) | P0 |
+| TC-210 | Seller cancel validation and ownership errors | Integration | Vitest (integration) | P1 |
 | TC-211 | Seller cancel conflicts and unsupported order shapes | Integration | Vitest | P1 |
-| TC-212 | Seller cannot cancel a shipped order | API | Playwright-API + Vitest | P1 |
-| TC-213 | `canSellerCancelPending` is derived by the server | API | Playwright-API | P1 |
+| TC-212 | Seller cannot cancel a shipped order | Unit | Vitest | P1 |
+| TC-213 | `canSellerCancelPending` is derived by the server | Unit | Vitest | P1 |
 | TC-219 | Refunds can be switched off | Integration | Vitest | P1 |
-| TC-222 | Seller isolation and role checks on refund decisions | API | Playwright-API | P0 |
-| TC-223 | Approve starts one refund; repeat and races converge | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-224 | Rejection needs an explanation | Multi | Vitest + Playwright-API | P1 |
+| TC-222 | Seller isolation and role checks on refund decisions | Integration | Vitest (integration) | P0 |
+| TC-223 | Approve starts one refund; repeat and races converge | Integration | Vitest (integration) | P0 |
+| TC-224 | Rejection needs an explanation | Unit | Vitest | P1 |
 | TC-225 | A refund does not undo fulfillment | API | Playwright-API | P1 |
-| TC-226 | Seller refund list pagination and filters | Unit | Vitest | P2 |
+| TC-226 | Seller refund list pagination and filters | Integration | Vitest (integration) | P2 |
 | TC-227 | Delivery records `deliveredAt` and the 7-day deadline on every path | Multi | Vitest (integration) + Playwright-API | P1 |
-| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Multi | Vitest + Playwright-API | P1 |
+| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Integration | Vitest (integration) | P1 |
 | TC-232 | Login returns a token for valid credentials | API | Playwright-API | P0 |
 | TC-233 | Login rejects an invalid password | API | Playwright-API | P1 |
 | TC-234 | `GET /api/auth/me` returns the logged-in user | API | Playwright-API | P1 |
