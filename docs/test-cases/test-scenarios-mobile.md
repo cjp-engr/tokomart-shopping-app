@@ -33,6 +33,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `keys.products.homeScreen` and `keys.products.searchField` visible
 - User authenticated; bottom nav shell visible
 
+**Requirement(s)**: REQ-AUTH-03  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `auth_loginEmailField`, `auth_loginPasswordField`, `auth_loginButton`, `products_homeScreen`, `products_searchField`  
 **Suggested Layer**: E2E Mobile  
@@ -63,6 +64,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - GoRouter redirect sends user to `/login` for any non-auth route
 - Products home not visible until login succeeds
 
+**Requirement(s)**: REQ-PAR-01  
 **Business Rule**: §9 Platform — mobile auth gate (`app_router.dart` redirect)  
 **Selectors/API**: Route `/login`; `auth_loginButton`  
 **Suggested Layer**: E2E Mobile  
@@ -91,6 +93,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Redirect to `/` (products home)
 
+**Requirement(s)**: REQ-PAR-01  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `products_homeScreen`  
 **Suggested Layer**: E2E Mobile  
@@ -122,6 +125,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Account created; redirected to products home
 - User role = buyer
 
+**Requirement(s)**: REQ-PAR-03  
 **Business Rule**: §1 Roles, §10 Mobile signup validation  
 **Selectors/API**: `POST /api/auth/signup` — **keys missing** for signup fields  
 **Suggested Layer**: E2E Mobile  
@@ -152,6 +156,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Redirect to `/login`
 - Cart cleared locally (server cart preserved for re-login)
 
+**Requirement(s)**: REQ-AUTH-13  
 **Business Rule**: §1 Session & cart  
 **Selectors/API**: Profile sign-out — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -182,6 +187,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Cart items restored from server via `GET /api/cart`
 
+**Requirement(s)**: REQ-CART-01, REQ-CART-08  
 **Business Rule**: §1 Session & cart, §3 Cart sync  
 **Selectors/API**: `GET /api/cart` — cart screen keys missing  
 **Suggested Layer**: E2E Mobile  
@@ -214,6 +220,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Product cards visible with name and price
 - Search field and cart icon in app bar
 
+**Requirement(s)**: REQ-CAT-01  
 **Business Rule**: §2 Product catalog  
 **Selectors/API**: `products_homeScreen`, `products_searchField`  
 **Suggested Layer**: E2E Mobile  
@@ -243,6 +250,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Navigates to `/cart`
 - Cart screen loads (empty or with items)
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §3 Cart  
 **Selectors/API**: Semantics label `AppStrings.openCart` — **Patrol key missing**  
 **Suggested Layer**: E2E Mobile  
@@ -273,6 +281,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Results filtered to matching products
 - Empty state if no matches
 
+**Requirement(s)**: REQ-CAT-04  
 **Business Rule**: §2 Search  
 **Selectors/API**: `products_searchField`  
 **Suggested Layer**: E2E Mobile  
@@ -302,6 +311,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Only products in selected category shown
 
+**Requirement(s)**: REQ-CAT-03  
 **Business Rule**: §2 Category filter  
 **Selectors/API**: Category chips — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -333,6 +343,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Selected variant price/stock reflected
 - Cart badge increments
 
+**Requirement(s)**: REQ-PRC-02  
 **Business Rule**: §2 Variants, §3 Add to cart  
 **Selectors/API**: `/products/:id` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -362,6 +373,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - New listing visible; seller's own listing hidden when logged in as that seller (TC-610)
 
+**Requirement(s)**: REQ-CAT-01  
 **Business Rule**: §2 Catalog visibility  
 **Selectors/API**: `products_homeScreen`  
 **Suggested Layer**: E2E Mobile  
@@ -390,6 +402,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Original price shown with strikethrough; sale price prominent
 
+**Requirement(s)**: REQ-PRC-08  
 **Business Rule**: §4 Pricing — discounts  
 **Selectors/API**: Price widgets — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -418,6 +431,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Own products excluded from public listing
 
+**Requirement(s)**: REQ-CAT-10  
 **Business Rule**: §2 Seller catalog filter  
 **Selectors/API**: `GET /api/products` filters sellerId  
 **Suggested Layer**: E2E Mobile  
@@ -451,6 +465,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Quantity updates respect stock cap
 - Remove clears line item; empty state when last item removed
 
+**Requirement(s)**: REQ-CART-01  
 **Business Rule**: §3 Cart operations  
 **Selectors/API**: Cart tile qty controls — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -482,6 +497,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Checkout receives route `extra`: `{ selected: Set<productId>, deliverySelections, voucherSelections }`
 - Only checked items appear on checkout screen
 
+**Requirement(s)**: REQ-CART-05  
 **Business Rule**: §3 Mobile cart selection (`cart_screen.dart`, `app_router.dart`)  
 **Selectors/API**: Checkbox per `cart_item_tile`; checkout route `extra['selected']`  
 **Suggested Layer**: E2E Mobile  
@@ -512,6 +528,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Checkout action disabled or shows zero selected count
 - No navigation to `/checkout` with empty selection
 
+**Requirement(s)**: REQ-CART-05  
 **Business Rule**: §3 Cart selection  
 **Selectors/API**: `selectedCount == 0` → `onCheckout: null` in `cart_screen.dart`  
 **Suggested Layer**: E2E Mobile  
@@ -542,6 +559,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - All item checkboxes sync with header tri-state
 - Summary subtotal reflects selected subset only
 
+**Requirement(s)**: REQ-CART-05  
 **Business Rule**: §3 Cart selection  
 **Selectors/API**: Seller-group header checkbox in `cart_screen.dart`  
 **Suggested Layer**: E2E Mobile  
@@ -572,6 +590,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Selected delivery passed in `extra['deliverySelections']`
 - Shipping fee on checkout matches selection
 
+**Requirement(s)**: REQ-CART-04, REQ-PRC-05  
 **Business Rule**: §3 Per-seller delivery  
 **Selectors/API**: Delivery chips per seller group — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -602,6 +621,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `extra['voucherSelections']` populated on `/checkout`
 - Discount reflected in checkout summary
 
+**Requirement(s)**: REQ-CART-04, REQ-CPN-03  
 **Business Rule**: §5 Vouchers  
 **Selectors/API**: `SelectVoucherScreen`; **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -633,6 +653,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Independent shipping/voucher per seller group
 - With a card under the manual-capture flow: each order is `pending` / `authorized` with its own Stripe hold for that seller's total
 
+**Requirement(s)**: REQ-ORD-01  
 **Business Rule**: §6 Multi-seller split  
 **Selectors/API**: `POST /api/orders` (batch, COD), `POST /api/checkout/sessions` (card, one hold per seller)  
 **Suggested Layer**: E2E Mobile  
@@ -665,6 +686,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Order created; checked-out items removed from cart
 - Order visible in `/orders` history
 
+**Requirement(s)**: REQ-ORD-03  
 **Business Rule**: §6 Checkout, §7 Orders  
 **Selectors/API**: `products_productDetailCartIconButton`, `cart_checkoutButton`, `orders_paymentOption_cash-on-delivery`, `orders_placeOrderButton`, `orders_ordersScreen`  
 
@@ -699,6 +721,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - *Updated 2026-10-24:* under `CHECKOUT_FLOW=manual_capture` card checkout uses `/api/checkout/sessions` and only holds the amount (`authorized`); `POST /api/orders` with a card returns 426. See TC-176
 - Checked-out items removed from cart; order visible on `/orders` (`orders_ordersScreen`)
 
+**Requirement(s)**: REQ-ORD-10  
 **Business Rule**: §4 Payment methods, §8 Saved cards  
 **Selectors/API**: `cart_checkoutButton`, `orders_checkoutStreetField`, `orders_paymentNewCardTab`, `orders_placeOrderButton`, `orders_ordersScreen`, `POST /api/orders` — **saved card row keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -734,6 +757,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Order visible in `/orders` history
 - *Updated 2026-10-24:* Stripe test card `4242 4242 4242 4242`; the payment screen shows the authorization disclosure ("Your money is reserved now and charged when each seller starts preparing your order"). See TC-176, TC-177, TC-178
 
+**Requirement(s)**: REQ-ORD-10  
 **Business Rule**: §4 Payment methods, §10 Checkout card validation  
 **Selectors/API**: `cart_checkoutButton`, `orders_paymentOption_credit-card`, `orders_paymentNewCardTab`, `orders_placeOrderButton`, `orders_ordersScreen` — **card field keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -769,6 +793,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Variant stock decrements for selected size only
 - Order visible in `/orders`; checked-out items removed from cart
 
+**Requirement(s)**: REQ-ORD-03, REQ-PRC-02  
 **Business Rule**: §2 Variants, §6 Checkout, §7 Orders  
 **Selectors/API**: Product detail variant chips — **keys missing**; `cart_checkoutButton`, `orders_paymentOption_cash-on-delivery`, `orders_placeOrderButton`, `orders_ordersScreen`, `POST /api/orders`  
 **Suggested Layer**: E2E Mobile  
@@ -799,6 +824,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Add blocked: disabled button, snackbar, or prompt to select variant
 - No cart line added; cart badge unchanged
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §2 Variant pricing — selection required  
 **Selectors/API**: Add-to-cart control on `/products/:id` — **keys missing**  
 **Suggested Layer**: E2E Mobile (canonical case; TC-613 is its historical alias)  
@@ -834,6 +860,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Payment method shows card type on order detail
 - Order visible in `/orders` history; cart items removed
 
+**Requirement(s)**: REQ-PRC-02, REQ-ORD-10  
 **Business Rule**: §2 Variants, §4 Payment methods, §6 Checkout, §10 Checkout card validation  
 **Selectors/API**: `products_variantValue_{attr}_{value}`, `cart_checkoutButton`, `orders_paymentOption_credit-card`, `orders_paymentNewCardTab`, `orders_placeOrderButton`, `orders_ordersScreen`, `POST /api/orders`  
 **Suggested Layer**: E2E Mobile  
@@ -868,6 +895,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Order payment shows saved card type + last4 on order detail
 - Checked-out items removed from cart; order visible in `/orders`
 
+**Requirement(s)**: REQ-PRC-02, REQ-ORD-10  
 **Business Rule**: §2 Variants, §4 Payment methods, §6 Checkout, §8 Saved cards  
 **Selectors/API**: `products_variantValue_{attr}_{value}`, `cart_checkoutButton`, `orders_paymentOption_credit-card`, `orders_placeOrderButton`, `orders_ordersScreen`, `POST /api/orders` — **saved card row keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -897,6 +925,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Error message shown; remain on `/login`
 
+**Requirement(s)**: REQ-AUTH-04, REQ-AUTH-11  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `auth_loginButton`, error snackbar/dialog — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -928,6 +957,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Action blocked or prompt to select variant
 
+**Requirement(s)**: Alias of TC-102; see that case  
 **Business Rule**: §2 Variant required  
 **Selectors/API**: Product detail — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -956,6 +986,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Quantity stops at effective stock (variant or product level)
 
+**Requirement(s)**: REQ-INV-07  
 **Business Rule**: §3 Stock cap  
 **Selectors/API**: Qty increment — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -989,6 +1020,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Detail shows items, totals, status badge
 - *Updated 2026-10-24:* tabs are Pending, Preparing, To Ship, To Receive, Complete, **Return/Refund**, Cancelled (no "All" tab on mobile). A fully refunded order is hidden from Complete (TC-187). Detail also shows the payment notice (TC-179) and the "Cancelled by the seller" notice with reason (TC-183)
 
+**Requirement(s)**: REQ-ORD-12  
 **Business Rule**: §7 Order history  
 **Selectors/API**: `/orders`, `/orders/:id` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1019,6 +1051,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Status advances to delivered (or buyer-confirmed state per API)
 - Review action becomes available
 
+**Requirement(s)**: REQ-FUL-06  
 **Business Rule**: §7 Confirm receipt  
 **Selectors/API**: `PUT /api/orders/:id/confirm-received` — **keys missing** *(corrected 2026-10-24: the endpoint was listed as `PATCH .../confirm`; confirming also records `deliveredAt` and starts the 7-day refund window, TC-227)*  
 **Suggested Layer**: E2E Mobile  
@@ -1052,6 +1085,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Item appears on wishlist screen with product info
 - Remove toggles favorite off; empty state when cleared
 
+**Requirement(s)**: REQ-PAR-02  
 **Business Rule**: §9 Wishlist — in-memory `WishlistBloc`  
 **Selectors/API**: `/wishlist`, `WishlistToggled` event — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1081,6 +1115,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - All items removed; empty state shown
 - Wishlist not persisted to API (session-only)
 
+**Requirement(s)**: REQ-PAR-02  
 **Business Rule**: §9 Wishlist in-memory  
 **Selectors/API**: `WishlistCleared` — **Blocked** for API persistence tests  
 **Suggested Layer**: E2E Mobile  
@@ -1112,6 +1147,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Follow state toggles; follower count updates
 
+**Requirement(s)**: REQ-PRO-03  
 **Business Rule**: §8 Follow  
 **Selectors/API**: `GET/POST /api/users/:id/follow` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1144,19 +1180,20 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Role promoted to seller (one-way)
 - Seller tab appears in bottom navigation
 
+**Requirement(s)**: REQ-AUTH-06  
 **Business Rule**: §11 Become seller  
 **Selectors/API**: `PATCH /api/users/me/seller` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
 
 ---
 
-### TC-090: Seller creates simple product — mobile 7-step wizard
+### TC-090: Seller creates simple product — mobile 6-step wizard
 **Scenario status**: Active  
 **Category**: Happy Path  
 **Priority**: P0  
 **Role**: Seller  
 **Platform**: Mobile  
-**Parity**: Divergent (7 steps: Basic → Pricing → Description → Images → Variants → Shipping → Review)  
+**Parity**: Both (6 steps on web and mobile)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
 **Script mapping**: Unverified  
@@ -1168,26 +1205,28 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Preconditions**: Seller logged in  
 **Steps**:
 1. Seller tab → add product (`/seller/add`)
-2. Complete steps 0–6: basic info, pricing (no variants), description, images, skip/empty variants, shipping, review
+2. Complete the six steps: basic info, pricing (variants off), description, images, shipping, review
 3. Publish
 
 **Expected Results**:
 - Product saved; visible on seller dashboard
-- 7 wizard steps with `_WizardStepper` (steps: Basic, Pricing, Description, Images, Shipping, Review — variants on step 4)
+- 6 wizard steps in `_WizardStepper`: Basic Info, Pricing, Description, Images, Shipping, Review; variants are part of the Pricing step
+- *Corrected 2026-11-28:* an earlier version said 7 steps with a separate Variants step; the page list has 6
 
+**Requirement(s)**: REQ-SEL-06  
 **Business Rule**: §2 Seller product wizard  
 **Selectors/API**: `/seller/add`, `add_edit_product_screen.dart` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
 
 ---
 
-### TC-091: Seller creates variant product — mobile 7-step wizard
+### TC-091: Seller creates variant product — mobile 6-step wizard
 **Scenario status**: Active  
 **Category**: Happy Path  
 **Priority**: P0  
 **Role**: Seller  
 **Platform**: Mobile  
-**Parity**: Divergent (variants on dedicated step 4, separate from web combined pricing step)  
+**Parity**: Both (variants are set up inside the Pricing step on web and mobile)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
 **Script mapping**: Unverified  
@@ -1199,14 +1238,16 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Preconditions**: Seller logged in  
 **Steps**:
 1. Start add product wizard
-2. On Variants step (4): define attributes, per-variant price/stock/discount/images
+2. On the Pricing step: switch on Enable Variants, define attributes, then per-variant price/stock/discount/images
 3. Complete shipping + review → publish
 
 **Expected Results**:
 - Variant product live; buyer can select variants on detail (TC-076)
+- *Corrected 2026-11-28:* an earlier version put variants on a separate step 4; the wizard has no such step
 
+**Requirement(s)**: REQ-SEL-03, REQ-SEL-06  
 **Business Rule**: §2 Variants, §2 Wizard steps  
-**Selectors/API**: Variant editor in step 4 — **keys missing**; media picker may request permission  
+**Selectors/API**: Variant editor inside the Pricing step — **keys missing**; media picker may request permission  
 **Suggested Layer**: E2E Mobile  
 
 ---
@@ -1235,6 +1276,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Each transition accepted; status badge updates
 - *Updated 2026-10-24:* `pending → preparing` is the acceptance step, labelled "Accept & start preparing" (`seller_acceptOrderButton_<id>`); it shows the acceptance deadline (`seller_acceptDeadlineText_<id>`) and a charging state while a card is captured (`seller_capturePendingText_<id>`), see TC-182. No cancel is offered from `shipped`
 
+**Requirement(s)**: REQ-FUL-01  
 **Business Rule**: §12 Order pipeline  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`; acceptance keys are listed above; remaining pipeline controls need a key audit before automation  
 **Suggested Layer**: E2E Mobile  
@@ -1264,6 +1306,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Voucher listed on seller dashboard; validation rules enforced at apply time
 
+**Requirement(s)**: REQ-CPN-01, REQ-CPN-02, REQ-CPN-03  
 **Business Rule**: §5 Vouchers  
 **Selectors/API**: `/seller?tab=vouchers` — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1292,6 +1335,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Opens product detail with edit hidden (`hideEdit=1`)
 
+**Requirement(s)**: REQ-SEL-07  
 **Business Rule**: §2 Preview as buyer  
 **Selectors/API**: `/products/:id?hideEdit=1`  
 **Suggested Layer**: E2E Mobile  
@@ -1320,6 +1364,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - UI blocks or API returns 403 for seller-only actions
 
+**Requirement(s)**: REQ-AUTH-07, REQ-PAR-01  
 **Business Rule**: §11 Role enforcement  
 **Selectors/API**: `GET /api/seller/*` → 403  
 **Suggested Layer**: E2E Mobile + API  
@@ -1351,6 +1396,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Product tile shows correct name and price on dashboard
 - Product detail screen loads at `/products/:id?hideEdit=1`; edit controls hidden
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §2 Seller product listing  
 **Selectors/API**: `keys.seller.productTile(productId)` — **key missing**; `keys.seller.dashboardScreen` exists  
 **Suggested Layer**: E2E Mobile  
@@ -1363,7 +1409,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Priority**: P1  
 **Role**: Seller  
 **Platform**: Mobile  
-**Parity**: Divergent (mobile: 7-step wizard re-opens pre-filled; web TC-044: 6-step wizard)  
+**Parity**: Both (the wizard re-opens pre-filled, 6 steps on web TC-044 and on mobile)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
 **Script mapping**: Unverified  
@@ -1383,6 +1429,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Wizard opens in edit mode with current values populated
 - After publish, dashboard product tile reflects updated name and price
 
+**Requirement(s)**: REQ-SEL-04  
 **Business Rule**: §2 Seller product wizard (edit mode)  
 **Selectors/API**: `keys.seller.editProductButton(productId)` — **key missing**; wizard keys exist  
 **Suggested Layer**: E2E Mobile  
@@ -1415,6 +1462,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Product tile no longer visible on dashboard after confirm
 - `DELETE /api/seller/products/:id` returns 200
 
+**Requirement(s)**: REQ-SEL-04  
 **Business Rule**: §2 Product delete  
 **Selectors/API**: `keys.seller.deleteProductButton(productId)` — **key missing**; `keys.widgets.dialogConfirmButton` exists  
 **Suggested Layer**: E2E Mobile  
@@ -1446,6 +1494,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Variant product tile shows on dashboard
 - Product detail screen loads; variant selectors visible
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §2 Seller product listing; §2 Variants  
 **Selectors/API**: `keys.seller.productTile(productId)` (exists); `SellerApiClient.createVariantProduct()` — **method missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1480,6 +1529,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - After publish, product tile still present on dashboard
 - Variant price update persisted (`PUT /api/seller/products/:id`)
 
+**Requirement(s)**: REQ-SEL-03, REQ-SEL-04  
 **Business Rule**: §2 Variant price/stock are per-option; §2 Wizard edit mode  
 **Selectors/API**: `keys.seller.editProductButton(productId)` (exists); `keys.seller.wizardVariantPriceField(label)` (exists); `PUT /api/seller/products/:id`  
 **Suggested Layer**: E2E Mobile  
@@ -1512,6 +1562,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Product tile no longer visible on dashboard
 - `DELETE /api/seller/products/:id` returns 200
 
+**Requirement(s)**: REQ-SEL-04  
 **Business Rule**: §2 Product delete  
 **Selectors/API**: `keys.seller.deleteProductButton(productId)` (exists); `keys.widgets.dialogConfirmButton` (exists); no API teardown — UI deleted  
 **Suggested Layer**: E2E Mobile  
@@ -1543,6 +1594,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Exactly 20 product cards are in the widget tree on initial load (first BLoC page)
 - No loading spinner at bottom of list (initial fetch complete)
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §1 Product browse — mobile infinite scroll, 20 per fetch  
 **Selectors/API**: `keys.products.productList`, `keys.products.productCard(name)`, `GET /api/products?page=1&limit=20`  
 **Suggested Layer**: E2E Mobile  
@@ -1576,6 +1628,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - More than 20 product cards are now in the widget tree
 - No error state visible
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §1 Product browse — `ProductsLoadMoreRequested` triggered within 300px of bottom  
 **Selectors/API**: `keys.products.productList`, `keys.products.productCard(name)`, `GET /api/products?page=2&limit=20`  
 **Suggested Layer**: E2E Mobile  
@@ -1606,6 +1659,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - `CircularProgressIndicator` (keyed as the load-more spinner) is visible at the bottom of the list during the fetch
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §1 Product browse — BLoC `ProductsLoading` state while fetching next page  
 **Selectors/API**: `keys.products.loadMoreSpinner` — **key may be missing; add to `lib/features/products/keys.dart`**  
 **Suggested Layer**: E2E Mobile  
@@ -1639,6 +1693,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - No loading spinner appears
 - `GET /api/products` is not called again for a next page
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §1 Product browse — BLoC stops dispatching `ProductsLoadMoreRequested` when `hasReachedMax` is true  
 **Selectors/API**: `keys.products.productList`, `keys.products.loadMoreSpinner` (absent)  
 **Suggested Layer**: E2E Mobile  
@@ -1669,19 +1724,20 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Cannot reach `/` without login (contrast TC-008 web guest browse)
 
+**Requirement(s)**: REQ-PAR-01  
 **Business Rule**: §9 Platform auth  
 **Selectors/API**: `app_router.dart` redirect  
 **Suggested Layer**: E2E Mobile  
 
 ---
 
-### TC-601: Mobile 7-step seller wizard step count
+### TC-601: Mobile seller wizard step count
 **Scenario status**: Active  
 **Category**: Platform Parity  
 **Priority**: P2  
 **Role**: Seller  
 **Platform**: Mobile  
-**Parity**: Divergent (vs TC-061 web 6-step)  
+**Parity**: Both (vs TC-061: web also has 6 steps)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
 **Script mapping**: Unverified  
@@ -1695,9 +1751,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 1. Count wizard steps in `_WizardStepper`
 
 **Expected Results**:
-- 7 content pages (0–6): Basic, Pricing, Description, Images, Variants, Shipping, Review
-- Variants on separate step (unlike web combined in pricing)
+- 6 pages: Basic Info, Pricing, Description, Images, Shipping, Review
+- Variants are set up inside the Pricing step, as on web
+- *Corrected 2026-11-28:* an earlier version said 7 pages with a separate Variants step
 
+**Requirement(s)**: REQ-SEL-06  
 **Business Rule**: §9 Platform wizard  
 **Selectors/API**: `add_edit_product_screen.dart`  
 **Suggested Layer**: E2E Mobile  
@@ -1710,7 +1768,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Priority**: P2  
 **Role**: Buyer  
 **Platform**: Mobile  
-**Parity**: Divergent (vs TC-063 web all-items checkout)  
+**Parity**: Both (web TC-063 has the same checkboxes)  
 **Automation**: Patrol  
 **Automation status**: Needs review  
 **Script mapping**: Unverified  
@@ -1724,8 +1782,11 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 1. Select subset → checkout
 
 **Expected Results**:
-- Unchecked items remain in cart after order
+- Only the checked items are in the order, the summary and the total
+- After the order only the checked-out items leave the cart; unchecked items stay (REQ-CART-05)
+- *Corrected 2026-11-28:* an earlier version contrasted this with a web cart that has no checkboxes; the web cart has them (TC-063)
 
+**Requirement(s)**: REQ-CART-05  
 **Business Rule**: §3 Cart selection  
 **Selectors/API**: TC-078  
 **Suggested Layer**: E2E Mobile  
@@ -1754,6 +1815,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Wishlist empty after restart (in-memory bloc only)
 
+**Requirement(s)**: REQ-PAR-02  
 **Business Rule**: §9 Wishlist  
 **Selectors/API**: N/A — **Blocked** for Playwright-API  
 **Suggested Layer**: Manual  
@@ -1782,6 +1844,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - `onPressed: () {}` — no navigation, no dialog (stub)
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §9 Notifications stub  
 **Selectors/API**: Semantics `AppStrings.notifications`  
 **Suggested Layer**: Manual  
@@ -1814,6 +1877,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Tapping payload `seller_orders_tab` opens the seller Orders tab at `/seller?tab=orders`
 - This verifies foreground polling/local alerts, not FCM or closed-app delivery. Permission-denied behavior needs a separate run and is not an alert-delivery failure
 
+**Requirement(s)**: REQ-PAR-04  
 **Business Rule**: §9 Seller notifications  
 **Selectors/API**: `NotificationService.onTap`, `main_shell.dart` polling  
 **Suggested Layer**: Manual / E2E Mobile  
@@ -1842,6 +1906,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Succeeds on mobile; would fail on web signup
 
+**Requirement(s)**: REQ-PAR-03  
 **Business Rule**: §10 Password rules  
 **Selectors/API**: Signup form — **keys missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1882,6 +1947,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The order is placed; the address appears once in Saved Addresses
 - With the toggle off nothing is saved
 
+**Requirement(s)**: REQ-PRO-01  
 **Business Rule**: §8 Saved addresses  
 **Selectors/API**: `orders_checkoutNewAddressOption`, `orders_checkoutStreetField`, `orders_checkoutCityField`, `orders_checkoutStateField`, `orders_checkoutZipField`, `orders_placeOrderButton`; save toggle — **key missing**  
 **Suggested Layer**: E2E Mobile  
@@ -1911,6 +1977,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - The list shows the new values; an empty street/city is rejected with a message and nothing is sent
 
+**Requirement(s)**: REQ-PRO-01  
 **Business Rule**: §8 Saved addresses (`street` + `city` required)  
 **Selectors/API**: address sheet — **keys missing**; `PUT /api/auth/saved-addresses/:id`  
 **Suggested Layer**: E2E Mobile  
@@ -1940,6 +2007,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - The dialog shows "Delete address" and the address text; Cancel keeps it, confirming removes it (PR #77)
 
+**Requirement(s)**: REQ-PRO-01  
 **Business Rule**: §8 Saved addresses  
 **Selectors/API**: confirm dialog — **keys missing**; `DELETE /api/auth/saved-addresses/:id`  
 **Suggested Layer**: E2E Mobile  
@@ -1972,6 +2040,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Delete asks to confirm ("Delete card" with brand and last4), then shows "card deleted" feedback
 - No cards: the empty state "no saved cards" is shown; a load failure shows a Retry button
 
+**Requirement(s)**: REQ-PRO-02  
 **Business Rule**: §8 Saved cards  
 **Selectors/API**: `ValueKey(method.id)` rows; buttons by tooltip; `GET/DELETE /api/auth/payment-methods`, `PATCH .../:id/default`  
 **Suggested Layer**: E2E Mobile  
@@ -2008,6 +2077,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Detail shows the "Payment reserved" notice (`orders_paymentNoticeTitle_Payment reserved`)
 - Multi-seller carts get one order and one hold per seller
 
+**Requirement(s)**: REQ-PAY-02  
 **Business Rule**: Authorize-capture §Checkout and authorization  
 **Selectors/API**: `orders_paymentOption_credit-card`, `orders_paymentNewCardTab`, `orders_paymentSavedCardsTab`, `orders_paymentSubmitButton`, `orders_placeOrderButton`, `POST /api/checkout/sessions`  
 **Suggested Layer**: E2E Mobile (Stripe test mode)  
@@ -2037,6 +2107,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A readable decline message is shown (not a raw exception); no order is created
 - The cart items stay checked; stock is unchanged after the draft is released
 
+**Requirement(s)**: REQ-ORD-09  
 **Business Rule**: Authorize-capture §Checkout (compensation)  
 **Selectors/API**: `orders_paymentSubmitButton` — error text **key missing**  
 **Suggested Layer**: E2E Mobile  
@@ -2065,6 +2136,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Completed: order `pending` / `authorized`. Abandoned: no order, cart kept, retry possible, no hold left after expiry
 
+**Requirement(s)**: REQ-ORD-09  
 **Business Rule**: Authorize-capture §Checkout step 4  
 **Selectors/API**: Stripe SDK native sheet  
 **Suggested Layer**: Manual  
@@ -2095,6 +2167,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A cancelled-by-seller order shows "Cancelled by the seller" and the reason
 - Known gap (open items): the 24-hour acceptance notice is hidden for COD orders
 
+**Requirement(s)**: REQ-PAY-02  
 **Business Rule**: Authorize-capture §Recovery and Stripe events  
 **Selectors/API**: `orders_paymentNoticeTitle_<title>` (`OrdersKeys.paymentNoticeTitle`)  
 **Suggested Layer**: Widget / E2E Mobile  
@@ -2124,6 +2197,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - The same session is resumed; one order and one hold per seller, never duplicates
 
+**Requirement(s)**: REQ-ORD-07, REQ-ORD-08  
 **Business Rule**: Authorize-capture §Checkout (idempotency, resume)  
 **Selectors/API**: `lib/features/checkout/data/checkout_attempt_store.dart`  
 **Suggested Layer**: Manual  
@@ -2156,6 +2230,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - "Keep order" changes nothing; confirming moves the order to the Cancelled tab with stock restored once
 - Card order: notice goes to "Releasing reservation" then "Reservation released"; COD: no payment notice
 
+**Requirement(s)**: REQ-CAN-01  
 **Business Rule**: Authorize-capture §Buyer cancellation  
 **Selectors/API**: `orders_cancelOrderButton`, `orders_orderCard_<id>`, `PUT /api/orders/:id/status`  
 **Suggested Layer**: E2E Mobile  
@@ -2184,6 +2259,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - `orders_cancelOrderButton` is absent for both; a conflict from a stale screen is shown as a message, never as "cancelled"
 
+**Requirement(s)**: REQ-CAN-02  
 **Business Rule**: §5 Buyer cancel (pending only)  
 **Selectors/API**: `orders_cancelOrderButton` (absent)  
 **Suggested Layer**: E2E Mobile  
@@ -2216,6 +2292,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `seller_acceptDeadlineText_<id>` is visible while pending; `seller_capturePendingText_<id>` shows during capture
 - The order becomes `preparing`; the exact held amount is captured; the buyer's notice reads "Payment charged"
 
+**Requirement(s)**: REQ-PAY-02, REQ-FUL-04  
 **Business Rule**: Authorize-capture §Seller acceptance and capture  
 **Selectors/API**: `seller_acceptOrderButton_<id>`, `seller_acceptDeadlineText_<id>`, `seller_capturePendingText_<id>`, `seller_ordersTab`  
 **Suggested Layer**: E2E Mobile  
@@ -2248,6 +2325,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Card order: hold released; COD: no Stripe call
 - The buyer sees "Cancelled by the seller" and `Reason: …` on the detail screen
 
+**Requirement(s)**: REQ-CAN-05  
 **Business Rule**: Seller pending cancellation spec §Approved policy, §Client experience  
 **Selectors/API**: `seller_cancelOrderButton_<id>`, `seller_cancelReasonField`  
 **Suggested Layer**: E2E Mobile  
@@ -2276,6 +2354,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - No Cancel for `shipped`, the `preparing` card order, or the pending order the server flags as not cancellable; Cancel with an optional reason for the `preparing` COD order
 
+**Requirement(s)**: REQ-CAN-07  
 **Business Rule**: Seller pending cancellation spec; `SellerOrderData.canCancel`  
 **Selectors/API**: `seller_cancelOrderButton_<id>` (absent)  
 **Suggested Layer**: Widget / E2E Mobile  
@@ -2307,6 +2386,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - No money was charged; the hold was released
 - The order is not listed under Pending
 
+**Requirement(s)**: REQ-PAY-04  
 **Business Rule**: Authorize-capture §Seller acceptance (deadline) and Recovery  
 **Selectors/API**: `orders_ordersNavTab`, `orders_orderCard_<id>`, `orders_paymentNoticeTitle_<title>`  
 **Suggested Layer**: E2E Mobile  
@@ -2341,6 +2421,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - After submit the request shows as awaiting the seller; the order stays `delivered`
 - Ineligible orders (COD, window closed, flag off) show "This order is not eligible for a refund request." or "New refund requests are currently unavailable."
 
+**Requirement(s)**: REQ-REF-03  
 **Business Rule**: Delivered-item refund spec  
 **Selectors/API**: refund request panel — **keys missing**; `POST /api/orders/:id/refund-requests`  
 **Suggested Layer**: E2E Mobile  
@@ -2374,6 +2455,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - C: the request moves to Rejected, the requested-count badge decrements and the buyer can read the explanation
 - Record subcases independently; the parent passes only when A, B and C pass
 
+**Requirement(s)**: REQ-REF-05  
 **Business Rule**: Delivered-item refund spec §API and concurrency  
 **Selectors/API**: `RefundReviewPanel` — **keys missing**; `PUT /api/seller/refund-requests/:id/decision`  
 **Suggested Layer**: E2E Mobile  
@@ -2403,6 +2485,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A fully refunded order is not listed under Complete; approved refunds are listed under Return/Refund with "Fully refunded" / "Partially refunded"
 - Partially refunded orders stay under Complete with refund chips on their items
 
+**Requirement(s)**: REQ-REF-06  
 **Business Rule**: Delivered-item refund spec §Clients; PR #86, #87  
 **Selectors/API**: `orders_ordersScreen`, tab labels — **keys missing**  
 **Suggested Layer**: Widget / E2E Mobile  
@@ -2433,6 +2516,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - The offline banner appears; network errors read "No internet connection." and disappear when back online
 
+**Requirement(s)**: REQ-PAR-07  
 **Business Rule**: Offline handling spec 2026-08-06  
 **Selectors/API**: `core/widgets/offline_banner.dart`, `ConnectivityCubit`  
 **Suggested Layer**: Widget + Manual  

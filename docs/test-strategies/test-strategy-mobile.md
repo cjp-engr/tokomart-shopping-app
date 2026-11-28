@@ -74,8 +74,8 @@
 | TC-087 | Wishlist clear all | E2E | Patrol | P2 | `WishlistCleared` | In-memory |
 | TC-088 | Follow/unfollow seller | E2E | Patrol | P2 | `/seller-profile/:sellerId` | Social |
 | TC-089 | Become seller | E2E | Patrol | P0 | Seller promotion API | S3 mobile |
-| TC-090 | **Simple 7-step wizard** | E2E | Patrol | P0 | `/seller/add` | S3 mobile |
-| TC-091 | **Variant 7-step wizard** | E2E | Patrol | P0 | Variant step 4 | Variant listing |
+| TC-090 | **Simple 6-step wizard** | E2E | Patrol | P0 | `/seller/add` | S3 mobile |
+| TC-091 | **Variant 6-step wizard** | E2E | Patrol | P0 | Variants inside the Pricing step | Variant listing |
 | TC-615 | Seller views simple product (Read) | E2E | Patrol | P1 | `keys.seller.productTile(id)` (exists) | Parity TC-045 (divergent) |
 | TC-616 | Seller edits simple product (Update) | E2E | Patrol | P1 | `keys.seller.editProductButton(id)` (exists) | Parity TC-044 (divergent) |
 | TC-617 | Seller deletes simple product (Delete) | E2E | Patrol | P1 | `keys.seller.deleteProductButton(id)` (exists) | Parity TC-046 (both) |
@@ -91,7 +91,7 @@
 | TC-094 | Preview as buyer | E2E | Patrol | P2 | `?hideEdit=1` | vs web TC-045 |
 | TC-611 | Buyer blocked seller routes | Multi | Patrol + API | P0 | `GET /api/seller/*` → 403 | Security |
 | TC-600 | Auth gate vs web guest | E2E | Patrol | P1 | Cold launch | Parity doc |
-| TC-601 | 7-step wizard count | E2E | Patrol | P2 | `_WizardStepper` | vs TC-061 |
+| TC-601 | Wizard step count (6) | E2E | Patrol | P2 | `_WizardStepper` | vs TC-061 |
 | TC-602 | Checkbox parity | E2E | Patrol | P2 | TC-078 | vs TC-063 |
 | TC-603 | Wishlist in-memory | Blocked | — | P3 | No API | No persistence test |
 | TC-604 | Notifications bell stub | Manual | Manual | P3 | `onPressed: () {}` | No-op UI |
@@ -105,7 +105,7 @@
 ### Phase M1 — Keys + P0 smoke (unblock all Patrol)
 
 1. Add `keys.dart` for: cart, checkout, orders, seller, wishlist → register in `lib/keys.dart`
-2. Wire keys in screen widgets per `ui-selectors.md`
+2. Wire keys in screen widgets following the existing `keys.dart` naming
 3. Extend `login_test.dart` → **S2**: TC-067, TC-072, TC-073
 
 ### Phase M2 — P0 buyer checkout

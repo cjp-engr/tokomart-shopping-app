@@ -63,15 +63,15 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 
 | ID | Title | Layer | Phase |
 |----|-------|-------|-------|
-| TC-090 | Simple product (7-step wizard) | E2E Patrol | M3 |
-| TC-091 | Variant product (7-step wizard) | E2E Patrol | M3 |
+| TC-090 | Simple product (6-step wizard) | E2E Patrol | M3 |
+| TC-091 | Variant product (6-step wizard) | E2E Patrol | M3 |
 | TC-615 | View simple product in dashboard (Read) | E2E Patrol | M4 |
 | TC-616 | Edit simple product from dashboard (Update) | E2E Patrol | M4 |
 | TC-617 | Delete simple product from dashboard (Delete) | E2E Patrol | M4 |
 | TC-618 | View variant product in dashboard (Read) | E2E Patrol | M4 |
 | TC-619 | Edit variant product from dashboard (Update) | E2E Patrol | M4 |
 | TC-620 | Delete variant product from dashboard (Delete) | E2E Patrol | M4 |
-| TC-601 | 7-step wizard parity | E2E Patrol | M6 |
+| TC-601 | Wizard step count parity (6) | E2E Patrol | M6 |
 | TC-094 | Preview as buyer (`hideEdit=1`) | E2E Patrol | M6 |
 | TC-610 | Own products hidden | E2E Patrol | M4 |
 

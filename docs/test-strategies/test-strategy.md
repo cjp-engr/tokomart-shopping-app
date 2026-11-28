@@ -47,7 +47,7 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 | API | 117 | Orders, coupons, auth, reviews, rate limiting, cancellation, refund and checkout-session contracts, isolation | Playwright `request` |
 | Component / widget | 13 | Refund panels, chips, tabs, notices, offline banner, seller dialogs | Vitest + RTL, `flutter_test` |
 | E2E Web | 74 | Auth, cart, checkout, seller wizard, catalog, pagination, saved addresses, Stripe checkout | Playwright `page` |
-| E2E Mobile | 60 | Auth gate, cart checkbox, checkout, 7-step wizard, seller CRUD, new settings screens | Patrol |
+| E2E Mobile | 60 | Auth gate, cart checkbox, checkout, 6-step wizard, seller CRUD, new settings screens | Patrol |
 | Multi (≥ 2 layers) | 44 | Web 17 · Mobile 8 · API 19: card authorization, capture, cancellation, refunds, multi-seller | Mixed |
 | Manual / Blocked | 9 | Manual: TC-052, TC-178, TC-189, TC-270, TC-300, TC-604, TC-605 · Blocked: TC-062, TC-603 | — |
 
@@ -61,7 +61,7 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 |----|----------|-------------|------|----------|----------|--------|-----------|
 | S1 | Login → cart → checkout COD → order history | Multi | Playwright + Playwright-API | Web | P0 | TC-001, TC-016, TC-022, TC-098; `checkout.spec.ts`, `variant-checkout.spec.ts` | P0 buyer smoke; variant path in TC-098. TC-022 checks that the order is listed in the history; TC-016 has no script yet |
 | S2 | Mobile login → browse → cart | E2E | Patrol | Mobile | P0 | TC-067, TC-072, TC-073; `login_test.dart` | Extend existing Patrol; keys partial |
-| S3 | Become seller → simple + variant listing | Multi | Playwright + Patrol | Both | P0 | Web: TC-041, TC-042, TC-064 · Mobile: TC-089, TC-090, TC-091 | Divergent wizards (6 vs 7 steps) |
+| S3 | Become seller → simple + variant listing | Multi | Playwright + Patrol | Both | P0 | Web: TC-041, TC-042, TC-064 · Mobile: TC-089, TC-090, TC-091 | Wizard has 6 steps on web and mobile; mobile asks for media permission |
 | S4 | 2-seller cart → 2 orders | Multi | Playwright-API + Playwright/Patrol | Both | P0 | API: TC-025 · Web E2E: TC-021/025 · Mobile E2E: TC-083 | API proves split; platform E2E confirms UI |
 | S5 | Card checkout reserves the amount → seller accepts → payment captured | Multi | Integration + Playwright-API + Playwright + Patrol | Both | P0 | Web: TC-143, TC-155 · Mobile: TC-176, TC-182 · API: TC-199 · Integration: `orderCapture.integration.test.ts` | Money-critical: integration proves exact capture; one E2E per platform; needs `CHECKOUT_FLOW=manual_capture` |
 | S6 | Pending order cancelled by buyer and by seller; hold released | Multi | Integration + Playwright-API + Playwright + Patrol | Both | P0 | Web: TC-152, TC-157 · Mobile: TC-180, TC-183 · API: TC-205, TC-209 | Release and restore-once are backend rules; E2E shows dialogs and notices |
@@ -199,8 +199,8 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 | TC-087 | Wishlist clear all | E2E | Patrol | Mobile | P2 | `WishlistCleared` | In-memory clear | |
 | TC-088 | Follow/unfollow seller | E2E | Patrol | Mobile | P2 | `/seller-profile/:sellerId` | Social UX — **keys missing** | |
 | TC-089 | Become seller | E2E | Patrol | Mobile | P0 | `PATCH /api/users/me/seller` | S3 mobile leg | |
-| TC-090 | Simple product 7-step wizard | E2E | Patrol | Mobile | P0 | `/seller/add`, `_WizardStepper` | S3 mobile leg — **keys missing** | |
-| TC-091 | Variant product 7-step wizard | E2E | Patrol | Mobile | P0 | Variant step 4 | Variant listing — **keys missing** | |
+| TC-090 | Simple product 6-step wizard | E2E | Patrol | Mobile | P0 | `/seller/add`, `_WizardStepper` | S3 mobile leg — **keys missing** | |
+| TC-091 | Variant product 6-step wizard | E2E | Patrol | Mobile | P0 | Variants inside the Pricing step | Variant listing — **keys missing** | |
 | TC-615 | Seller views simple product in dashboard (Read) | E2E | Patrol | Mobile | P1 | `keys.seller.productTile(id)` (exists) | Parity TC-045 (divergent) | |
 | TC-616 | Seller edits simple product from dashboard (Update) | E2E | Patrol | Mobile | P1 | `keys.seller.editProductButton(id)` (exists) | Parity TC-044 (divergent) | |
 | TC-617 | Seller deletes simple product from dashboard (Delete) | E2E | Patrol | Mobile | P1 | `keys.seller.deleteProductButton(id)` (exists) | Parity TC-046 (both) | |
@@ -212,7 +212,7 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 | TC-094 | Preview as buyer | E2E | Patrol | Mobile | P2 | `/products/:id?hideEdit=1` | Divergent from web TC-045 | |
 | TC-611 | Buyer blocked from seller routes | Multi | Patrol + Playwright-API | Mobile | P0 | `GET /api/seller/*` → 403 | Shared API with TC-053 | |
 | TC-600 | Auth gate vs web guest | E2E | Patrol | Mobile | P1 | Cold launch redirect | Parity documentation | |
-| TC-601 | 7-step wizard step count | E2E | Patrol | Mobile | P2 | `add_edit_product_screen.dart` | Parity vs TC-061 | |
+| TC-601 | Wizard step count (6) | E2E | Patrol | Mobile | P2 | `add_edit_product_screen.dart` | Parity vs TC-061 | |
 | TC-602 | Checkbox subset parity | E2E | Patrol | Mobile | P2 | TC-078 | Unchecked items remain in cart | |
 | TC-603 | Wishlist in-memory only | Blocked | — | Mobile | P3 | No wishlist API | Cannot API-test persistence | |
 | TC-604 | Notifications bell stub | Manual | Manual | Mobile | P3 | `onPressed: () {}` | No behavior to automate | yes |
@@ -485,7 +485,7 @@ Counts are recomputed from the assignment tables in §4–§4d (339 scenarios, e
 
 ### Phase 6 — Mobile P0 (Patrol)
 
-**Prerequisite:** Add `ValueKey`s per `ui-selectors.md` — cart, checkout, orders, seller, wishlist.
+**Prerequisite:** Add `ValueKey`s following the existing `keys.dart` naming — cart, checkout, orders, seller, wishlist.
 
 22. **Patrol keys:** `lib/features/cart/keys.dart`, `checkout/keys.dart`, `orders/keys.dart`, `seller/keys.dart`, `wishlist/keys.dart` → register in `lib/keys.dart`
 23. **Patrol:** Extend `login_test.dart` → S2 / TC-067, TC-072, TC-073
