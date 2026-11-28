@@ -92,3 +92,12 @@ export function cancelledBySellerNotice(order: Order): PaymentStatusNotice | nul
     body: order.cancelReason ? `The seller cancelled this order. Reason: ${order.cancelReason}` : 'The seller cancelled this order.',
   };
 }
+
+// The server stores one of these as the cancel reason when nobody typed one (backend `OrderCancelReason`).
+const INTERNAL_CANCEL_REASONS = ['buyer_cancelled', 'seller_cancelled', 'seller_acceptance_timeout', 'authorization_expired'];
+
+/** The cancellation reason a person gave, or undefined when there is none or it is only an internal code. */
+export function shownCancelReason(order: Pick<Order, 'cancelReason'>): string | undefined {
+  const reason = order.cancelReason;
+  return reason && !INTERNAL_CANCEL_REASONS.includes(reason) ? reason : undefined;
+}

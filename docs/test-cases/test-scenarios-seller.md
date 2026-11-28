@@ -109,8 +109,8 @@ Automation labels below identify intended tools, not implemented or passing scri
 |-------|-------|----------|------------|
 | TC-610 | Own products hidden (mobile) | P1 | Patrol |
 | TC-089 | Become seller | P0 | Patrol |
-| TC-090 | **Simple product — 7-step wizard** | P0 | Patrol |
-| TC-091 | **Variant product — 7-step wizard** | P0 | Patrol |
+| TC-090 | **Simple product — 6-step wizard** | P0 | Patrol |
+| TC-091 | **Variant product — 6-step wizard** | P0 | Patrol |
 | TC-615 | Seller views simple product in dashboard (Read) | P1 | Patrol |
 | TC-616 | Seller edits simple product from dashboard (Update) | P1 | Patrol |
 | TC-617 | Seller deletes simple product from dashboard (Delete) | P1 | Patrol |
@@ -120,7 +120,7 @@ Automation labels below identify intended tools, not implemented or passing scri
 | TC-092 | Order status pipeline | P0 | Patrol |
 | TC-093 | Voucher CRUD + buyer apply | P1 | Patrol |
 | TC-094 | Preview as buyer (`hideEdit=1`) | P2 | Patrol |
-| TC-601 | 7-step wizard step count | P2 | Patrol |
+| TC-601 | Wizard step count (6) | P2 | Patrol |
 | TC-605 | Local order notification + deep link | P2 | Manual / Patrol |
 | TC-182 | Accept pending card order | P0 | Patrol |
 | TC-183 | Cancel pending order, reason required | P0 | Patrol |
@@ -131,6 +131,15 @@ Automation labels below identify intended tools, not implemented or passing scri
 **Added 2026-10-24 and 2026-10-25:** 10 web + 5 mobile + 55 API seller-facing scenarios
 
 Full steps, expected results, and selectors: **`docs/test-cases/test-scenarios.md`**
+
+---
+
+## Added 2026-11-28
+
+| TC | Scenario | Priority | Automation |
+|----|----------|----------|------------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | P1 | Integration |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | P0 | Integration |
 
 ---
 
@@ -147,7 +156,7 @@ Full steps, expected results, and selectors: **`docs/test-cases/test-scenarios.m
 | Platform | Simple listing | Variant listing | Preview |
 |----------|----------------|-----------------|---------|
 | Web | TC-042 (6-step) | TC-064 | TC-045 `/my-products` |
-| Mobile | TC-090 (7-step) | TC-091 | TC-094 `?hideEdit=1` |
+| Mobile | TC-090 (6-step) | TC-091 | TC-094 `?hideEdit=1` |
 
 **Buyer visibility:** TC-065/066 (web) · TC-608 (mobile)
 
@@ -160,6 +169,6 @@ Full steps, expected results, and selectors: **`docs/test-cases/test-scenarios.m
 | TC-045 | Web | `/my-products` buyer-view preview |
 | TC-052 | Web | In-app toast for new orders (polling) |
 | TC-061 | Web | 6-step wizard |
-| TC-601 | Mobile | 7-step wizard (variants separate) |
+| TC-601 | Mobile | 6-step wizard (variants inside Pricing) |
 | TC-605 | Mobile | Local notification → `/seller?tab=orders` |
 | TC-170 / TC-186 | Web / Mobile | Return/Refund tab with In Progress, Approved, Rejected groups and a badge |

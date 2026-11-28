@@ -13,7 +13,9 @@
 - `Test File` retains any existing reference or says Unmapped. `Script mapping: Unverified` means the reference has not been checked for an actual matching test and assertions. Once checked, include the exact test name with the path and set mapping to Verified. An existing path is not evidence of passing coverage.
 - `Latest result`, `Last run`, `Run evidence` and `Run baseline` begin as Not recorded, which means execution history is unknown, not that a case has never run. Record Passed/Failed/Blocked/Skipped only from actual evidence, with the run date, report link, environment, branch and commit.
 - `Scenario status: Active` identifies executable scenario definitions, including ones currently blocked by tooling. Alias records retain historical IDs and point to a canonical case; execute, import and count that behavior under the canonical ID, not twice.
-- TC-060 is an alias of TC-008; TC-613 is an alias of TC-102. There are **259 retained top-level case IDs, of which 257 are active canonical cases and 2 are aliases** (Web 107 active + 1 alias; Mobile 77 active + 1 alias; API 73 active).
+- `Requirement(s)` lists the `REQ-*` IDs (from the `tokomart-requirements` skill) that a case checks. `docs/test-cases/requirements-trace.md` shows the same links in the other direction, the requirements with no case, and the cases with no requirement.
+- A `Business Rule` line that starts with `§` cites a section of `business-rules.md`, a skill document that was retired on 2026-11-28 because it was out of date (it remains in the `aiSkills` git history). Treat those lines as legacy labels and use `Requirement(s)` instead.
+- TC-060 is an alias of TC-008; TC-613 is an alias of TC-102. There are **348 retained top-level case IDs, of which 346 are active canonical cases and 2 are aliases** (Web 111 active + 1 alias; Mobile 80 active + 1 alias; API 155 active).
 - Subcases such as TC-167-A and TC-186-B share their parent's metadata but need independent run results and fixtures. Import them as child records when separate execution tracking is needed; a parent is Passed only when every required subcase passes. Do not add alias or subcase rows to the top-level count.
 - Use a fresh fixture for each independent outcome; wait for confirmed asynchronous state before its assertion. Automated Stripe checks mock the provider; real Stripe test-mode checks are separate owner-run manual verification. Do not treat a live provider outcome as a deterministic automated fixture.
 
@@ -30,9 +32,9 @@
 
 | Platform | File | Coverage |
 |----------|------|----------|
-| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400, TC-500** |
-| API | [test-scenarios-api.md](test-scenarios-api.md) | TC-026–028, TC-033, TC-035–036, TC-048, TC-053–054, TC-056–058, TC-107–108, TC-110–111, TC-113–119, TC-132–136, **TC-190–311** |
-| Mobile | [test-scenarios-mobile.md](test-scenarios-mobile.md) | TC-067–097, TC-101–104, TC-600–624, **TC-172–189** |
+| Web | [test-scenarios-web.md](test-scenarios-web.md) | TC-001–025, TC-029–032, TC-034, TC-037–047, TC-049–052, TC-055, TC-059–066, TC-098–100, TC-105–106, TC-109, TC-112, TC-120–131, **TC-137–171, TC-400, TC-500, TC-501, TC-503** |
+| API | [test-scenarios-api.md](test-scenarios-api.md) | TC-026–028, TC-033, TC-035–036, TC-048, TC-053–054, TC-056–058, TC-107–108, TC-110–111, TC-113–119, TC-132–136, **TC-190–316** |
+| Mobile | [test-scenarios-mobile.md](test-scenarios-mobile.md) | TC-067–097, TC-101–104, TC-600–624, **TC-172–189, TC-502, TC-504** |
 
 ---
 
@@ -103,7 +105,9 @@ Counts below are recomputed from the `### TC-` headings in the platform files on
 | **TC-400** | 1 | **New** Web card checkout: an expired checkout session is not resumed and its stored attempt is cleared (it had no scenario; its test was titled `TC-AUTH-06`), added 2026-11-04 |
 | **TC-401** | 1 | **New** Mobile order detail: an order the seller never accepted shows "Reservation released" (its test had no id), added 2026-11-08 |
 | **TC-500** | 1 | **New** Web card checkout UI state: the Stripe card field renders on the payment step (its test was titled `TC-STRIPE-04`), added 2026-11-05 |
-| **Total** | **339** | Web 110 · Mobile 79 · API 150 (178 added between 2026-10-24 and 2026-11-08) |
+| **TC-312–316** | 5 | **New** Cancellation, refund and order invariants API (stock, sold count and coupon use come back once; a Cash on Delivery order is not refundable; refund amounts follow the allocation; a unit is not refunded twice; a cancelled or expired card order never leaves a charge), added 2026-11-28 for requirements that had no case |
+| **TC-501–504** | 4 | **New** Cash on Delivery notes: the "Inspect before you pay" note at checkout (web TC-501, mobile TC-502) and on a delivered Cash on Delivery order instead of the refund policy (web TC-503, mobile TC-504), added 2026-11-28 |
+| **Total** | **348** | Web 112 · Mobile 81 · API 155 (178 added between 2026-10-24 and 2026-11-08, 9 on 2026-11-28) |
 
 **Automation split of the new TCs (178):** Playwright / Playwright-API 151, Patrol 16 (the refund and several checkout screens still need widget keys), Manual 8, Blocked 3 (TC-202, TC-204, TC-230 need clock control, concurrency or signed Stripe events). The owner writes the automation (AGENTS.md rule 1); nothing under `e2e-testing/` or `patrol_test/` was changed.
 
@@ -125,25 +129,7 @@ Counts below are recomputed from the `### TC-` headings in the platform files on
 
 ---
 
-## Domain doc gaps (code ≠ `tokomart-domain`; docs were not edited)
-
-Found while reviewing on 2026-10-24. The domain files were last edited on 2026-08-17.
-
-1. **Buyer cancel** (`business-rules.md` §5): says `pending` or `preparing`; code allows `pending` only.
-2. **Seller transitions** (§5): `shipped → cancelled` is listed; `VALID_TRANSITIONS` now allows only `shipped → delivered`. The line "any of pending…shipped can → cancelled" is stale.
-3. **Payments** (§4): no Stripe, no `paymentStatus` enum (`awaiting_authorization`, `authorized`, `capture_pending`, `captured`, `release_pending`, `released`, `refund_pending`, `refunded`, `partially_refunded`, `failed`, `not_required`), no `/api/checkout/sessions`, no 426 `update_required` guard, no `awaiting_payment` draft status.
-4. **Acceptance window** (§5): not documented — 24 h `acceptBy` (or the card's earlier deadline minus 5 minutes), auto-cancel with `seller_acceptance_timeout`, `cancelledByRole`/`cancelledById`/`cancelledAt`.
-5. **Delivered-item refunds**: absent — `deliveredAt`, `refundRequestDeadlineAt` (+168 h), `RefundRequest` states `requested`, `rejected`, `processing`, `refunded`, `needs_review`, reason codes, the `refund-*` endpoints.
-6. **Order tabs** (§5): mobile table lacks Return/Refund; web has All and Return/Refund tabs.
-7. **Profile** (§8): saved-address edit (`PUT /saved-addresses/:id`), save-at-checkout, default card endpoint (`PATCH /payment-methods/:id/default`) and the mobile `/payment-methods` route are missing.
-8. **API reference**: the new checkout, refund, seller-decision, saved-address and payment-method endpoints, `/api-docs` and `/api-docs.json` (non-production), and the error codes `cancellation_conflict`, `cancellation_unavailable`, `invalid_cancel_reason`, `not_order_seller`, `order_not_pending`, `acceptance_deadline_passed`, `refund_validation`, `refund_conflict`, `refund_not_found`, `delivered_refunds_disabled`, `legacy_payment_review` are not listed.
-9. **Coupons** (§13): "usage is not rolled back on cancel" looks stale — the cancellation work restores reserved coupon use once. Verify before relying on either.
-10. **Stock restore** (§5, §13): pending cancellations are variant-aware for buyer and seller; the seller `preparing`/`processing` COD cancel path still restores product-level stock only (the old limitation remains there).
-11. **Credentials**: `SKILL.md` lists `test@example.com` / `password123`; `business-rules.md` lists `hello@world.com` / `Test750!!` and `seller@test.com`; existing TC-001 uses the first. Pick one source of truth. (Secrets are not reproduced here.)
-12. **Wizard steps** (§2): says 6 steps for web and mobile; mobile has 7 (see TC-601). `SKILL.md` still says Playwright is "not yet in repo".
-13. **Shipping default** (§4 Shipping rules): says "Neither (default): $9.99 if the after-discount subtotal is under $50, $0 at $50 or more". Since 2026-10-26 the default is a flat $9.99 at any amount; free shipping comes only from a seller-set `free`. A buyer-pays product with no fee configured also pays $9.99 (an explicit 0 stays 0). Not edited here.
-
-### Known gaps worth a decision (from `docs/authorize-capture-open-items.md` and code reading)
+## Known gaps worth a decision (from `docs/authorize-capture-open-items.md` and code reading)
 
 - Seller cancellation spec says "preparing or later → 409 `cancellation_conflict`"; code allows COD cancellation in `preparing`/`processing` and answers `cancellation_unavailable` for card orders (TC-160, TC-211).
 - No client shows a specific message for `legacy_payment_review`.
@@ -159,5 +145,5 @@ Found while reviewing on 2026-10-24. The domain files were last edited on 2026-0
 | Skill | Input |
 |-------|-------|
 | `/test-strategy` | this file and the platform files |
-| `/generate-tests` | master + filtered views; `ui-selectors.md` for keys (needs the new selectors added by the owner) |
+| `/generate-tests` | master + filtered views; the app's `data-testid`s and keys for selectors (the owner adds any new ones) |
 | `/review-tests` | scenarios as acceptance criteria |

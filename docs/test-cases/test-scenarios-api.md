@@ -7,7 +7,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 
 ---
 
-## Buyer — Cart (API)
+## Buyer — Cart (API) 
 
 ### TC-107: GET /api/cart returns authenticated buyer's own items
 **Scenario status**: Active  
@@ -33,6 +33,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Response 200; `sellers` array contains the added `productId`
 
+**Requirement(s)**: REQ-CART-01  
 **Business Rule**: §3 Cart — server-side, scoped to `userId`  
 **Selectors/API**: `GET /api/cart`, `PUT /api/cart`, `DELETE /api/cart`  
 **Suggested Layer**: API  
@@ -63,6 +64,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Response 200; returned `sellers` array does NOT contain buyer1's product ID
 - Buyer2 sees only their own (empty) cart
 
+**Requirement(s)**: REQ-CART-01  
 **Business Rule**: §3 Cart — server-side cart scoped to authenticated `userId`  
 **Selectors/API**: `GET /api/cart`  
 **Suggested Layer**: API  
@@ -95,6 +97,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Response 200; returned orders array does NOT contain buyer1's order ID
 - Buyer2 sees only their own orders (empty array if none)
 
+**Requirement(s)**: REQ-ORD-12, REQ-AUTH-08  
 **Business Rule**: §5 Order lifecycle — orders scoped to authenticated `userId`  
 **Selectors/API**: `GET /api/orders`, `POST /api/orders`  
 **Suggested Layer**: API  
@@ -124,6 +127,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Response 403 or 404 — buyer2 cannot read buyer1's order detail
 
+**Requirement(s)**: REQ-AUTH-08  
 **Business Rule**: §5 Order ownership — order detail scoped to order's `userId`  
 **Selectors/API**: `GET /api/orders/:id`  
 **Suggested Layer**: API  
@@ -154,6 +158,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - All routes respond 401; `success: false`
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: All authenticated endpoints must reject requests with no token  
 **Selectors/API**: Multiple protected routes  
 **Suggested Layer**: API  
@@ -183,6 +188,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Response 401; `success: false`
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: JWT signature validation must reject tampered tokens  
 **Selectors/API**: `GET /api/auth/me`  
 **Suggested Layer**: API  
@@ -213,6 +219,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Response 200; returned orders array does NOT contain seller2's order ID
 
+**Requirement(s)**: REQ-FUL-02, REQ-AUTH-08  
 **Business Rule**: Seller order list scoped to products owned by the authenticated seller  
 **Selectors/API**: `GET /api/seller/orders`  
 **Suggested Layer**: API  
@@ -241,6 +248,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - All routes respond 403; `success: false`
 
+**Requirement(s)**: REQ-AUTH-07  
 **Business Rule**: Seller-only routes must reject buyer role tokens  
 **Selectors/API**: Multiple `/api/seller/` routes  
 **Suggested Layer**: API  
@@ -269,6 +277,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Response 400; `success: false`
 
+**Requirement(s)**: REQ-AUTH-02  
 **Business Rule**: Password must meet minimum length requirement  
 **Selectors/API**: `POST /api/auth/signup`  
 **Suggested Layer**: API  
@@ -303,6 +312,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A $20 product with no shipping fee: subtotal 20, tax 1.60, shipping 9.99, total 31.59
 - A $100 product at 10% off with a 10% seller coupon: product discount 10, coupon discount 9 (10% of the $90), tax 6.48, shipping 9.99, total 97.47
 
+**Requirement(s)**: REQ-PRC-04  
 **Business Rule**: §4 Price calculation  
 **Selectors/API**: `POST /api/orders`, order response body  
 **Suggested Layer**: API  
@@ -334,6 +344,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `total` = after-discount amount + 8% tax + 9.99
 - Only a product the seller set to `free` ships for $0 (TC-257)
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules (default fee)  
 **Selectors/API**: `POST /api/orders`; `computeSellerTotals`  
 **Suggested Layer**: Unit  
@@ -362,6 +373,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `shipping` = 9.99, even though the after-discount amount is above $50
 - Only a product the seller set to `free` ships for $0 (TC-257)
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules (default fee)  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: Unit  
@@ -391,6 +403,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - *Updated 2026-10-24:* the buyer can cancel **pending only**, so `preparing` is also rejected. Legacy-shape orders answer **400** `"You can only cancel pending orders"`; manual-capture card orders and COD orders with `paymentStatus: not_required` answer **409** `cancellation_conflict` (shared atomic claim). See TC-206
 - *Updated 2026-10-25:* `orders.api.spec.ts` places a COD order, so it asserts **409** `cancellation_conflict`; the 400 above applies to legacy-shaped orders only
 
+**Requirement(s)**: REQ-CAN-02  
 **Business Rule**: §5 Buyer cancel — pending only (preparing removed, PR #80)  
 **Selectors/API**: `PUT /api/orders/:id/status`  
 **Suggested Layer**: API  
@@ -421,6 +434,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **409** duplicate review
 
+**Requirement(s)**: REQ-REV-03  
 **Business Rule**: §7 Unique (userId, productId)  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -449,6 +463,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **403** — not eligible
 
+**Requirement(s)**: REQ-REV-02  
 **Business Rule**: §7 Eligibility  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -479,6 +494,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **400** — `"Cannot follow yourself"`
 
+**Requirement(s)**: REQ-PRO-03  
 **Business Rule**: §8 Follow system  
 **Selectors/API**: `POST /api/users/:id/follow`  
 **Suggested Layer**: API  
@@ -510,6 +526,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** `"Cannot transition order from 'pending' to 'shipped'"`
 - *Updated 2026-10-24:* `VALID_TRANSITIONS` no longer allows `shipped → cancelled` (only `shipped → delivered`), see TC-212. A `preparing` request on a non-pending order answers **409** `order_not_pending` (TC-200), not 400
 
+**Requirement(s)**: REQ-FUL-01  
 **Business Rule**: §5 Invalid transition  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -540,6 +557,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **403** forbidden
 
+**Requirement(s)**: REQ-AUTH-07  
 **Business Rule**: §1 requireSeller  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -554,13 +572,13 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Platform**: API  
 **Parity**: Both  
 **Automation**: Playwright-API  
-**Automation status**: Needs review  
-**Script mapping**: Unverified  
-**Latest result**: Not recorded  
-**Last run**: Not recorded  
-**Run evidence**: Not recorded  
-**Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/web/seller/seller-access.spec.ts`  
+**Automation status**: Automated  
+**Script mapping**: Verified by reading and by the runs of 2026-11-28: the describe blocks "TC-054: Seller cannot edit another sellers product" and "TC-054: Seller cannot delete another sellers product" in `e2e-testing/tests/api/seller-access.api.spec.ts`, tagged `@TC-054`; seller 1 sends `PUT` and `DELETE` for a product of seller 2 and expects 403. `e2e-testing/tests/web/seller/seller-access.spec.ts` also carries `@TC-054`, but it checks something else (the seller dashboard lists only the seller's own products), so it is not this scenario's test.  
+**Latest result**: Passed (3 runs in a row)  
+**Last run**: 2026-11-28  
+**Run evidence**: Local runs on 2026-11-28 of `seller-access.api.spec.ts` with three other API specs (`npx playwright test --project=api`, 20 tests per run) against an isolated stack (API on localhost:5055, the new database `tokomart_e2e_agent_test` on the 27018 replica set; nothing on ports 5000 or 27017)  
+**Run baseline**: Branch `feat/main-shift-left-testing-11282026` at `9905764`, with the uncommitted changes of 2026-11-28  
+**Test File**: `e2e-testing/tests/api/seller-access.api.spec.ts` (the web spec `seller-access.spec.ts` shares the tag but tests the dashboard list, not this rule)  
 **Preconditions**: Two seller accounts  
 **Steps**:
 1. Seller A attempts update/delete Seller B product
@@ -568,6 +586,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **403** forbidden
 
+**Requirement(s)**: REQ-SEL-04  
 **Business Rule**: §1 Authorization  
 **Selectors/API**: `PUT /api/products/:id`  
 **Suggested Layer**: API  
@@ -598,6 +617,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **400** `"Insufficient stock for..."`
 
+**Requirement(s)**: REQ-INV-02  
 **Business Rule**: §4 Stock validation  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: API  
@@ -618,7 +638,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Last run**: Not recorded  
 **Run evidence**: Not recorded  
 **Run baseline**: Not recorded  
-**Test File**: `e2e-testing/tests/api/coupons.api.spec.ts`  
+**Test File**: `e2e-testing/tests/api/coupons.api.spec.ts`; New 2026-11-28 (not tagged with a TC id; matched by topic): integration `backend/src/controllers/__tests__/couponController.validate.integration.test.ts`  
 **Preconditions**: Coupon with `minOrderAmount` > cart subtotal  
 **Steps**:
 1. Validate coupon via API
@@ -626,6 +646,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **400** minimum not met
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -655,6 +676,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** validation error
 - On `/api/seller/products` this is checked with the other value rules in TC-306 (create) and TC-307 (update). `POST /api/products` appears to answer 500 for it (from the code, not run); the apps do not use that route
 
+**Requirement(s)**: REQ-SEL-01  
 **Business Rule**: §2 description max 200  
 **Selectors/API**: `POST /api/products`  
 **Suggested Layer**: API  
@@ -687,6 +709,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Response includes `RateLimit-Remaining` header
 - Response includes `RateLimit-Reset` header
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -717,6 +740,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Response includes `RateLimit-Remaining` header
 - Response includes `RateLimit-Reset` header
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `GET /api/products`  
 **Suggested Layer**: API  
@@ -746,6 +770,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - `RateLimit-Remaining` on second response is exactly 1 less than first
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `GET /api/products`  
 **Suggested Layer**: API  
@@ -777,6 +802,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `body.success` → `false`
 - `body.message` → `"Too many requests, please try again later."`
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -807,6 +833,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **429** status
 - Response includes `Retry-After` header with a positive integer value
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -838,6 +865,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `body.success` → `false`
 - `body.message` → `"Too many requests, please try again later."`
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: §12 Rate Limiting  
 **Selectors/API**: `GET /api/products`  
 **Suggested Layer**: API  
@@ -880,6 +908,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - 2xx each time; exactly one address has `isDefault: true` (the second); the first is gone after delete
 - Another buyer's addresses never appear in the list
 
+**Requirement(s)**: REQ-PRO-01  
 **Business Rule**: §8 Saved addresses  
 **Selectors/API**: `/api/auth/saved-addresses[/:id[/default]]`  
 **Suggested Layer**: API  
@@ -909,6 +938,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - 400 for each; nothing is saved or changed
 
+**Requirement(s)**: REQ-PRO-01  
 **Business Rule**: §8 Saved addresses  
 **Selectors/API**: `/api/auth/saved-addresses`  
 **Suggested Layer**: API  
@@ -940,6 +970,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - 404 (or 403) for every attempt on A's ids; A's data is unchanged; B's lists contain only B's data
 - Unauthenticated calls return 401
 
+**Requirement(s)**: REQ-PRO-01, REQ-PRO-02  
 **Business Rule**: §1 Authentication, §8 Profile  
 **Selectors/API**: `/api/auth/saved-addresses/:id`, `/api/auth/payment-methods/:id`  
 **Suggested Layer**: API  
@@ -974,6 +1005,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) COD is created normally (`paymentStatus: not_required`)
 - (3) legacy flow accepts the card order as before
 
+**Requirement(s)**: REQ-ORD-04  
 **Business Rule**: Authorize-capture §API and client contracts  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: API  
@@ -1003,6 +1035,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **426** `update_required` (`reason: card_intent_replaced_by_sessions`); no PaymentIntent is created in Stripe
 - Unauthenticated: 401
 
+**Requirement(s)**: REQ-ORD-04  
 **Business Rule**: Authorize-capture §API and client contracts  
 **Selectors/API**: `POST /api/payments/create-intent`  
 **Suggested Layer**: API  
@@ -1035,6 +1068,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Non-positive quantities and unsupported payment methods are rejected with 400; unsupported currencies are rejected
 - The PaymentIntent amount (minor units) equals the persisted order total
 
+**Requirement(s)**: REQ-ORD-15  
 **Business Rule**: §4 Price calculation; Authorize-capture §Checkout steps 1–3  
 **Selectors/API**: `POST /api/checkout/sessions`  
 **Suggested Layer**: API  
@@ -1067,6 +1101,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) returns the same session and does not reserve stock twice or create a second PaymentIntent; (3) conflicts (409)
 - (4) the second confirm returns the existing orders; the cart is not cleared twice
 
+**Requirement(s)**: REQ-ORD-05, REQ-ORD-07  
 **Business Rule**: Authorize-capture §Checkout steps 2, 6  
 **Selectors/API**: `POST /api/checkout/sessions`, `POST /api/checkout/sessions/:id/confirm`  
 **Suggested Layer**: API  
@@ -1098,6 +1133,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - B gets 403/404 for (1); (2) is rejected and no PaymentIntent is made with A's card; (3) is 401
 - Client secrets and drafts are never returned to anyone but the owner
 
+**Requirement(s)**: REQ-ORD-06, REQ-ORD-08  
 **Business Rule**: Authorize-capture §Checkout step 3, §API  
 **Selectors/API**: `/api/checkout/sessions/:id[/confirm]`  
 **Suggested Layer**: API  
@@ -1127,6 +1163,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - 400 "Insufficient stock…"; no draft, no reservation and no PaymentIntent for either seller; stock unchanged
 
+**Requirement(s)**: REQ-INV-03, REQ-INV-04  
 **Business Rule**: §4 Stock validation; Authorize-capture §Checkout step 2  
 **Selectors/API**: `POST /api/checkout/sessions`  
 **Suggested Layer**: API  
@@ -1157,6 +1194,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The draft is missing from buyer history and detail (404); sellers never see it and cannot change it (404 `order_not_found`)
 - Manual-capture orders are hidden from sellers while `SELLER_SEES_MANUAL_CAPTURE=false`
 
+**Requirement(s)**: REQ-ORD-11  
 **Business Rule**: Authorize-capture §Data and invariants  
 **Selectors/API**: `GET /api/orders`, `GET /api/seller/orders`  
 **Suggested Layer**: API  
@@ -1189,6 +1227,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - 200, order `preparing`, `paymentStatus: captured`; PaymentIntent `succeeded` and `amount_received` equals the order amount
 - Capturing a multi-seller purchase's other order does not happen (independent intents)
 
+**Requirement(s)**: REQ-PAY-02  
 **Business Rule**: Authorize-capture §Seller acceptance and capture  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1217,6 +1256,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **409** `order_not_pending`; no second capture; state unchanged
 
+**Requirement(s)**: REQ-PAY-03  
 **Business Rule**: Authorize-capture §Seller acceptance; open-items B5  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1246,6 +1286,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **403** `not_order_seller` for both; Stripe stays uncaptured and the order is unchanged
 - Ownership comes from the persisted `sellerId` (deleting A's product does not change who owns the order)
 
+**Requirement(s)**: REQ-PAY-03  
 **Business Rule**: Authorize-capture §Seller acceptance; Seller cancellation spec §Current implementation  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1274,6 +1315,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - At the exact deadline and after: **409** `acceptance_deadline_passed`; nothing is captured
 
+**Requirement(s)**: REQ-PAY-03  
 **Business Rule**: Authorize-capture §Seller acceptance (deadline)  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: Integration  
@@ -1302,6 +1344,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Both become `cancelled` with reason `seller_acceptance_timeout`, `cancelledByRole: system`; the card PaymentIntent is `canceled` (nothing captured); stock and coupon use restored exactly once, even if two workers run
 
+**Requirement(s)**: REQ-PAY-04  
 **Business Rule**: Authorize-capture §Buyer cancellation, seller cancellation, and expiry  
 **Selectors/API**: scanner in `acceptanceScanner.ts`  
 **Suggested Layer**: Integration + Manual  
@@ -1330,6 +1373,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - One request wins; the loser gets 409 `cancellation_conflict` / `order_not_pending`; capture never runs for a cancelled order; a cancel never lands on a captured order; stock restored at most once
 
+**Requirement(s)**: REQ-CAN-03  
 **Business Rule**: Authorize-capture §Seller acceptance and capture, §Buyer cancellation  
 **Selectors/API**: `PUT /api/orders/:id/status`, `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: Integration  
@@ -1363,6 +1407,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - 200 with `status: cancelled`; card order `paymentStatus` `release_pending` then `released`; PaymentIntent `canceled`; COD order has no Stripe call
 - The repeat returns the same cancelled order without restoring stock or coupon again; `cancelledByRole: buyer` and `cancelledById` are set
 
+**Requirement(s)**: REQ-CAN-01, REQ-CAN-02  
 **Business Rule**: Authorize-capture §Buyer cancellation  
 **Selectors/API**: `PUT /api/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1391,6 +1436,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **409** `cancellation_conflict` with a message telling the buyer to refresh; the order stays `preparing`; a legacy-shape order answers 400 "You can only cancel pending orders"
 
+**Requirement(s)**: REQ-CAN-02  
 **Business Rule**: Authorize-capture §Buyer cancellation; PR #80  
 **Selectors/API**: `PUT /api/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1419,6 +1465,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **400** `invalid_cancel_reason`; the order stays pending
 
+**Requirement(s)**: REQ-CAN-01  
 **Business Rule**: Authorize-capture §Buyer cancellation  
 **Selectors/API**: `PUT /api/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1447,6 +1494,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **403**; the order and its hold are unchanged
 
+**Requirement(s)**: REQ-CAN-01  
 **Business Rule**: §1 Authentication; §5 Buyer actions  
 **Selectors/API**: `PUT /api/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1478,6 +1526,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `cancelledByRole: seller`, `cancelledById`, `cancelledAt`, `cancelReason` stored once; the repeat returns the stored result with the original actor
 - Stock, variant stock, sold count and coupon use restored once; the buyer's order shows the seller's reason
 
+**Requirement(s)**: REQ-CAN-05  
 **Business Rule**: Seller pending cancellation spec §API contract  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1509,6 +1558,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **400** `invalid_cancel_reason` (limit is 1–1000 after trimming); (2) **403** `not_order_seller`; (3) **404** `order_not_found`
 - No state change in any case
 
+**Requirement(s)**: REQ-CAN-05  
 **Business Rule**: Seller pending cancellation spec §API contract  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1540,6 +1590,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Seller cancellation after `pending` stays COD-only: a `preparing` card order is refused with **409** `cancellation_unavailable` ("Seller cancellation for card payments is not available yet"); a `preparing` COD order can still be cancelled (TC-160)
 - Note: the seller-cancellation spec says "preparing or later → `cancellation_conflict`"; the current code answers `cancellation_unavailable` for card orders and allows COD. Confirm which is intended (see Domain doc gaps in the master)
 
+**Requirement(s)**: REQ-CAN-05  
 **Business Rule**: Seller pending cancellation spec §Approved policy (amendment)  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1569,6 +1620,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) **400** "Cannot transition order from 'shipped' to 'cancelled'" (changed from the earlier rule that allowed it); (2) succeeds and records `deliveredAt` (TC-227)
 
+**Requirement(s)**: REQ-CAN-05, REQ-FUL-01  
 **Business Rule**: Authorize-capture §Buyer cancellation, seller cancellation, and expiry  
 **Selectors/API**: `PUT /api/seller/orders/:id/status`  
 **Suggested Layer**: API  
@@ -1598,6 +1650,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `true` only for a `pending` order with a persisted `sellerId` and `paymentStatus` `authorized` or `not_required`; `false` for `capture_pending`, `preparing`, cancelled, legacy-shaped and orders without `sellerId`
 - Orders still appear in the seller's list after a product is deleted (matched by `sellerId`)
 
+**Requirement(s)**: REQ-CAN-07  
 **Business Rule**: Seller pending cancellation spec §API contract  
 **Selectors/API**: `GET /api/seller/orders`  
 **Suggested Layer**: API  
@@ -1628,6 +1681,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - `eligible: true`, `requestsEnabled: true`, `deliveredAt`, `deadlineAt` = delivery + 168 hours, `currency`, and per line `lineId`, `quantityOrdered`, `quantityAvailable`, `availableUnitAmountsMinor` (paid price after discounts + allocated tax); the sum matches the captured amount allocation
 
+**Requirement(s)**: REQ-REF-01  
 **Business Rule**: Delivered-item refund spec §Refund amount allocation  
 **Selectors/API**: `GET /api/orders/:id/refund-eligibility`  
 **Suggested Layer**: API  
@@ -1657,6 +1711,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `eligible: false` with the reason `not_delivered`, `unsupported_payment`, `delivery_unknown`, `window_closed`, `active_request`, `no_units_left`, `review_needed` respectively; the boundary is inclusive (a request at exactly the deadline is accepted)
 - `POST` to create a request in these states is refused
 
+**Requirement(s)**: REQ-REF-01  
 **Business Rule**: Delivered-item refund spec §Delivery time and eligibility  
 **Selectors/API**: `GET /api/orders/:id/refund-eligibility`  
 **Suggested Layer**: API  
@@ -1687,6 +1742,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** `refund_validation` for the first group; the second group is refused without creating a request
 - Valid reasons are `damaged`, `wrong_item`, `missing_items`, `not_as_described`, `other`; no photos or buyer-entered amount are accepted
 
+**Requirement(s)**: REQ-REF-03  
 **Business Rule**: Delivered-item refund spec §Approved first-version policy  
 **Selectors/API**: `POST /api/orders/:id/refund-requests`  
 **Suggested Layer**: API  
@@ -1717,6 +1773,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (2) returns the original request (no second request, one quote); (3) **409** `refund_conflict`
 
+**Requirement(s)**: REQ-REF-06  
 **Business Rule**: Delivered-item refund spec §API and concurrency  
 **Selectors/API**: `POST /api/orders/:id/refund-requests`  
 **Suggested Layer**: API  
@@ -1746,6 +1803,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) **409** `refund_conflict`; (2) succeeds; rejected units are not counted as refunded; `needs_review` keeps blocking until reconciled
 
+**Requirement(s)**: REQ-REF-09  
 **Business Rule**: Delivered-item refund spec §Data and service boundaries  
 **Selectors/API**: `POST /api/orders/:id/refund-requests`  
 **Suggested Layer**: API  
@@ -1776,6 +1834,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **409** `delivered_refunds_disabled`; eligibility shows `requestsEnabled: false`
 - (2) reads still work; refunds that were already approved keep settling
 
+**Requirement(s)**: REQ-REF-01  
 **Business Rule**: Delivered-item refund spec §Clients and rollout  
 **Selectors/API**: `POST /api/orders/:id/refund-requests`, `PUT /api/seller/refund-requests/:id/decision`  
 **Suggested Layer**: API  
@@ -1806,6 +1865,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The stored quote equals the server allocation for the selected units; the extra fields are ignored
 - Total refunded (successful + processing + uncertain) never exceeds the captured balance
 
+**Requirement(s)**: REQ-REF-03  
 **Business Rule**: Delivered-item refund spec §Refund amount allocation  
 **Selectors/API**: `POST /api/orders/:id/refund-requests`  
 **Suggested Layer**: API  
@@ -1836,6 +1896,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - B gets **404** `order_not_found` on the eligibility call (the order is hidden); the list and create calls must also be refused (assert 403 or 404, whichever the API returns, and record it); B's completed list contains only B's refunds; unauthenticated calls are 401
 
+**Requirement(s)**: REQ-REF-07  
 **Business Rule**: §1 Authentication; Delivered-item refund spec §API  
 **Selectors/API**: `/api/orders/:id/refund-*`, `/api/orders/refund-requests/completed`  
 **Suggested Layer**: API  
@@ -1866,6 +1927,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - B sees only B's requests and gets **404** `refund_not_found` when deciding A's request; the buyer gets **403** (seller routes); A's decision never touches seller B's order or amount
 
+**Requirement(s)**: REQ-REF-05  
 **Business Rule**: §1 Roles; Delivered-item refund spec §API and concurrency  
 **Selectors/API**: `/api/seller/refund-requests[/:id/decision]`  
 **Suggested Layer**: API  
@@ -1898,6 +1960,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A repeated approval returns the current outcome; approve vs reject has exactly one winner
 - Order `paymentStatus` becomes `partially_refunded` or `refunded`; `refundedAmountMinor` reflects confirmed refunds only
 
+**Requirement(s)**: REQ-REF-06  
 **Business Rule**: Delivered-item refund spec §Data and service boundaries, §API and concurrency  
 **Selectors/API**: `PUT /api/seller/refund-requests/:id/decision`  
 **Suggested Layer**: API + Integration  
@@ -1928,6 +1991,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) and (2) **400** `refund_validation`; (3) the request becomes `rejected` with the stored reason; no automatic approval or rejection happens for seller silence
 
+**Requirement(s)**: REQ-REF-05  
 **Business Rule**: Delivered-item refund spec §Approved first-version policy  
 **Selectors/API**: `PUT /api/seller/refund-requests/:id/decision`  
 **Suggested Layer**: API  
@@ -1957,6 +2021,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `status` is still `delivered`; stock, sold count and coupon use are unchanged; `order.total` is unchanged
 - Auto-complete never delivers an order whose `refundRequestedAt` is set
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: Delivered-item refund spec §Approved first-version policy; §5 Auto-complete  
 **Selectors/API**: `GET /api/orders/:id`  
 **Suggested Layer**: API  
@@ -1986,6 +2051,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) returns only the requested group and page size; (2) **400** `refund_validation` (page ≥ 1, limit 1–100, status one of the three groups)
 
+**Requirement(s)**: REQ-REF-05  
 **Business Rule**: Delivered-item refund spec §API  
 **Selectors/API**: `GET /api/seller/refund-requests`  
 **Suggested Layer**: API  
@@ -2018,6 +2084,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Each sets `deliveredAt` and `refundRequestDeadlineAt` = `deliveredAt + 168 h` (auto-complete uses `shippedAt + 48 h`, not the worker restart time)
 - Repeating a transition does not move the deadline; a stale save cannot overwrite another fulfillment change (409)
 
+**Requirement(s)**: REQ-FUL-05  
 **Business Rule**: Delivered-item refund spec §Delivery time and eligibility  
 **Selectors/API**: `PUT /api/orders/:id/confirm-received`  
 **Suggested Layer**: API + Integration  
@@ -2050,6 +2117,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Development: a valid OpenAPI document that lists the checkout session, seller cancellation and refund endpoints, plus a working Swagger UI titled "TokoMart API documentation"
 - Production: both routes return 404
 
+**Requirement(s)**: REQ-NFR-07  
 **Business Rule**: Swagger integration (PRs #78, #82)  
 **Selectors/API**: `GET /api-docs.json`, `/api-docs`  
 **Suggested Layer**: API (contract tests exist: `npm run test:contracts`)  
@@ -2081,6 +2149,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The handler returns before it writes the event inbox or touches an order, so no state changes (read from `paymentController.ts`; the spec does not assert it)
 - Step 2 was checked by hand on 2026-11-02 (400 and the same body); the spec asserts step 1 only. A valid signature is covered by the integration suite (TC-230)
 
+**Requirement(s)**: REQ-PAY-07  
 **Business Rule**: Authorize-capture §Recovery and Stripe events  
 **Selectors/API**: `POST /api/payments/webhook`  
 **Suggested Layer**: API  
@@ -2115,6 +2184,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Confirmed provider cancellation may cancel a still-pending `authorized` order, but cannot take over a `capture_pending` operation or cancel an already captured order
 
 **Known implementation gap**: Earlier wording promised automatic compensation after unexpected capture. The current handler requires support review instead. Automatic compensation remains an open product decision needing separate implementation; this correction does not claim it exists  
+**Requirement(s)**: REQ-PAY-07  
 **Business Rule**: Authorize-capture §Recovery and Stripe events  
 **Selectors/API**: `POST /api/payments/webhook`  
 **Suggested Layer**: Integration  
@@ -2145,6 +2215,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - 2xx; `success: true`, a non-empty `token`, and `user.email` equal to the email sent
 
+**Requirement(s)**: REQ-AUTH-03  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -2173,6 +2244,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - Rejected with **401** `Invalid credentials` (the spec asserts any status ≥ 400; tighten it to 401); no token is returned
 
+**Requirement(s)**: REQ-AUTH-04  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -2202,6 +2274,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - 2xx; `user.email` is the authenticated user's email
 - Without a token the same call returns 401 (covered by TC-132)
 
+**Requirement(s)**: REQ-AUTH-12  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `GET /api/auth/me`  
 **Suggested Layer**: API  
@@ -2236,6 +2309,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **200** `success: true`; `discountAmount` = 20
 - `coupon` carries `id`, `code` (upper case), `discountType`, `discountValue`, `maxDiscount`, `description`
 
+**Requirement(s)**: REQ-CPN-03, REQ-CPN-05  
 **Business Rule**: §6 Discount amount  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2267,6 +2341,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The same cap is applied at checkout (`couponDiscountFor`), so the validated amount equals the order's coupon discount
 - Known edge: `maxDiscount: 0` is treated as "no cap" by the code
 
+**Requirement(s)**: REQ-CPN-05  
 **Business Rule**: §6 Discount amount  
 **Selectors/API**: `POST /api/coupons/validate`; `checkoutPricing.ts`  
 **Suggested Layer**: API + Unit  
@@ -2299,6 +2374,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) and (3) `discountAmount` = 15, i.e. `min(discountValue, subtotal)` as `business-rules.md` §6 and checkout pricing define
 - **Open mismatch:** `validateCoupon` currently returns the full `discountValue` (20) for (1), while checkout applies 15. Decide whether to fix the endpoint; until then (1) fails against the rule
 
+**Requirement(s)**: REQ-CPN-05  
 **Business Rule**: §6 Discount amount (`fixed: min(discountValue, subtotal)`)  
 **Selectors/API**: `POST /api/coupons/validate`; `couponDiscountFor`  
 **Suggested Layer**: API + Unit  
@@ -2328,6 +2404,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **404** `Invalid voucher code`; `success: false`
 - The code is matched case-insensitively (a lower-case valid code is accepted)
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2357,6 +2434,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** `This voucher is no longer active`; re-enabling it makes validation succeed again
 - An inactive coupon is also absent from `GET /api/coupons` (TC-251)
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`, `PUT /api/coupons/seller/:id`  
 **Suggested Layer**: API  
@@ -2386,6 +2464,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** `This voucher has expired`
 - A coupon expiring in the future validates normally
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2415,6 +2494,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **400** `This voucher has reached its usage limit`; it is also missing from `GET /api/coupons`
 - A second order that still submits the code gets no discount (`couponDiscountFor` rejects it)
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2444,6 +2524,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **404** `Invalid voucher code` (the lookup is scoped to `code` + `sellerId`); no discount is returned
 - In a multi-seller cart the code only applies to seller A's order
 
+**Requirement(s)**: REQ-CPN-03  
 **Business Rule**: §6 Application scope (one coupon per seller)  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2474,6 +2555,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **400** `code and sellerId are required`
 - (2) **401** for both
 
+**Requirement(s)**: REQ-CPN-03  
 **Business Rule**: §1 Authentication; §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2503,6 +2585,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Current behaviour: **200**; the minimum is not checked and a percentage coupon returns `discountAmount` 0 (a fixed coupon returns its full value)
 - Decide whether this is intended or whether `orderAmount` should be required; update this scenario with the decision
 
+**Requirement(s)**: REQ-CPN-04  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`  
 **Suggested Layer**: API  
@@ -2533,6 +2616,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A **4xx** (400 or 404) with a readable message
 - **Unverified risk:** the controllers pass the value straight to Mongoose, so a cast error probably surfaces as **500**; run it before relying on this result
 
+**Requirement(s)**: REQ-CPN-03  
 **Business Rule**: §6 Validation  
 **Selectors/API**: `POST /api/coupons/validate`, `GET /api/coupons`  
 **Suggested Layer**: API  
@@ -2563,6 +2647,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **201**; `coupon.code` = `SAVE10X`; `minOrderAmount` defaults to 0; the seller owns it
 - The coupon appears in the seller's list and nowhere in another seller's list
 
+**Requirement(s)**: REQ-CPN-01  
 **Business Rule**: §6 Seller creates coupon  
 **Selectors/API**: `POST /api/coupons/seller`, `GET /api/coupons/seller`  
 **Suggested Layer**: API  
@@ -2593,6 +2678,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **400** `code, discountType, and discountValue are required`
 - (2) **409** `Coupon code already exists` for both spellings (codes are unique across sellers)
 
+**Requirement(s)**: REQ-CPN-01  
 **Business Rule**: §6 Seller creates coupon (duplicate → 409)  
 **Selectors/API**: `POST /api/coupons/seller`  
 **Suggested Layer**: API  
@@ -2623,6 +2709,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **403** each; the coupon is unchanged
 - (2) **401** each
 
+**Requirement(s)**: REQ-CPN-02  
 **Business Rule**: §1 Roles  
 **Selectors/API**: `/api/coupons/seller[/:id]`, `requireSeller`  
 **Suggested Layer**: API  
@@ -2653,6 +2740,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) and (2) **404** `Coupon not found`; (3) the coupon is unchanged and still validates
 
+**Requirement(s)**: REQ-CPN-02  
 **Business Rule**: §6; ownership (extends TC-054)  
 **Selectors/API**: `PUT/DELETE /api/coupons/seller/:id`  
 **Suggested Layer**: API  
@@ -2683,6 +2771,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **200** with the new values; `code` and `sellerId` are not changed (only the allowed fields are applied)
 - (2) **200** `Coupon deleted`; validation then returns 404
 
+**Requirement(s)**: REQ-CPN-02  
 **Business Rule**: §6 Seller creates coupon  
 **Selectors/API**: `PUT/DELETE /api/coupons/seller/:id`  
 **Suggested Layer**: API  
@@ -2715,6 +2804,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) The $100-minimum coupon is also excluded
 - (3) **400** `sellerId is required`
 
+**Requirement(s)**: REQ-CPN-07  
 **Business Rule**: §6 Application scope (`GET /api/coupons?sellerId=…&orderAmount=…`)  
 **Selectors/API**: `GET /api/coupons`  
 **Suggested Layer**: API  
@@ -2748,6 +2838,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) The second order gets no coupon discount (limit reached, TC-241)
 - Under `CHECKOUT_FLOW=manual_capture` the capacity is reserved at checkout and restored once on cancellation (see TC-205)
 
+**Requirement(s)**: REQ-CPN-08  
 **Business Rule**: §4 Price calculation; §6 Application scope  
 **Selectors/API**: `POST /api/orders`, `GET /api/coupons/seller`  
 **Suggested Layer**: API  
@@ -2780,6 +2871,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A percentage coupon never discounts more than the order amount, and the order total never goes negative
 - **Current code (verify):** the model only enforces `discountValue >= 0`, `usageLimit >= 1` and the `discountType` enum, and the controller turns validation errors into **500**. A 150% coupon is accepted, and neither `validateCoupon` nor `couponDiscountFor` caps a percentage discount at the subtotal, so it would discount 150. Confirm and decide the intended limits
 
+**Requirement(s)**: REQ-CPN-01  
 **Business Rule**: §6 Seller creates coupon; §4 Price calculation  
 **Selectors/API**: `POST /api/coupons/seller`, `POST /api/coupons/validate`  
 **Suggested Layer**: API + Unit  
@@ -2815,6 +2907,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **401** for both; no order is created and stock is unchanged
 - (`GET /api/orders` without a token is covered by TC-132)
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: API  
@@ -2847,6 +2940,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1)–(3) **400** with the validator message ("Order must contain at least one item", "Quantity must be a positive integer", "Shipping address is required", "Payment method is required"); no order is created
 - (4) Expected 400 from the Order model validation. **Verify:** the route validator only checks that `shippingAddress` and `paymentMethod` are non-empty, so confirm the model rejects incomplete addresses and unknown payment types rather than accepting them
 
+**Requirement(s)**: REQ-ORD-02  
 **Business Rule**: §4 Shipping address, §4 Payment methods  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: API  
@@ -2879,6 +2973,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) **404** `Variant not found for: <name>`
 - (3) A 4xx (the error handler maps a cast error to **400** `Invalid resource ID`); confirm it is not a 500
 
+**Requirement(s)**: REQ-ORD-03  
 **Business Rule**: §4 Stock validation at order time  
 **Selectors/API**: `POST /api/orders`  
 **Suggested Layer**: API  
@@ -2911,6 +3006,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - An older product with no shipping setting, or a buyer-pays product with no fee, pays the flat 9.99 (see TC-027, TC-302); the API can no longer create one
 - Resolution order: the client selection for that seller, then the first value in `deliverySelections`, then the product's first option, then the first fee key
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules; delivery option resolution order  
 **Selectors/API**: `POST /api/orders`; `computeSellerTotals`  
 **Suggested Layer**: API + Unit  
@@ -2942,6 +3038,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The variant's stock decreases by the quantity, not the product's stock
 - A variant with no discount of its own does not inherit the product discount
 
+**Requirement(s)**: REQ-PRC-02  
 **Business Rule**: §2 Variant pricing  
 **Selectors/API**: `POST /api/orders`; `priceLine`  
 **Suggested Layer**: API + Unit  
@@ -2971,6 +3068,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Each order is **201** with `discount` 0 and no `couponCode`; the coupon's `usedCount` is unchanged
 - Current behaviour is silent: the buyer gets no error for a bad code at order time (validation errors only come from `POST /api/coupons/validate`, TC-238 to TC-241). Confirm that is intended
 
+**Requirement(s)**: REQ-CPN-08  
 **Business Rule**: §6 Validation; application scope  
 **Selectors/API**: `POST /api/orders` with `couponCodes`  
 **Suggested Layer**: API  
@@ -3001,6 +3099,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) `stock` 7 and `soldCount` 3
 - (2) `stock` back to 10 and `soldCount` back to 0, restored once (repeating the cancel changes nothing, see TC-205)
 
+**Requirement(s)**: REQ-INV-02, REQ-INV-06  
 **Business Rule**: §4 Post-checkout; §5 Cancellation and stock restore  
 **Selectors/API**: `POST /api/orders`, `PUT /api/orders/:id/status`, `GET /api/products/:id`  
 **Suggested Layer**: API  
@@ -3031,6 +3130,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) Product A is gone, B stays, and empty seller groups are removed
 - (2) Only the ordered variant should leave the cart. **Verify:** the legacy path removes cart lines by `product` id (`$in: orderedProductIds`), so the other variant's line probably disappears too; the checkout-session path matches product and variant. Record the actual result and decide whether to fix
 
+**Requirement(s)**: REQ-CART-07  
 **Business Rule**: §3 Cart; §4 Post-checkout (cart cleared after order)  
 **Selectors/API**: `POST /api/orders`, `PUT /api/cart`, `GET /api/cart`  
 **Suggested Layer**: API  
@@ -3063,6 +3163,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `estimatedDelivery` ≈ order date + 7 days; `paymentMethod.type` `cash-on-delivery`
 - The same shape under `CHECKOUT_FLOW=legacy` and `manual_capture`; the order has no Stripe call
 
+**Requirement(s)**: REQ-ORD-03  
 **Business Rule**: §4 Post-checkout; Seller pending cancellation spec §Amendment  
 **Selectors/API**: `POST /api/orders`, `GET /api/orders/:id`  
 **Suggested Layer**: API  
@@ -3092,6 +3193,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `shipping` = 9.99 for all three: the amount does not change the fee
 - The unit tests for `computeSellerTotals`, the web helper and the mobile helper assert the same
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules (default fee)  
 **Selectors/API**: `POST /api/orders`; `computeSellerTotals`  
 **Suggested Layer**: Unit  
@@ -3128,6 +3230,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `Retry-After` and `RateLimit-Reset` agree to within a second or two
 - This test takes about a minute; tag it as slow and keep it out of the default run
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting (fixed 60 s window)  
 **Selectors/API**: `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -3158,6 +3261,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - No request returns 429
 - Current code maps `0` to `Infinity`; record which `RateLimit-*` headers (if any) are sent. TC-114 to TC-116 skip in this mode because there is no finite limit to assert
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting (`0 = unlimited`, `server.ts`, the Swagger rate-limit text)  
 **Selectors/API**: `GET /api/products`, `POST /api/auth/login`  
 **Suggested Layer**: API  
@@ -3188,6 +3292,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - The response carries `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`
 - In low-limit mode the next request is **429** with the standard message; the checkout routes share the same API bucket as products, orders and cart
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting; `/api/checkout` uses `apiLimiter`  
 **Selectors/API**: `/api/checkout/sessions/:id`  
 **Suggested Layer**: API  
@@ -3219,6 +3324,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) every response is **400** `Invalid signature`, never 429, and carries no `RateLimit-*` headers: Stripe retries must never be blocked by the limiter (the Swagger tag text says these routes are not behind the limiter)
 - (3) **200**
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting scope; Authorize-capture §Recovery and Stripe events  
 **Selectors/API**: `POST /api/payments/webhook`, `GET /health`  
 **Suggested Layer**: API  
@@ -3249,6 +3355,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) returns **429**: every `/api/auth/*` route (login, signup, `me`, profile, avatar, saved addresses, payment methods) counts against the same strict brute-force limit
 - **Product risk to decide:** at the default of 10 per minute, a signed-in user who edits addresses and cards, or who loads several screens, can reach 429 without any attack. Decide whether the saved-address and payment-method routes should use the general API limiter instead
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting scope (`/api/auth` uses `authLimiter`)  
 **Selectors/API**: `/api/auth/*`  
 **Suggested Layer**: API  
@@ -3279,6 +3386,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) is **429**: the client IP, not the header, decides the bucket, so a script cannot dodge the limit by rotating the header
 - Starting the backend with a non-integer `TRUST_PROXY_HOPS` fails at startup (`TRUST_PROXY_HOPS must be a non-negative integer`)
 
+**Requirement(s)**: REQ-NFR-09  
 **Business Rule**: Rate limiting; `deployment.md` Proxy and rate limiting; `configureTrustProxy`  
 **Selectors/API**: `POST /api/auth/login` with `X-Forwarded-For`  
 **Suggested Layer**: API  
@@ -3309,6 +3417,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Client B is **not** limited, and client A is still limited. If B is limited too, the app sees the proxy's address for everyone and the whole site is throttled as one client; raise or fix `TRUST_PROXY_HOPS`
 - `deployment.md` asks for exactly this check on the actual host
 
+**Requirement(s)**: REQ-NFR-09  
 **Business Rule**: `deployment.md` Proxy and rate limiting  
 **Selectors/API**: `POST /api/auth/login` on the deployed host  
 **Suggested Layer**: Manual  
@@ -3339,6 +3448,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Both bodies are `{ success: false, message: "Too many requests, please try again later." }` plus the `Retry-After` and `RateLimit-*` headers
 - Known inconsistency: other errors carry a machine-readable `code`, but the limiter response does not, and `RATE_LIMITED` in `apiResponse.ts` is unused. Decide whether to add `code: "RATE_LIMITED"`, then assert it here
 
+**Requirement(s)**: REQ-NFR-03  
 **Business Rule**: Rate limiting; API error envelope  
 **Selectors/API**: `POST /api/auth/login`, `GET /api/products`; `config/swagger.ts` `TooManyRequests`  
 **Suggested Layer**: API  
@@ -3375,6 +3485,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **401** for each; no review is created or changed
 - (2) **200**: the product's review list is public
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: §1 Authentication; §7 Reviews  
 **Selectors/API**: `/api/reviews`  
 **Suggested Layer**: API  
@@ -3406,6 +3517,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) **400** (rating 0 is rejected as "required", 6 and -1 as `Rating must be between 1 and 5`)
 - No review is created and the product rating is unchanged
 
+**Requirement(s)**: REQ-REV-01  
 **Business Rule**: §7 Fields (`rating` 1–5, `comment` required)  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -3440,6 +3552,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) and (4) **400**
 - **Current behaviour (verify):** the controller only turns the duplicate-key error into a clean response, and every other failure becomes **500 `Server error`**. The model rejects the 1001-character comment and `abc` with a validation error, and a malformed id with a cast error, so (1) over-long, (2) `abc`, (3) and (4) are probably 500 today
 
+**Requirement(s)**: REQ-REV-01  
 **Business Rule**: §7 Fields (`comment` max 1000)  
 **Selectors/API**: `POST /api/reviews`, `PUT /api/reviews/:id`  
 **Suggested Layer**: API  
@@ -3473,6 +3586,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2): **403** `This product is not in the specified order`
 - No review is created; the identical message for another buyer's, cancelled and nonexistent orders does not reveal which order ids exist
 
+**Requirement(s)**: REQ-REV-02  
 **Business Rule**: §7 Eligibility  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -3502,6 +3616,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Proposed rule: **403**, because a self-review inflates the product's rating
 - **Current behaviour:** the controller has no such check, so the review is created (**201**) and counts toward the rating. This scenario needs an owner decision; the old `reviews.api.spec.ts` ran as the seller reviewing their own product, which is why the gap went unnoticed
 
+**Requirement(s)**: None yet (see `docs/test-cases/requirements-trace.md`)  
 **Business Rule**: §7 (not specified; decision needed)  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -3533,6 +3648,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) `rating` 5, `reviews` 1; (2) `rating` 4.5, `reviews` 2; (3) `rating` 4.3 (4.333… rounded to one decimal), `reviews` 3
 - A rejected review (duplicate or ineligible) does not change either value
 
+**Requirement(s)**: REQ-REV-04  
 **Business Rule**: §7 Product rating update (average, 1 decimal; count)  
 **Selectors/API**: `POST /api/reviews`, `GET /api/products/:id`  
 **Suggested Layer**: API  
@@ -3566,6 +3682,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) **400** `Provide rating or comment to update`; ratings outside 1 to 5 give **400**
 - `PUT` cannot change the product or order the review belongs to
 
+**Requirement(s)**: REQ-REV-05  
 **Business Rule**: §7 Buyer flow (edit); product rating update  
 **Selectors/API**: `PUT /api/reviews/:id`  
 **Suggested Layer**: API  
@@ -3597,6 +3714,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) and (2) **404** `Review not found or not yours`: the response is the same whether the review exists or not
 - (3) the review and the product's rating are unchanged
 
+**Requirement(s)**: REQ-REV-05  
 **Business Rule**: §7 Reviews; ownership  
 **Selectors/API**: `PUT /api/reviews/:id`  
 **Suggested Layer**: API  
@@ -3629,6 +3747,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) page 1 has 2 reviews and page 2 has 1; `pages` is 2
 - (3) `data: []`, `total: 0`
 
+**Requirement(s)**: REQ-REV-06  
 **Business Rule**: §7 Reviews  
 **Selectors/API**: `GET /api/reviews/product/:productId`  
 **Suggested Layer**: API  
@@ -3661,6 +3780,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) **400** or an empty list, not 500
 - **Current behaviour (verify):** `page=0`, `limit=0` and `abc` fall back to the defaults because of `|| 1` / `|| 10`; `page=-1` probably becomes a negative `skip` and returns 500; `limit` has no upper bound; a malformed product id is a cast error and returns 500
 
+**Requirement(s)**: REQ-REV-06  
 **Business Rule**: Pagination (extends TC-123 to TC-131 for the products list)  
 **Selectors/API**: `GET /api/reviews/product/:productId`  
 **Suggested Layer**: API  
@@ -3691,6 +3811,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - (1) `hasReviewed: false`, `review: null`; (2) `hasReviewed: true` with the review; (3) `hasReviewed: false`: the check is scoped to the caller
 
+**Requirement(s)**: REQ-REV-06  
 **Business Rule**: §7 Buyer flow (check existing review)  
 **Selectors/API**: `GET /api/reviews/check/:productId`  
 **Suggested Layer**: API  
@@ -3721,6 +3842,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - One response is **201** and the other **409** `You have already reviewed this product` (the unique `(userId, productId)` index decides the race)
 - The product has `reviews` 1 and the rating equals the review's rating, not double-counted
 
+**Requirement(s)**: REQ-REV-08  
 **Business Rule**: §7 One review per user per product  
 **Selectors/API**: `POST /api/reviews`  
 **Suggested Layer**: API  
@@ -3751,6 +3873,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (1) **404** (the route does not exist). `business-rules.md` §7 says the product rating updates "after create/update/delete", but no delete exists; decide whether to add it or fix the doc, then update this scenario
 - (2) the product is removed but its reviews remain in the collection and are still returned by the list (orphans); decide whether deleting a product should remove or hide them
 
+**Requirement(s)**: REQ-REV-07  
 **Business Rule**: §7 Product rating update  
 **Selectors/API**: `DELETE /api/reviews/:id`, `DELETE /api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -3789,6 +3912,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) **404** `Product not found`
 - TC-054 only exercises the `/api/products/:id` routes; the app also has the `/api/seller/products/:id` routes, which must enforce the same rule
 
+**Requirement(s)**: REQ-SEL-04  
 **Business Rule**: §2 Listing visibility; ownership  
 **Selectors/API**: `/api/products/:id`, `/api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -3818,6 +3942,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **401** with `success: false` for every one; nothing is created or changed
 - Public by design (must stay open): `GET /api/products`, `GET /api/products/:id`, `GET /api/reviews/product/:productId`, `GET /health`, `GET /`, and `POST /api/payments/webhook` (signature-checked instead)
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: the routes above  
 **Suggested Layer**: API  
@@ -3851,6 +3976,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **401** for each; (4) answers `User not found`, the others `Not authorized to access this route`
 - (5) needs a backend started with a very short `JWT_EXPIRES_IN` (for example 1 second) or an integration test; mark it slow
 
+**Requirement(s)**: REQ-AUTH-05  
 **Business Rule**: §1 Authentication  
 **Selectors/API**: `GET /api/auth/me`; `middleware/auth.ts`  
 **Suggested Layer**: API + Integration  
@@ -3880,6 +4006,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - **403** with `success: false` for every call, and no data is changed or returned
 - A review of the route table in `sellerRoutes.ts`, `couponRoutes.ts` and `productRoutes.ts` finds no seller-only route outside this list; any new one must be added
 
+**Requirement(s)**: REQ-AUTH-07  
 **Business Rule**: §1 Roles  
 **Selectors/API**: the routes above; `requireSeller`  
 **Suggested Layer**: API  
@@ -3912,6 +4039,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) **400** `First name is required` / `Last name is required`
 - (3) **400** `User already exists with this email` for both spellings. **Decision:** it is a 400, not a 409, and the message confirms the email is registered (account enumeration), while login hides it behind `Invalid credentials`
 
+**Requirement(s)**: REQ-AUTH-01, REQ-AUTH-02  
 **Business Rule**: §1 Authentication; §10 Client-side validation  
 **Selectors/API**: `POST /api/auth/signup`  
 **Suggested Layer**: API  
@@ -3944,6 +4072,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) as A `isFollowing: true`, as B `isFollowing: false`; `followersCount` 1; A's `followingCount` 1
 - (3) **200** `isFollowing: false`, `followersCount` 0 both times
 
+**Requirement(s)**: REQ-PRO-03  
 **Business Rule**: §8 Follow system  
 **Selectors/API**: `POST/DELETE /api/users/:id/follow`, `GET /api/users/:id`  
 **Suggested Layer**: API  
@@ -3976,6 +4105,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) never-followed returns **200** `isFollowing: false`; `abc` should be a **4xx**. **Verify:** the unfollow path has no id check, so a malformed id reaches Mongo and the error handler maps the cast error to 400 `Invalid resource ID`
 - (3) **401**. (Following yourself is TC-113.)
 
+**Requirement(s)**: REQ-PRO-03  
 **Business Rule**: §8 Follow system  
 **Selectors/API**: `POST/DELETE /api/users/:id/follow`  
 **Suggested Layer**: API  
@@ -4009,6 +4139,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) at most **30** users; (3) the caller is never in the results
 - (4) only `id`, `firstName`, `lastName`, `avatar`, `role`, `followersCount`, `followingCount`, `isFollowing`; no email, password or addresses
 
+**Requirement(s)**: REQ-PRO-04  
 **Business Rule**: §8 Follow system (`GET /api/users?q=`, max 30, excludes self)  
 **Selectors/API**: `GET /api/users`  
 **Suggested Layer**: API  
@@ -4039,6 +4170,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Each returns **200** treating the text literally (or a **400**), never a **500**, and the long pattern does not hang the request
 - **Current behaviour (verify):** `searchUsers` passes the trimmed text straight into a MongoDB `$regex`, so an invalid pattern such as `(` or `[` probably returns 500, `.*` matches every user, and a pathological pattern could be slow. The fix is to escape the text (or use a text index)
 
+**Requirement(s)**: REQ-PRO-04  
 **Business Rule**: §8 Follow system (search)  
 **Selectors/API**: `GET /api/users?q=`  
 **Suggested Layer**: API  
@@ -4073,6 +4205,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) following of an unknown user is **404**, but followers of an unknown user currently returns **200** with `[]`. Make the two consistent (404) and update this scenario
 - (4) **401**
 
+**Requirement(s)**: REQ-PRO-04  
 **Business Rule**: §8 Follow system  
 **Selectors/API**: `/api/users/:id`, `/followers`, `/following`  
 **Suggested Layer**: API  
@@ -4103,6 +4236,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - `CHECKOUT_FLOW=legacy`: **current behaviour** is **201**; `orderService.createOrders` skips Stripe verification when no intent is supplied ("saved/mock card path"), so an order marked as paid by card is created with nothing charged. The old `TC-STRIPE-WH-02` expected 402, which the code never returns for this case. **Decision needed:** keep the mock path only for development, or require a verified intent for every card order
 - The spec asserts 426 under `manual_capture` and records the legacy result as a known gap
 
+**Requirement(s)**: REQ-PAY-09  
 **Business Rule**: §4 Payment methods; Authorize-capture §API and client contracts  
 **Selectors/API**: `POST /api/orders`; `rejectLegacyCardOrder`  
 **Suggested Layer**: API  
@@ -4134,6 +4268,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) the first order is created; the second is **409** `This payment has already been used for an order`
 - Best covered with Stripe mocked in the backend tests (`orderService.stripe.test.ts`); an API run needs real test-mode intents
 
+**Requirement(s)**: REQ-PAY-09  
 **Business Rule**: §4 Payment methods  
 **Selectors/API**: `POST /api/orders` with `paymentIntentId`  
 **Suggested Layer**: Integration + API  
@@ -4164,6 +4299,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Current shapes: service errors `{ success, message, code? }`; `426` guards `{ success, error: { code, message, retryable, details } }`; the limiter `{ success, message }`; the webhook `{ error }`; unknown routes `{ success, message }`
 - Expected: one envelope with `success: false` and a machine-readable `code` everywhere (including 429 and the webhook), so clients can parse errors in one place. Decide the target shape, then assert it per route
 
+**Requirement(s)**: REQ-NFR-01  
 **Business Rule**: API error contract; Swagger `Error` schema  
 **Selectors/API**: the routes above  
 **Suggested Layer**: API  
@@ -4195,6 +4331,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) **200** `{ success: true, message: "TokoMart API", version: "1.0.0" }`
 - Neither route needs a token and neither is rate limited
 
+**Requirement(s)**: REQ-NFR-06  
 **Business Rule**: Smoke  
 **Selectors/API**: `GET /health`, `GET /`  
 **Suggested Layer**: API  
@@ -4223,6 +4360,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 **Expected Results**:
 - **404** `{ success: false, message: "Not Found — <path>" }` as JSON, not an HTML page, and no stack trace outside `NODE_ENV=development`
 
+**Requirement(s)**: REQ-NFR-02  
 **Business Rule**: API error contract  
 **Selectors/API**: `notFound` middleware  
 **Suggested Layer**: API  
@@ -4253,6 +4391,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Current behaviour: `/health` still returns 200 (it does not query the database) while `/api/products` fails, so a load balancer using `/health` would keep sending traffic to a backend with no database
 - Decide whether to add a readiness check (`/health/ready` that pings the database) and then assert it here
 
+**Requirement(s)**: REQ-NFR-06  
 **Business Rule**: Deployment health checks (`docs/deployment.md`)  
 **Selectors/API**: `GET /health`  
 **Suggested Layer**: Manual  
@@ -4292,6 +4431,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (2) and (3) the shipping line reads $9.99 in the cart and in checkout, and the displayed total equals the order total the backend stores
 - (4) `shipping` is 0 (the only way to ship free)
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules (default)  
 **Selectors/API**: `POST /api/orders`; `computeSellerTotals`; web `Cart.tsx`, `Checkout.tsx`; mobile `cart_state.dart`, `checkout_screen.dart`  
 **Suggested Layer**: Unit  
@@ -4325,6 +4465,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) `shipping` 5: an option with no fee of its own falls back to the first configured fee
 - Create and update now reject a `buyer_pays` product with no amounts (TC-303), so this fallback only protects older products
 
+**Requirement(s)**: REQ-PRC-05  
 **Business Rule**: §4 Shipping rules; delivery option resolution order  
 **Selectors/API**: `POST /api/orders`; `computeSellerTotals`  
 **Suggested Layer**: Unit  
@@ -4359,6 +4500,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - A `free` product ignores any `shippingFeeAmounts`; an explicit fee of 0 is accepted; numeric strings from multipart bodies are accepted
 - Another seller's product still answers 403 (ownership is checked before the shipping settings)
 
+**Requirement(s)**: REQ-SEL-02  
 **Business Rule**: §2 Product wizard (shipping step); §4 Shipping rules  
 **Selectors/API**: `POST/PUT /api/seller/products`, `POST/PUT /api/products`  
 **Suggested Layer**: API + Unit  
@@ -4397,6 +4539,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (6) the seller's product count is unchanged after every 400
 - `price` of `0` is accepted (the check is "missing", not "falsy"); see TC-306 for negative prices and TC-310 for an empty price
 
+**Requirement(s)**: REQ-SEL-01  
 **Business Rule**: §2 Product wizard (required fields)  
 **Selectors/API**: `POST /api/seller/products`  
 **Suggested Layer**: API  
@@ -4431,6 +4574,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (3) **201**; each variant's `image` is stored as `images: [image]`; the top-level `price` is still required for a variant product on this route
 - (4) **201** but the extra fields are ignored: `rating` stays 0, `soldCount` stays 0 and `sellerId` is the caller (the controller reads a fixed list of fields)
 
+**Requirement(s)**: REQ-SEL-01  
 **Business Rule**: §2 Product wizard (optional fields)  
 **Selectors/API**: `POST /api/seller/products`  
 **Suggested Layer**: API  
@@ -4470,6 +4614,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (9) one **400** whose message lists both problems, joined with ", "
 - No product is created by any 400 request (the product count is unchanged)
 
+**Requirement(s)**: REQ-PRC-01, REQ-SEL-01  
 **Business Rule**: §2 Product wizard (field limits); TC-058  
 **Selectors/API**: `POST /api/seller/products`  
 **Suggested Layer**: API  
@@ -4509,6 +4654,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (6) after every 400 the stored product is unchanged
 - Shipping settings on update: see TC-303
 
+**Requirement(s)**: REQ-SEL-01  
 **Business Rule**: §2 Product wizard (edit)  
 **Selectors/API**: `PUT /api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -4544,6 +4690,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (4) **403** as in (3): ownership is checked before the field rules, so B learns nothing about validation of A's product. The two checks the controller makes before it looks the product up are the exception: malformed JSON (TC-309) and an empty `price` or `stock` (TC-310) answer 400 whatever the owner
 - Ownership of the other routes: TC-054 and TC-285
 
+**Requirement(s)**: REQ-SEL-04, REQ-NFR-05  
 **Business Rule**: §2 Product ownership  
 **Selectors/API**: `PUT /api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -4575,6 +4722,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Blank text for one of these fields counts as not sent: for `POST` a blank `shippingOptions` gives the shipping 400 of TC-303, a blank `variants` creates a product without variants
 - Fixed 2026-10-27 (it used to answer **500**: the controller let the `SyntaxError` reach the error handler without a status code). Unit tests: `validators/__tests__/productInput.test.ts`, `controllers/__tests__/sellerProductController.test.ts`
 
+**Requirement(s)**: REQ-SEL-05  
 **Business Rule**: §2 Product wizard  
 **Selectors/API**: `POST /api/seller/products`, `PUT /api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -4610,6 +4758,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (4) **400** ``Path `description` is required.``: the model now trims the description, so spaces alone count as empty
 - Fixed 2026-10-27 (an empty price used to create a product at 0 and a space-only description was accepted). Unit tests: `productInput.test.ts`, `sellerProductController.test.ts`, `models/__tests__/Product.test.ts`
 
+**Requirement(s)**: REQ-SEL-05  
 **Business Rule**: §2 Product wizard (required fields)  
 **Selectors/API**: `POST /api/seller/products`, `PUT /api/seller/products/:id`  
 **Suggested Layer**: API  
@@ -4647,8 +4796,196 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - (5) **400** `invalid_shipping_settings` `Unknown delivery option " standard ". Use standard, express or pickup.`; the same rule applies to `condition` and `shippingFee`
 - The trimming is done by the product model (`trim` on the text fields, tags and attribute values, and a validation hook for the attribute keys), so `POST/PUT /api/products` trims the same way
 
+**Requirement(s)**: REQ-SEL-01  
 **Business Rule**: §2 Product wizard (text fields)  
 **Selectors/API**: `POST /api/seller/products`, `PUT /api/seller/products/:id`  
 **Suggested Layer**: API + Unit  
+
+---
+
+## Cancellation, refund and order invariants (API) — added 2026-11-28
+
+### TC-312: Cancelling an order gives back stock, sold count and coupon use, once
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Both  
+**Platform**: API  
+**Parity**: Both  
+**Automation**: Integration (Vitest, Stripe mocked)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `orderCancellation.integration.test.ts`, `sellerCancellation.integration.test.ts`, `legacyPayments.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: A product with stock S and sold count C; a seller coupon with use count U; a pending order of 2 units that used the coupon (Cash on Delivery, or a card order under manual capture)  
+**Steps**:
+1. Place the order and note the stock, the sold count and the coupon use count
+2. Cancel it as the buyer (`PUT /api/orders/:id/status`); on a second order cancel as the seller with a reason (`PUT /api/seller/orders/:id/status`); on a third let the acceptance deadline pass
+3. Cancel the same order again, or repeat the seller cancellation
+4. Repeat step 2 for an order of a variant product
+
+**Expected Results**:
+- After placing: stock S − 2, sold count C + 2, coupon use U + 1
+- After the cancellation, by any of the three actors: stock S, sold count C, coupon use U; the order is `cancelled`
+- A card order also releases its hold (`release_pending`, then `released`; see TC-316)
+- A repeated cancel returns the order unchanged and gives nothing back a second time; stock, sold count and coupon use stay as in step 2
+- A variant order gives back the stock of its variant, not of the product
+- The coupon use count never goes below 0
+- **Old-shape orders** (cash on delivery with no payment status, placed before acceptance deadlines existed): the buyer cancel gives back **stock only**, not the sold count or the coupon use. This is Open question 20 in `tokomart-requirements`; decide whether it is intended before writing a test for it
+
+**Requirement(s)**: REQ-CAN-04, REQ-INV-06, REQ-CPN-10  
+**Business Rule**: §5 Cancellation  
+**Selectors/API**: `PUT /api/orders/:id/status`, `PUT /api/seller/orders/:id/status`; `restoreOrderReservations` in `orderCancellation.ts`  
+**Suggested Layer**: Integration  
+
+---
+
+### TC-313: A delivered Cash on Delivery order cannot be refunded in the app
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both (UI: web TC-503, mobile TC-504)  
+**Automation**: Integration (Vitest) + one Playwright-API case  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundEligibility.integration.test.ts`, `refundRequest.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; a delivered Cash on Delivery order of the buyer (`status: delivered`, delivery date recorded)  
+**Steps**:
+1. `GET /api/orders/:id/refund-eligibility`
+2. `POST /api/orders/:id/refund-requests` with a valid body (one line, a reason code, a description, an idempotency key)
+3. Repeat step 2 with `DELIVERED_REFUNDS_ENABLED` off
+4. Repeat step 1 as another buyer
+
+**Expected Results**:
+- (1) **200** `eligible: false`, `reason: unsupported_payment`, no lines
+- (2) **409** `refund_conflict` "Refund unavailable: unsupported_payment"; no refund request is created and the order is unchanged
+- (3) **409** `delivered_refunds_disabled`: the flag is checked before eligibility
+- (4) **404** `refund_not_found`
+- The reasons are checked in order and the first one wins: a Cash on Delivery order that is not delivered yet answers `not_delivered`, not `unsupported_payment`
+
+**Requirement(s)**: REQ-REF-02, REQ-REF-01  
+**Business Rule**: Delivered-item refund spec §Eligibility  
+**Selectors/API**: `GET /api/orders/:id/refund-eligibility`, `POST /api/orders/:id/refund-requests`; `getRefundEligibility` in `refundEligibility.ts`  
+**Suggested Layer**: Integration + API  
+
+---
+
+### TC-314: A refund for chosen units follows the order's own allocation of price, discount and tax
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P0  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both (UI: web TC-162, mobile TC-185)  
+**Automation**: Integration (Vitest) + Unit  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundAllocation.test.ts`, `refundShipping.test.ts`, `refundRequest.integration.test.ts`, `deliveredRefund.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; a delivered card order paid and captured in full, with 2 units of one product, a coupon discount, 8% tax and shipping (for example 2 × $10.00, tax $1.60, shipping $5.00, total $26.60)  
+**Steps**:
+1. `GET /api/orders/:id/refund-eligibility` and read the amount of each available unit
+2. `POST /api/orders/:id/refund-requests` for 1 of the 2 units, reason `damaged`
+3. Send the request for all units instead
+4. Send the same request with an `amount` field added
+
+**Expected Results**:
+- Each unit is worth its share of the price after discount plus its share of the tax, in whole cents (in the example $10.80 each); the shares of all units add up to the price after discount plus tax
+- (2) **201**; the request amount is that unit's value and no shipping (shipping is refunded only when every unit is selected, TC-167)
+- (3) the amount is both units plus the shipping (for a seller-fault reason)
+- The amount is always computed by the server; the request carries none (4: the extra field is refused with **400** `refund_validation`)
+- The amounts of all units plus shipping never add up to more than the captured amount
+
+**Requirement(s)**: REQ-REF-04, REQ-REF-03  
+**Business Rule**: Delivered-item refund spec §Allocation  
+**Selectors/API**: `POST /api/orders/:id/refund-requests`; `ensureRefundAllocation`, `refundableUnits` in `refundAllocation.ts`  
+**Suggested Layer**: Unit + Integration  
+
+---
+
+### TC-315: A unit already requested or refunded cannot be requested again, and the refunds never exceed the payment
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P1  
+**Role**: Buyer  
+**Platform**: API  
+**Parity**: Both  
+**Automation**: Integration (Vitest)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `refundRequest.integration.test.ts`, `refundEligibility.integration.test.ts`, `deliveredRefund.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `DELIVERED_REFUNDS_ENABLED=true`; the delivered card order of TC-314 (2 units)  
+**Steps**:
+1. Request unit 1 (state `requested`)
+2. While that request is open, request unit 2, and read the eligibility
+3. The seller approves request 1 and the refund settles; then request 2 units at once
+4. Request the remaining unit with a new idempotency key
+5. Request again when no unit is left
+6. Send the same request twice with the same idempotency key, then with the same key and a different body
+
+**Expected Results**:
+- (2) **409** `refund_conflict` "Refund unavailable: active_request"; the eligibility reason is `active_request` (one open request per order)
+- (3) **409** `refund_conflict` "Requested quantities are not available": the refunded unit is not offered again
+- (4) **201**; once it settles, every unit of the order has been refunded
+- (5) the eligibility reason is `no_units_left` and a request answers **409**
+- (6) the same key and body is a replay (**200**, the same request, nothing created twice); the same key with another body is **409** "Idempotency key was already used for a different request"
+- The refunded amount plus the reserved amount never exceeds the captured amount: a request that would is refused with **409**
+
+**Requirement(s)**: REQ-REF-04, REQ-REF-06  
+**Business Rule**: Delivered-item refund spec §Allocation and Idempotency  
+**Selectors/API**: `POST /api/orders/:id/refund-requests`, `GET /api/orders/:id/refund-eligibility`; `submitRefundRequest` in `refundRequestService.ts`  
+**Suggested Layer**: Integration  
+
+---
+
+### TC-316: A card order that is cancelled or expires never leaves a charge
+**Scenario status**: Active  
+**Category**: Business Rule  
+**Priority**: P0  
+**Role**: Both  
+**Platform**: API  
+**Parity**: Both (UI: mobile TC-401; web notice TC-157)  
+**Automation**: Integration (Vitest, Stripe mocked)  
+**Automation status**: Needs review  
+**Script mapping**: Unverified: no script is mapped to this scenario. Candidates matched by topic (not by TC id): `orderCancellation.integration.test.ts`, `sellerCancellation.integration.test.ts`, `acceptanceScanner.integration.test.ts`, `orderAcceptance.integration.test.ts`.  
+**Latest result**: Not recorded  
+**Last run**: Not recorded  
+**Run evidence**: Not recorded  
+**Run baseline**: Not recorded  
+**Test File**: Unmapped  
+**Preconditions**: `CHECKOUT_FLOW=manual_capture`; three pending card orders whose payment is `authorized` (a hold, not a charge)  
+**Steps**:
+1. The buyer cancels the first order
+2. The seller cancels the second with a reason
+3. The acceptance deadline of the third passes and the scanner runs
+4. Race the seller's acceptance against the buyer's cancel on a fourth order
+
+**Expected Results**:
+- Orders 1 to 3: `cancelled`; payment status `release_pending`, then `released`; the PaymentIntent is cancelled and never captured; the amount received stays 0
+- The capture is never attempted for them, and no refund is needed because nothing was charged
+- The buyer's order page says "Reservation released" (web TC-157, mobile TC-401)
+- Order 4: exactly one wins. If the seller wins, the order is charged normally and the buyer's cancel answers **409** `cancellation_conflict`; if the buyer wins, the acceptance is refused and there is no charge
+- An expired authorization (`authorization_expired`) is released the same way
+
+**Requirement(s)**: REQ-ORD-13, REQ-PAY-05, REQ-PAY-04  
+**Business Rule**: Authorize-capture §Release and Recovery  
+**Selectors/API**: `PUT /api/orders/:id/status`, `PUT /api/seller/orders/:id/status`; `cancelPendingOrder`, `releaseIntentOperation`  
+**Suggested Layer**: Integration  
 
 ---

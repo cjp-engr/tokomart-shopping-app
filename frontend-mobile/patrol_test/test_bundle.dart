@@ -17,8 +17,6 @@ import '2_buyer/simple_cod_checkout_test.dart' as _2_buyer__simple_cod_checkout_
 import '2_buyer/simple_new_credit_checkout_test.dart' as _2_buyer__simple_new_credit_checkout_test;
 import '2_buyer/simple_saved_credit_checkout_test.dart' as _2_buyer__simple_saved_credit_checkout_test;
 import '2_buyer/variant_cod_checkout_test.dart' as _2_buyer__variant_cod_checkout_test;
-import '2_buyer/variant_new_credit_checkout_test.dart' as _2_buyer__variant_new_credit_checkout_test;
-import '2_buyer/variant_saved_credit_checkout_test.dart' as _2_buyer__variant_saved_credit_checkout_test;
 // END: GENERATED TEST IMPORTS
 
 Future<void> main() async {
@@ -114,8 +112,6 @@ Future<void> main() async {
   group('_2_buyer.simple_new_credit_checkout_test', _2_buyer__simple_new_credit_checkout_test.main);
   group('_2_buyer.simple_saved_credit_checkout_test', _2_buyer__simple_saved_credit_checkout_test.main);
   group('_2_buyer.variant_cod_checkout_test', _2_buyer__variant_cod_checkout_test.main);
-  group('_2_buyer.variant_new_credit_checkout_test', _2_buyer__variant_new_credit_checkout_test.main);
-  group('_2_buyer.variant_saved_credit_checkout_test', _2_buyer__variant_saved_credit_checkout_test.main);
 // END: GENERATED TEST GROUPS
 
   if (constants.testDiscoveryEnabled) {

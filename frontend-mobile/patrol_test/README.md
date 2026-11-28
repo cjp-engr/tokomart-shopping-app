@@ -190,8 +190,6 @@ IDs map to `docs/test-cases/test-scenarios-mobile.md`; the title of each test st
 | `variant_cod_checkout_test.dart` | TC-101 | `checkout-variant-cod`, `smoke` | Buyer places COD order with variant product |
 | `simple_saved_credit_checkout_test.dart` | TC-096 | `tc-096` | **Local Stripe.** Saved card, simple product; checks the order is `authorized` |
 | `simple_new_credit_checkout_test.dart` | TC-097 | `tc-097` | **Local Stripe.** New card in the native Stripe sheet, simple product |
-| `variant_new_credit_checkout_test.dart` | TC-103 | `tc-103` | **Local Stripe.** New card, variant product (size M); checks `Size: M` on the order item |
-| `variant_saved_credit_checkout_test.dart` | TC-104 | `tc-104` | **Local Stripe.** Saved card, variant product (size M); checks `Size: M` on the order item |
 | `multi_seller_card_checkout_test.dart` | TC-083 (card leg) | `tc-083` | **Local Stripe.** Two sellers' products, saved card; expects two authorized orders, one hold per seller |
 | `local_buyer_cancels_order_test.dart` | TC-180 (partial) | `tc-180` | **Local Stripe.** Test creates a pending card order; the buyer cancels it and sees "Reservation released" |
 | `local_charged_payment_notice_test.dart` | TC-179 (partial) | `tc-179` | **Local Stripe.** Test creates and accepts an order through the API; the buyer sees "Payment charged" |

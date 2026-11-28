@@ -2,8 +2,9 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Mobile (79 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
-**Updated:** 2026-10-24; TC-401 added 2026-11-08
+**Platform filter:** Mobile (81 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
+**Updated:** 2026-10-24; TC-401 added 2026-11-08  
+**Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
 ---
 
@@ -60,12 +61,12 @@
 | TC-082 | Voucher via route extra | E2E | Patrol | P1 | `extra['voucherSelections']` | Coupon UI |
 | TC-095 | **COD checkout** | E2E | Patrol | P0 | `CheckoutScreen` | P0 checkout smoke |
 | TC-101 | **COD checkout — variant product** | E2E | Patrol | P0 | `products_variantValue_*` | Variant path smoke |
-| TC-083 | Multi-seller → 2 orders | Multi | Patrol + API | P0 | `POST /api/orders` + checkout | S4 mobile |
+| TC-083 | E2E | Patrol | Patrol + API | P0 | `POST /api/orders` + checkout | S4 mobile |
 | TC-096 | Saved card checkout | E2E | Patrol | P1 | Saved card selector | Card payment |
 | TC-097 | New card checkout | E2E | Patrol | P1 | Card entry fields | Card entry |
-| TC-103 | New card checkout — variant | E2E | Patrol | P1 | `products_variantValue_*` + card entry | Variant + new card |
-| TC-104 | Saved card checkout — variant | E2E | Patrol | P1 | `products_variantValue_*` + saved card | Variant + saved card |
-| TC-084 | Order history + detail | E2E | Patrol | P1 | `/orders`, `/orders/:id` | Buyer orders |
+| TC-103 | New card checkout — variant | Trim | — | P1 | `products_variantValue_*` + card entry | Variant + new card |
+| TC-104 | Saved card checkout — variant | Trim | — | P1 | `products_variantValue_*` + saved card | Variant + saved card |
+| TC-084 | Order history + detail | Component | flutter_test (widget) | P1 | `/orders`, `/orders/:id` | Buyer orders |
 | TC-085 | Confirm receipt | E2E | Patrol | P1 | Confirm action | Post-shipped |
 | TC-612 | Invalid login | E2E | Patrol | P1 | `auth_loginButton` | Error UX |
 | TC-613 | Variant required | E2E | Patrol | P1 | Product detail | Validation |
@@ -74,8 +75,8 @@
 | TC-087 | Wishlist clear all | E2E | Patrol | P2 | `WishlistCleared` | In-memory |
 | TC-088 | Follow/unfollow seller | E2E | Patrol | P2 | `/seller-profile/:sellerId` | Social |
 | TC-089 | Become seller | E2E | Patrol | P0 | Seller promotion API | S3 mobile |
-| TC-090 | **Simple 7-step wizard** | E2E | Patrol | P0 | `/seller/add` | S3 mobile |
-| TC-091 | **Variant 7-step wizard** | E2E | Patrol | P0 | Variant step 4 | Variant listing |
+| TC-090 | **Simple 6-step wizard** | E2E | Patrol | P0 | `/seller/add` | S3 mobile |
+| TC-091 | **Variant 6-step wizard** | E2E | Patrol | P0 | Variants inside the Pricing step | Variant listing |
 | TC-615 | Seller views simple product (Read) | E2E | Patrol | P1 | `keys.seller.productTile(id)` (exists) | Parity TC-045 (divergent) |
 | TC-616 | Seller edits simple product (Update) | E2E | Patrol | P1 | `keys.seller.editProductButton(id)` (exists) | Parity TC-044 (divergent) |
 | TC-617 | Seller deletes simple product (Delete) | E2E | Patrol | P1 | `keys.seller.deleteProductButton(id)` (exists) | Parity TC-046 (both) |
@@ -91,7 +92,7 @@
 | TC-094 | Preview as buyer | E2E | Patrol | P2 | `?hideEdit=1` | vs web TC-045 |
 | TC-611 | Buyer blocked seller routes | Multi | Patrol + API | P0 | `GET /api/seller/*` → 403 | Security |
 | TC-600 | Auth gate vs web guest | E2E | Patrol | P1 | Cold launch | Parity doc |
-| TC-601 | 7-step wizard count | E2E | Patrol | P2 | `_WizardStepper` | vs TC-061 |
+| TC-601 | Wizard step count (6) | E2E | Patrol | P2 | `_WizardStepper` | vs TC-061 |
 | TC-602 | Checkbox parity | E2E | Patrol | P2 | TC-078 | vs TC-063 |
 | TC-603 | Wishlist in-memory | Blocked | — | P3 | No API | No persistence test |
 | TC-604 | Notifications bell stub | Manual | Manual | P3 | `onPressed: () {}` | No-op UI |
@@ -105,7 +106,7 @@
 ### Phase M1 — Keys + P0 smoke (unblock all Patrol)
 
 1. Add `keys.dart` for: cart, checkout, orders, seller, wishlist → register in `lib/keys.dart`
-2. Wire keys in screen widgets per `ui-selectors.md`
+2. Wire keys in screen widgets following the existing `keys.dart` naming
 3. Extend `login_test.dart` → **S2**: TC-067, TC-072, TC-073
 
 ### Phase M2 — P0 buyer checkout
@@ -197,23 +198,30 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-174 | Deleting a saved address asks for confirmation (mobile) | E2E | Patrol | P2 |
 | TC-175 | Payment Methods screen — list, set default, delete a card (mobile) | E2E | Patrol | P1 |
 | TC-176 | Card checkout reserves the amount and explains it (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-177 | Declined card places no order (mobile) | Component | flutter_test | P1 |
+| TC-177 | Declined card places no order (mobile) | Integration | Vitest (integration) | P1 |
 | TC-178 | 3-D Secure card on mobile | Manual | Manual | P1 |
 | TC-179 | Buyer order detail shows payment notices (mobile) | Component | flutter_test | P1 |
-| TC-180 | Buyer cancels a pending order (mobile) | Multi | Playwright-API + Patrol | P0 |
+| TC-180 | Buyer cancels a pending order (mobile) | E2E | Patrol | P0 |
 | TC-181 | No cancel after the seller accepts (mobile) | Component | flutter_test | P2 |
 | TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-183 | Seller cancels a pending order with a required reason (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-183 | Seller cancels a pending order with a required reason (mobile) | Component | flutter_test (widget) | P0 |
 | TC-184 | Cancel is hidden when the seller may not cancel (mobile) | Component | flutter_test | P2 |
-| TC-185 | Buyer requests a refund for a delivered order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-186 | Seller approves or rejects a refund request (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-185 | Buyer requests a refund for a delivered order (mobile) | Component | flutter_test (widget) | P0 |
+| TC-186 | Seller approves or rejects a refund request (mobile) | Component | flutter_test (widget) | P0 |
 | TC-187 | Return/Refund tab and Complete tab behaviour (mobile) | Component | flutter_test | P1 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
-| TC-189 | Interrupted card checkout resumes (mobile) | Manual | Manual | P2 |
+| TC-189 | Interrupted card checkout resumes (mobile) | Integration | Vitest (integration) | P2 |
 | TC-401 | An order the seller never accepted shows "Reservation released" (mobile) | E2E | Patrol | P2 |
 | TC-621 | Initial product list loads first 20 products | E2E | Patrol | P1 |
 | TC-622 | Scrolling to the bottom loads more products | E2E | Patrol | P1 |
 | TC-623 | Loading spinner visible while fetching more products | E2E | Patrol | P1 |
 | TC-624 | No further fetch when all products are loaded | E2E | Patrol | P1 |
+
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-502 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then (mobile) | Component | flutter_test (widget) | P2 |
+| TC-504 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy (mobile) | Component | flutter_test (widget) | P2 |
 
 Full master strategy: **`docs/test-strategies/test-strategy.md`**

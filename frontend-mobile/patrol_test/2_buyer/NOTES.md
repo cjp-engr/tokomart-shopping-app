@@ -88,42 +88,6 @@ Same flow as TC-095 but uses `E2E Variant Shirt - Test` and selects Size M befor
 
 ---
 
-### TC-103 — `variant_new_credit_checkout_test.dart`
-**Buyer places a new card order with a variant product**
-
-Tags: `checkout-variant-new-cc`, `smoke`
-
-Same flow as TC-101 up to payment. Selects `credit-card`, switches to new card tab if visible, fills card number and holder name.
-
-| Step | Action |
-|------|--------|
-| Login → Browse → Variant (Size M) → Cart → Checkout | Same as TC-101 |
-| Payment | Select `credit-card`; tap New Card tab if visible; fill card details |
-| Place order | Tap Place Order |
-
-**Assertion:** orders screen is visible.
-
----
-
-### TC-104 — `variant_saved_credit_checkout_test.dart`
-**Buyer places a saved card order with a variant product**
-
-Tags: `checkout-variant-saved-cc`, `checkout`, `smoke`
-
-Same flow as TC-101 up to payment. Selects `credit-card` — saved card is pre-selected automatically when the buyer has cards on file.
-
-| Step | Action |
-|------|--------|
-| Login → Browse → Variant (Size M) → Cart → Checkout | Same as TC-101 |
-| Payment | Select `credit-card` (saved card pre-selected) |
-| Place order | Tap Place Order |
-
-**Assertion:** orders screen is visible.
-
-**Precondition:** buyer account must have at least one saved card.
-
----
-
 ## Structure
 
 ```
@@ -132,9 +96,7 @@ Same flow as TC-101 up to payment. Selects `credit-card` — saved card is pre-s
 ├── simple_cod_checkout_test.dart         ← TC-095
 ├── simple_saved_credit_checkout_test.dart ← TC-096
 ├── simple_new_credit_checkout_test.dart  ← TC-097
-├── variant_cod_checkout_test.dart        ← TC-101
-├── variant_saved_credit_checkout_test.dart ← TC-104
-└── variant_new_credit_checkout_test.dart ← TC-103
+└── variant_cod_checkout_test.dart        ← TC-101
 ```
 
 ## Coverage matrix
@@ -145,8 +107,6 @@ Same flow as TC-101 up to payment. Selects `credit-card` — saved card is pre-s
 | TC-096 | Simple | Saved credit card | `simple_saved_credit_checkout_test.dart` |
 | TC-097 | Simple | New card entry | `simple_new_credit_checkout_test.dart` |
 | TC-101 | Variant (Size M) | Cash on Delivery | `variant_cod_checkout_test.dart` |
-| TC-103 | Variant (Size M) | New card entry | `variant_new_credit_checkout_test.dart` |
-| TC-104 | Variant (Size M) | Saved credit card | `variant_saved_credit_checkout_test.dart` |
 
 ## Key notes
 

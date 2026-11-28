@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import type { Order } from '../types/order';
 import type { RefundRequest } from '../types/refund';
-import { canSellerCancel } from '../utils/orderPayment';
+import { canSellerCancel, shownCancelReason } from '../utils/orderPayment';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
@@ -489,17 +489,17 @@ export const SellerOrderDetail: React.FC = () => {
       </Card>
 
       {/* Cancellation reason */}
-      {isCancelled && order.cancelReason && (
+      {isCancelled && shownCancelReason(order) && (
         <div className="flex items-start gap-2 px-5 py-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800">
           <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-red-600 dark:text-red-400">This order has been cancelled</p>
-            <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">Reason: {order.cancelReason}</p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">Reason: {shownCancelReason(order)}</p>
           </div>
         </div>
       )}
 
-      {isCancelled && !order.cancelReason && (
+      {isCancelled && !shownCancelReason(order) && (
         <div className="flex items-center gap-2 px-5 py-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800">
           <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
           <p className="text-sm font-medium text-red-600 dark:text-red-400">This order has been cancelled</p>

@@ -18,35 +18,31 @@ Navigates to `/login`, fills credentials, submits the form, and asserts the auth
 
 ---
 
-### TC-022, TC-023, TC-024, TC-025, TC-029, TC-500 — `checkout.spec.ts`
-**Buyer checkout: the payment methods, multi-seller orders, address validation and the Stripe card field**
+### TC-022, TC-025, TC-029, TC-500 — `checkout.spec.ts`
+**Buyer checkout: Cash on Delivery, multi-seller orders, address validation and the Stripe card field**
 
 Every test creates its own in-stock product through the API (`createCheckoutProduct`; TC-025 uses `createProductsFromTwoSellers`), clears the buyer's cart in `beforeEach`, then drives the UI. The tests run one after another (serial mode), and the `web-buyer` project is limited to one worker, because all buyer specs share one buyer and one cart. Checks that only hold for the authorization flow run only when `CHECKOUT_FLOW=manual_capture`.
 
 | TC | Scenario | What the test checks |
 |----|----------|----------------------|
 | TC-022 | Cash on Delivery | Finds the product in the list, pays on delivery with a new address; the order is `pending` / `not_required` with a seller and a 24-hour deadline, is listed in the history, and the cart is empty |
-| TC-023 | Saved credit card | Pays with the saved Stripe test card; the order is `pending`, the detail page reads "Credit Card ending in 4242"; under manual capture it is also `authorized` with the "reserved" notice and the deadline |
-| TC-024 | New card entry | Types the Stripe test card into Stripe's frame; the order is `pending` and shows only the card type; the same manual-capture checks |
-| TC-025 | Multi-seller checkout (E2E leg) | A cart with two sellers paid on delivery gives one order per seller, each with 8% tax on its own subtotal |
+| TC-025 | Multi-seller checkout | A cart with two sellers paid on delivery gives one order per seller, each with 8% tax on its own subtotal. The split itself is an integration rule; the API leg was dropped on 2026-11-28 |
 | TC-029 | Missing address fields | Empty fields are stopped by the browser, spaces show the app's messages; no payment step and no order |
 | TC-500 | Stripe card field | Choosing Credit Card shows the Stripe frame with its Card number input (formerly TC-STRIPE-04) |
 
 `TC-STRIPE-01` (successful card payment) and `TC-STRIPE-02` (declined card) were removed on 2026-11-05: they duplicated TC-024 and TC-143 and TC-146, which check more. The file they lived in, `stripe-checkout.spec.ts`, was folded into this one and deleted.
 
+`TC-023` (saved card) and `TC-024` (new card) were removed on 2026-11-28 by the shift-left review: under `CHECKOUT_FLOW=manual_capture` they repeated TC-144 and TC-143 in `card-checkout-authorization.spec.ts`. If `legacy` is what ships, bring one of them back.
+
 **Shared code:** `helpers/checkout-flow.ts` (orders, cart count, products), and the `CheckoutPage`, `MyOrdersPage` and `OrderDetailPage` page objects.
 ---
 
-### TC-098, TC-105, TC-106 — `variant-checkout.spec.ts`
-**Buyer checkout with a variant product across all three payment methods**
+### TC-098 — `variant-checkout.spec.ts`
+**Buyer checkout with a variant product, paid on delivery**
 
-Same structure as `checkout.spec.ts` but the product has size variants. The test selects Size M before adding to cart.
+Same structure as `checkout.spec.ts` but the product has size variants. The test selects Size M before adding to cart and checks the variant line and the stock of size M.
 
-| TC | Payment Method |
-|----|---------------|
-| TC-098 | Cash on Delivery |
-| TC-105 | New card entry |
-| TC-106 | Saved credit card |
+`TC-105` (new card) and `TC-106` (saved card) were removed on 2026-11-28 by the shift-left review: a card order of a variant product is the card flow plus the variant line, and TC-143, TC-144 and TC-098 already check those.
 
 **Shared setup:** `clearBuyerCart()`, `getBuyerToken()`, `loginSeller()` from `helpers/auth-state.ts`. Order total asserted via `fetchOrder()` from `helpers/product-assertions.ts`.
 
@@ -70,14 +66,22 @@ Runs only when the backend and the web app use `CHECKOUT_FLOW=manual_capture`; o
 
 ---
 
+### TC-153 — `order-cancellation.spec.ts`
+**A buyer cancels a pending Cash on Delivery order**
+
+The one buyer-cancel journey on web. The test creates a product, places a Cash on Delivery order through the API (`placeCodOrderViaApi`), then the buyer cancels it from `/orders` without a reason. It checks the cancelled banner (no reason shown), the stored order (cancelled by the buyer), the detail page (no payment notice for a cash order), the stock (back to what it was), and that a second cancel request does not return the stock again. Needs no Stripe, runs under either `CHECKOUT_FLOW`. The rules underneath (who may cancel, when, the races) are backend integration tests.
+
+---
+
 ## Structure
 
 ```
 web/buyer/
 ├── NOTES.md                    ← this file
 ├── login.spec.ts               ← TC-001
-├── checkout.spec.ts            ← TC-022, TC-023, TC-024, TC-025 (E2E leg), TC-029, TC-500
-├── variant-checkout.spec.ts    ← TC-098, TC-105, TC-106
+├── checkout.spec.ts            ← TC-022, TC-025, TC-029, TC-500
+├── variant-checkout.spec.ts    ← TC-098
+├── order-cancellation.spec.ts  ← TC-153
 └── card-checkout-authorization.spec.ts ← TC-143, TC-144, TC-146, TC-147 (also TC-151), TC-148, TC-400 (manual_capture only)
 ```
 

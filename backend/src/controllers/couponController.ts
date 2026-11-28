@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import Coupon from '../models/Coupon.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { couponDiscountFor } from '../services/couponRules.js';
 
 // ── Seller: list own coupons ─────────────────────────────────────────────────
 export const getSellerCoupons = async (req: AuthRequest, res: Response) => {
@@ -100,13 +101,7 @@ export const validateCoupon = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    let discountAmount = 0;
-    if (coupon.discountType === 'percentage') {
-      discountAmount = (orderAmount ?? 0) * (coupon.discountValue / 100);
-      if (coupon.maxDiscount) discountAmount = Math.min(discountAmount, coupon.maxDiscount);
-    } else {
-      discountAmount = coupon.discountValue;
-    }
+    const discountAmount = couponDiscountFor(coupon, orderAmount);
 
     res.json({
       success: true,

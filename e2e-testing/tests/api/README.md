@@ -213,7 +213,7 @@ test('TC-113: user cannot follow themselves', async () => { ... });
 |------|--------|---------------|
 | `auth.api.spec.ts` | — | Login, `GET /me`, invalid credentials |
 | `health.api.spec.ts` | — | API server health smoke |
-| `orders.api.spec.ts` | TC-025, TC-026, TC-027, TC-028, TC-033, TC-056 | Order totals, seller-configured shipping, multi-seller split, cancel guard, stock validation |
+| `orders.api.spec.ts` | TC-026, TC-027, TC-028, TC-033, TC-056 | Order totals, seller-configured shipping, cancel guard, stock validation |
 | `seller-access.api.spec.ts` | TC-048, TC-053, TC-054 | Buyer blocked from seller routes, cross-seller edit/delete blocked, invalid status transition |
 | `reviews.api.spec.ts` | TC-035, TC-036 | Duplicate review blocked, review before delivery blocked |
 | `coupons.api.spec.ts` | TC-057 | Coupon below minimum order amount |

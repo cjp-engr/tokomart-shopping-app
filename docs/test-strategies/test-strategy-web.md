@@ -2,8 +2,9 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Web scenarios (`test-scenarios-web.md`, 110) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
-**Updated:** 2026-11-05. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.
+**Platform filter:** Web scenarios (`test-scenarios-web.md`, 112) · API scenarios (`test-scenarios-api.md`, 155) are listed in the shared-API section below  
+**Updated:** 2026-11-05. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.  
+**Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
 ---
 
@@ -51,57 +52,57 @@
 | TC-001 | E2E | Playwright | P0 |
 | TC-002 | E2E | Playwright | P1 |
 | TC-003 | E2E | Playwright | P1 |
-| TC-004 | E2E | Playwright | P1 |
+| TC-004 | Unit | Vitest | P1 |
 | TC-005 | E2E | Playwright | P1 |
-| TC-006 | E2E | Playwright | P1 |
-| TC-007 | E2E | Playwright | P0 |
+| TC-006 | API | Playwright-API | P1 |
+| TC-007 | Trim | — | P0 |
 | TC-008 | E2E | Playwright | P0 |
-| TC-009 | E2E | Playwright | P1 |
-| TC-010 | E2E | Playwright | P1 |
-| TC-011 | E2E | Playwright | P1 |
-| TC-012 | E2E | Playwright | P1 |
-| TC-013 | E2E | Playwright | P0 |
-| TC-014 | E2E | Playwright | P1 |
-| TC-015 | E2E | Playwright | P1 |
+| TC-009 | Trim | — | P1 |
+| TC-010 | Integration | Vitest (integration) | P1 |
+| TC-011 | Integration | Vitest (integration) | P1 |
+| TC-012 | Component | Vitest (component) | P1 |
+| TC-013 | Trim | — | P0 |
+| TC-014 | Component | Vitest (component) | P1 |
+| TC-015 | Integration | Vitest (integration) | P1 |
 | TC-065 | E2E | Playwright | P0 |
-| TC-066 | E2E | Playwright | P1 |
+| TC-066 | Integration | Vitest (integration) | P1 |
 | TC-016 | E2E | Playwright | P0 |
-| TC-017 | E2E | Playwright | P1 |
-| TC-018 | E2E | Playwright | P0 |
-| TC-019 | E2E | Playwright | P1 |
-| TC-020 | Multi | Playwright + API | P1 |
-| TC-021 | E2E | Playwright | P0 |
+| TC-017 | Unit | Vitest | P1 |
+| TC-018 | Unit | Vitest | P0 |
+| TC-019 | Unit | Vitest | P1 |
+| TC-020 | API | Playwright-API | P1 |
+| TC-021 | Trim | — | P0 |
 | TC-022 | E2E | Playwright | P0 |
-| TC-023 | E2E | Playwright | P1 |
-| TC-024 | E2E | Playwright | P1 |
-| TC-105 | E2E | Playwright | P1 |
-| TC-106 | E2E | Playwright | P1 |
-| TC-025 | Multi | API + Playwright | P0 |
-| TC-026 | API | Playwright-API | P0 |
+| TC-023 | Trim | — | P1 |
+| TC-024 | Trim | — | P1 |
+| TC-105 | Trim | — | P1 |
+| TC-106 | Trim | — | P1 |
+| TC-025 | E2E | Playwright | P0 |
+| TC-026 | Unit | Vitest | P0 |
 | TC-027 | Unit | Vitest | P1 |
 | TC-028 | Unit | Vitest | P1 |
 | TC-029 | E2E | Playwright | P1 |
-| TC-030 | E2E | Playwright | P1 |
-| TC-031 | E2E | Playwright | P1 |
-| TC-032 | Multi | Playwright + API | P1 |
-| TC-033 | API | Playwright-API | P1 |
+| TC-030 | Unit | Vitest | P1 |
+| TC-031 | Integration | Vitest (integration) | P1 |
+| TC-032 | Trim | — | P1 |
+| TC-033 | Integration | Vitest (integration) | P1 |
 | TC-034 | E2E | Playwright | P1 |
-| TC-035 | API | Playwright-API | P1 |
-| TC-036 | API | Playwright-API | P1 |
-| TC-037 | E2E | Playwright | P2 |
-| TC-038 | E2E | Playwright | P2 |
-| TC-039 | E2E | Playwright | P1 |
-| TC-040 | E2E | Playwright | P2 |
+| TC-035 | Integration | Vitest (integration) | P1 |
+| TC-036 | Integration | Vitest (integration) | P1 |
+| TC-037 | API | Playwright-API | P2 |
+| TC-038 | Unit | Vitest | P2 |
+| TC-039 | Trim | — | P1 |
+| TC-040 | Component | Vitest (component) | P2 |
 | TC-041 | E2E | Playwright | P0 |
 | TC-042 | E2E | Playwright | P0 |
 | TC-064 | E2E | Playwright | P0 |
-| TC-043 | E2E | Playwright | P1 |
-| TC-044 | E2E | Playwright | P1 |
+| TC-043 | Unit | Vitest | P1 |
+| TC-044 | API | Playwright-API | P1 |
 | TC-120 | E2E | Playwright | P1 |
 | TC-122 | E2E | Playwright | P1 |
 | TC-045 | E2E | Playwright | P2 |
 | TC-121 | E2E | Playwright | P2 |
-| TC-046 | E2E | Playwright | P2 |
+| TC-046 | API | Playwright-API | P2 |
 | TC-123 | E2E | Playwright | P1 |
 | TC-124 | E2E | Playwright | P1 |
 | TC-125 | E2E | Playwright | P1 |
@@ -115,17 +116,17 @@
 | TC-048 | API | Playwright-API | P1 |
 | TC-049 | E2E | Playwright | P1 |
 | TC-050 | E2E | Playwright | P1 |
-| TC-051 | E2E | Playwright | P1 |
+| TC-051 | Unit | Vitest | P1 |
 | TC-052 | Manual | Manual | P2 |
 | TC-053 | API | Playwright-API | P0 |
 | TC-054 | API | Playwright-API | P1 |
 | TC-055 | E2E | Playwright | P0 |
-| TC-056 | API | Playwright-API | P1 |
-| TC-057 | API | Playwright-API | P1 |
-| TC-058 | API | Playwright-API | P2 |
-| TC-059 | E2E | Playwright | P2 |
+| TC-056 | Integration | Vitest (integration) | P1 |
+| TC-057 | Integration | Vitest (integration) | P1 |
+| TC-058 | Unit | Vitest | P2 |
+| TC-059 | Unit | Vitest | P2 |
 | TC-060 | E2E | Playwright | P1 |
-| TC-061 | E2E | Playwright | P2 |
+| TC-061 | Trim | — | P2 |
 | TC-062 | Blocked | — | P3 |
 | TC-063 | E2E | Playwright | P2 |
 
@@ -137,8 +138,8 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 |----|----------|-------------|------|----------|
 | TC-099 | Variant checkout — insufficient stock (web) | Multi | Playwright-API + Playwright | P1 |
 | TC-100 | Cart holds two variants of same product (web) | E2E | Playwright | P1 |
-| TC-105 | Checkout with new card — variant product (web) | E2E | Playwright | P1 |
-| TC-106 | Checkout with saved card — variant product (web) | E2E | Playwright | P1 |
+| TC-105 | Checkout with new card — variant product (web) | Trim | — | P1 |
+| TC-106 | Checkout with saved card — variant product (web) | Trim | — | P1 |
 | TC-123 | Products page — navigate to next page loads different products | E2E | Playwright | P1 |
 | TC-124 | Products page — category filter resets to page 1 | E2E | Playwright | P1 |
 | TC-125 | Products page — sort change resets to page 1 | E2E | Playwright | P1 |
@@ -157,33 +158,33 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-143 | Card checkout with a new card reserves the amount without charging | E2E | Playwright (Stripe test mode) | P0 |
 | TC-144 | Card checkout with a saved card reserves the amount | E2E | Playwright (Stripe test mode) | P1 |
 | TC-145 | Checkout explains the reservation before the buyer pays | Component | Vitest + RTL | P1 |
-| TC-146 | Declined card places no order and loses nothing | Multi | Vitest (integration) + Playwright | P0 |
+| TC-146 | Declined card places no order and loses nothing | E2E | Playwright | P0 |
 | TC-147 | 3-D Secure card completes only after authentication | E2E | Playwright (Stripe test mode) | P1 |
-| TC-148 | Multi-seller card checkout holds each seller's amount separately | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
+| TC-148 | E2E | Playwright | Vitest (integration) + Playwright-API + Playwright | P0 |
 | TC-149 | Buyer order detail shows the payment state accurately | Unit | Vitest | P1 |
 | TC-150 | Short card authorization window is disclosed | Unit | Vitest | P3 |
-| TC-151 | Interrupted checkout resumes without a second authorization | Unit | Vitest + Manual | P2 |
-| TC-152 | Buyer cancels a pending card order — the hold is released | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-153 | Buyer cancels a pending COD order | Multi | Vitest (integration) + Playwright | P1 |
-| TC-154 | Cancel is unavailable once the seller accepts; "Keep Order" cancels nothing | Unit | Vitest + Playwright | P1 |
+| TC-151 | Interrupted checkout resumes without a second authorization | Integration | Vitest (integration) | P2 |
+| TC-152 | Buyer cancels a pending card order — the hold is released | Integration | Vitest (integration) | P0 |
+| TC-153 | Buyer cancels a pending COD order | E2E | Playwright | P1 |
+| TC-154 | Cancel is unavailable once the seller accepts; "Keep Order" cancels nothing | Component | Vitest (component) | P1 |
 | TC-155 | Seller accepts a pending card order — payment is captured | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
 | TC-156 | Seller sees the acceptance deadline only while the order is pending | Unit | Vitest | P2 |
-| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-158 | Seller pending cancellation needs a valid reason | API | Playwright-API | P1 |
-| TC-159 | Seller cancels a pending COD order without any Stripe request | Multi | Vitest (integration) + Playwright | P1 |
+| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Integration | Vitest (integration) | P0 |
+| TC-158 | Seller pending cancellation needs a valid reason | Component | Vitest (component) | P1 |
+| TC-159 | Seller cancels a pending COD order without any Stripe request | Integration | Vitest (integration) | P1 |
 | TC-160 | Seller cannot cancel from shipped, and cannot cancel card orders after pending | Unit | Vitest + Playwright-API | P1 |
 | TC-161 | Refund request is offered for a delivered card order inside the 7-day window | Component | Vitest + RTL | P1 |
-| TC-162 | Buyer submits a partial refund request | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
+| TC-162 | Buyer submits a partial refund request | Integration | Vitest (integration) | P0 |
 | TC-163 | Refund form validation | Component | Vitest + RTL | P1 |
-| TC-164 | Seller approves a refund request — refund settles | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-165 | Seller rejects a refund request with a required explanation | Component | Vitest + RTL | P1 |
-| TC-166 | Only one active request per order; a second request follows resolution | API | Playwright-API | P1 |
+| TC-164 | Seller approves a refund request — refund settles | E2E | Playwright | P0 |
+| TC-165 | Seller rejects a refund request with a required explanation | Integration | Vitest (integration) | P1 |
+| TC-166 | Only one active request per order; a second request follows resolution | Integration | Vitest (integration) | P1 |
 | TC-167 | Shipping is refunded only with the last paid unit for a seller-fault reason | Unit | Vitest | P2 |
 | TC-168 | Refund chips and order tabs reflect refund state | Component | Vitest + RTL | P1 |
-| TC-169 | Refund is unavailable when the order is not eligible | API | Playwright-API | P1 |
+| TC-169 | Refund is unavailable when the order is not eligible | Component | Vitest (component) | P1 |
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | P2 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
-| TC-400 | An expired checkout is not resumed and its stored attempt is cleared | E2E | Playwright | P2 |
+| TC-400 | An expired checkout is not resumed and its stored attempt is cleared | Unit | Vitest | P2 |
 | TC-500 | The Stripe card field renders on the payment step | E2E | Playwright | P2 |
 
 ## Shared API scenarios (127 added or previously unassigned)
@@ -201,10 +202,10 @@ These API scenarios are implemented once and used by web and mobile. Integration
 | TC-191 | Saved address requires street and city | API | Playwright-API | P2 |
 | TC-192 | Saved addresses and cards are scoped to their owner | API | Playwright-API | P0 |
 | TC-193 | Card order through the old endpoint is refused with 426 | API | Playwright-API + Vitest | P0 |
-| TC-194 | Client-trusted payment intent is refused with 426 | API | Playwright-API + Vitest | P0 |
-| TC-195 | Checkout session prices from the server, never from the client | Multi | Vitest + Playwright-API | P0 |
-| TC-196 | Checkout session is idempotent | Multi | Vitest (integration) + Playwright-API | P1 |
-| TC-197 | Checkout sessions and saved cards are owner-only | API | Playwright-API | P0 |
+| TC-194 | Client-trusted payment intent is refused with 426 | Unit | Vitest | P0 |
+| TC-195 | Checkout session prices from the server, never from the client | Integration | Vitest (integration) | P0 |
+| TC-196 | Checkout session is idempotent | Multi | Vitest (integration) + Playwright-API (1 smoke) | P1 |
+| TC-197 | Checkout sessions and saved cards are owner-only | Integration | Vitest (integration) | P0 |
 | TC-198 | Insufficient stock aborts the whole session | API | Playwright-API | P1 |
 | TC-199 | Seller accept captures exactly the held amount | Multi | Vitest (integration) + Playwright-API | P0 |
 | TC-200 | Repeat or late accept returns 409 `order_not_pending` | API | Playwright-API | P1 |
@@ -212,33 +213,33 @@ These API scenarios are implemented once and used by web and mobile. Integration
 | TC-202 | Accept after the deadline is refused | Integration | Vitest | P1 |
 | TC-203 | Unaccepted orders are cancelled automatically at the deadline | Integration | Vitest | P1 |
 | TC-204 | Accept racing cancel has exactly one winner | Integration | Vitest | P1 |
-| TC-205 | Buyer cancels a pending order; the result is idempotent | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-206 | Buyer cancel after acceptance is a conflict | API | Playwright-API | P0 |
-| TC-207 | Buyer cancel reason is limited to 500 characters | API | Playwright-API | P2 |
-| TC-208 | Buyer cannot cancel someone else's order | API | Playwright-API | P0 |
-| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-210 | Seller cancel validation and ownership errors | API | Playwright-API | P1 |
+| TC-205 | Buyer cancels a pending order; the result is idempotent | Multi | Vitest (integration) + Playwright-API (1 smoke) | P0 |
+| TC-206 | Buyer cancel after acceptance is a conflict | Integration | Vitest (integration) | P0 |
+| TC-207 | Buyer cancel reason is limited to 500 characters | Unit | Vitest | P2 |
+| TC-208 | Buyer cannot cancel someone else's order | Integration | Vitest (integration) | P0 |
+| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API (1 smoke) | P0 |
+| TC-210 | Seller cancel validation and ownership errors | Integration | Vitest (integration) | P1 |
 | TC-211 | Seller cancel conflicts and unsupported order shapes | Integration | Vitest | P1 |
-| TC-212 | Seller cannot cancel a shipped order | API | Playwright-API + Vitest | P1 |
-| TC-213 | `canSellerCancelPending` is derived by the server | API | Playwright-API | P1 |
-| TC-214 | Refund eligibility for a delivered, captured card order | Multi | Vitest (integration) + Playwright-API | P0 |
+| TC-212 | Seller cannot cancel a shipped order | Unit | Vitest | P1 |
+| TC-213 | `canSellerCancelPending` is derived by the server | Unit | Vitest | P1 |
+| TC-214 | Refund eligibility for a delivered, captured card order | Multi | Vitest (integration) + Playwright-API (1 smoke) | P0 |
 | TC-215 | Ineligible refund reasons | Integration | Vitest | P1 |
 | TC-216 | Refund request body validation | Unit | Vitest | P1 |
-| TC-217 | Refund request idempotency | Multi | Vitest (integration) + Playwright-API | P1 |
-| TC-218 | One unresolved refund request per order | API | Playwright-API | P1 |
+| TC-217 | Refund request idempotency | Integration | Vitest (integration) | P1 |
+| TC-218 | One unresolved refund request per order | Integration | Vitest (integration) | P1 |
 | TC-219 | Refunds can be switched off | Integration | Vitest | P1 |
-| TC-220 | Refund amount is never taken from the client | Multi | Vitest + Playwright-API | P0 |
-| TC-221 | Buyer isolation on refund endpoints | API | Playwright-API | P0 |
-| TC-222 | Seller isolation and role checks on refund decisions | API | Playwright-API | P0 |
-| TC-223 | Approve starts one refund; repeat and races converge | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-224 | Rejection needs an explanation | Multi | Vitest + Playwright-API | P1 |
+| TC-220 | Refund amount is never taken from the client | Integration | Vitest (integration) | P0 |
+| TC-221 | Buyer isolation on refund endpoints | Integration | Vitest (integration) | P0 |
+| TC-222 | Seller isolation and role checks on refund decisions | Integration | Vitest (integration) | P0 |
+| TC-223 | Approve starts one refund; repeat and races converge | Integration | Vitest (integration) | P0 |
+| TC-224 | Rejection needs an explanation | Unit | Vitest | P1 |
 | TC-225 | A refund does not undo fulfillment | API | Playwright-API | P1 |
-| TC-226 | Seller refund list pagination and filters | Unit | Vitest | P2 |
+| TC-226 | Seller refund list pagination and filters | Integration | Vitest (integration) | P2 |
 | TC-227 | Delivery records `deliveredAt` and the 7-day deadline on every path | Multi | Vitest (integration) + Playwright-API | P1 |
 | TC-228 | API documentation is served outside production only | Unit | Vitest | P2 |
 | TC-229 | Stripe webhook rejects an invalid signature | API | Playwright-API | P1 |
 | TC-230 | Payment events never advance fulfillment | Integration | Vitest | P1 |
-| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Multi | Vitest + Playwright-API | P1 |
+| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Integration | Vitest (integration) | P1 |
 | TC-235 | Validate returns the discount for a valid percentage coupon | API | Playwright-API | P1 |
 | TC-236 | Percentage discount is capped by `maxDiscount` | Multi | Vitest + Playwright-API | P1 |
 | TC-237 | Fixed coupon never discounts more than the order amount | Multi | Vitest + Playwright-API | P1 |
@@ -259,14 +260,14 @@ These API scenarios are implemented once and used by web and mobile. Integration
 | TC-252 | An applied coupon discounts the order and counts one use | API | Playwright-API | P1 |
 | TC-253 | Out-of-range coupon values are rejected | Multi | Vitest + Playwright-API | P2 |
 | TC-254 | Order creation requires authentication | API | Playwright-API | P1 |
-| TC-255 | Order creation rejects an invalid body | API | Playwright-API | P1 |
-| TC-256 | Unknown product or variant returns 404 and changes nothing | API | Playwright-API | P1 |
+| TC-255 | Order creation rejects an invalid body | Unit | Vitest | P1 |
+| TC-256 | Unknown product or variant returns 404 and changes nothing | Integration | Vitest (integration) | P1 |
 | TC-257 | Delivery option and seller shipping settings set the fee | Multi | Vitest + Playwright-API | P1 |
 | TC-258 | Variant order uses the variant's price, discount and attributes | Multi | Vitest + Playwright-API | P1 |
 | TC-259 | An unknown or ineligible coupon code does not block the order | API | Playwright-API | P2 |
 | TC-260 | Placing an order deducts stock and counts the sale; cancelling restores stock | API | Playwright-API | P1 |
 | TC-261 | Ordered items leave the server cart; other items stay | API | Playwright-API | P2 |
-| TC-262 | A COD order starts pending with the acceptance fields set | API | Playwright-API | P1 |
+| TC-262 | A COD order starts pending with the acceptance fields set | Integration | Vitest (integration) | P1 |
 | TC-263 | No free-shipping boundary at $50 | Unit | Vitest | P1 |
 | TC-264 | The limit resets after the window | API | Playwright-API | P2 |
 | TC-265 | A limit set to 0 disables rate limiting | API | Playwright-API | P2 |
@@ -319,5 +320,17 @@ These API scenarios are implemented once and used by web and mobile. Integration
 | TC-232 | Login returns a token for valid credentials | API | Playwright-API | P0 |
 | TC-233 | Login rejects an invalid password | API | Playwright-API | P1 |
 | TC-234 | `GET /api/auth/me` returns the logged-in user | API | Playwright-API | P1 |
+
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | Integration | Vitest (integration) | P1 |
+| TC-313 | A delivered Cash on Delivery order cannot be refunded in the app | Multi | Vitest (integration) + Playwright-API (1 smoke) | P1 |
+| TC-314 | A refund for chosen units follows the order's own allocation of price, discount and tax | Integration | Vitest (integration) | P0 |
+| TC-315 | A unit already requested or refunded cannot be requested again, and the refunds never exceed the payment | Integration | Vitest (integration) | P1 |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | Integration | Vitest (integration) | P0 |
+| TC-501 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then | Multi | Vitest (component) + Playwright (1 check) | P2 |
+| TC-503 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy | Component | Vitest (component) | P2 |
 
 Full rationale and implementation order: **`docs/test-strategies/test-strategy.md`**

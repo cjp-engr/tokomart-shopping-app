@@ -35,19 +35,12 @@ The test injects buyer2's auth into localStorage via `injectAuth()`, reloads, na
 
 ---
 
-### TC-112 — `order-isolation.spec.ts`
-**Buyer2 sees only own order history — not buyer1's orders**
+### TC-164 — `refund-journey.spec.ts` (opt-in)
+**A delivered card order is refunded after the seller approves**
 
-`beforeAll` uses a raw API context to: create a seller product with `randomShippingMultipart()`, place an order as buyer1, then create a fresh buyer2 account.
+Skipped unless `DELIVERED_REFUND_VERIFICATION=true`. It pays in Stripe test mode, so it needs a backend started with `DELIVERED_REFUNDS_ENABLED=true`, `SELLER_SEES_MANUAL_CAPTURE=true` and `CHECKOUT_FLOW=manual_capture` on a replica-set database whose name ends in `_test` (port 27018), and `DELIVERED_REFUND_DB_URI` naming that same database. `backend/scripts/seed-delivered-card-order.mjs` makes the delivered, captured order. The buyer refunds one of two units ($10.80, no shipping), the seller approves in Return/Refund, and the test waits for "Refund completed and confirmed" and a partially refunded order. It runs in two browser contexts (buyer and seller storage states).
 
-The test injects buyer2's auth, navigates to `/orders` via `myOrdersPage.open()`, and asserts buyer1's order card is not visible.
-
-| Step | Detail |
-|------|--------|
-| Setup | Seller creates product with `randomShippingMultipart()`; buyer1 places order via API; buyer2 created via signup |
-| Auth injection | `injectAuth(page, buyer2Token, buyer2UserData)` |
-| Navigation | `myOrdersPage.open()` → `/orders` |
-| Assertions | `order-card-{buyer1OrderId}` not visible |
+`TC-112` (the order history page shows only the buyer's own orders) was removed on 2026-11-28 by the shift-left review: API TC-110 proves the isolation rule, and the page only lists what the API returns.
 
 ---
 
@@ -70,7 +63,7 @@ web/mixed/
 ├── NOTES.md                            ← this file
 ├── role-switch.smoke.spec.ts           ← infra smoke
 ├── cart-isolation.spec.ts              ← TC-109
-├── order-isolation.spec.ts             ← TC-112
+├── refund-journey.spec.ts              ← TC-164 (opt-in)
 └── product-catalog-visibility.spec.ts  ← TC-008, TC-065
 ```
 

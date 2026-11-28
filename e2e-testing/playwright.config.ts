@@ -43,8 +43,9 @@ export default defineConfig({
     {
       name: 'web-buyer',
       testMatch: /tests\/web\/buyer\/.*\.spec\.ts/,
-      // product-detail.spec.ts creates its products with the seller's login from .auth/seller.json, which only
-      // seller-setup writes. Without this dependency the file is missing on a fresh checkout (CI) or stale.
+      // seller-setup is no longer needed here: product-detail.spec.ts, the only buyer spec that read
+      // .auth/seller.json, was removed on 2026-11-28 (its checks are component tests). It is left in place; drop it
+      // to make a buyer-only run start faster.
       dependencies: ['buyer-setup', 'seller-setup'],
       // These specs share one buyer and its server-side cart, and each clears the cart before every test.
       // Run in parallel they empty each other's carts, so only one worker may run this project at a time.

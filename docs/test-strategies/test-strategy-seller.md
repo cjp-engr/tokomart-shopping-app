@@ -3,7 +3,8 @@
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
 **Role filter:** Seller | Both  
-**Platform:** Web + Mobile
+**Platform:** Web + Mobile  
+**Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
 ---
 
@@ -52,26 +53,26 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 |----|-------|-------|-------|
 | TC-042 | Simple product listing (6-step wizard) | E2E | 2 |
 | TC-064 | Variant product listing | E2E | 2 |
-| TC-043 | Wizard validation | E2E | 5 |
-| TC-044 | Edit price/stock | E2E | 5 |
+| TC-043 | Wizard validation | Unit | Vitest |
+| TC-044 | Edit price/stock | API | Playwright-API |
 | TC-045 | My Products preview | E2E | 5 |
-| TC-046 | Delete product | E2E | 5 |
-| TC-058 | Description max 200 | API | 3 |
-| TC-015 | Own products hidden (seller view) | E2E | 4 |
+| TC-046 | Delete product | API | Playwright-API |
+| TC-058 | Description max 200 | Unit | Vitest |
+| TC-015 | Own products hidden (seller view) | Integration | Vitest (integration) |
 
 ### Mobile product listing strategy
 
 | ID | Title | Layer | Phase |
 |----|-------|-------|-------|
-| TC-090 | Simple product (7-step wizard) | E2E Patrol | M3 |
-| TC-091 | Variant product (7-step wizard) | E2E Patrol | M3 |
+| TC-090 | Simple product (6-step wizard) | E2E Patrol | M3 |
+| TC-091 | Variant product (6-step wizard) | E2E Patrol | M3 |
 | TC-615 | View simple product in dashboard (Read) | E2E Patrol | M4 |
 | TC-616 | Edit simple product from dashboard (Update) | E2E Patrol | M4 |
 | TC-617 | Delete simple product from dashboard (Delete) | E2E Patrol | M4 |
 | TC-618 | View variant product in dashboard (Read) | E2E Patrol | M4 |
 | TC-619 | Edit variant product from dashboard (Update) | E2E Patrol | M4 |
 | TC-620 | Delete variant product from dashboard (Delete) | E2E Patrol | M4 |
-| TC-601 | 7-step wizard parity | E2E Patrol | M6 |
+| TC-601 | Wizard step count parity (6) | E2E Patrol | M6 |
 | TC-094 | Preview as buyer (`hideEdit=1`) | E2E Patrol | M6 |
 | TC-610 | Own products hidden | E2E Patrol | M4 |
 
@@ -81,7 +82,7 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 
 | ID | Final layer | Tool | Priority |
 |----|-------------|------|----------|
-| TC-015 | E2E | Playwright | P1 |
+| TC-015 | Integration | Vitest (integration) | P1 |
 | TC-041 | E2E | Playwright | P0 |
 | TC-042 | E2E | Playwright | P0 |
 | TC-064 | E2E | Playwright | P0 |
@@ -90,11 +91,11 @@ Role = Seller or Both across web, mobile and API. Counts are recomputed from the
 | TC-048 | API | Playwright-API | P1 |
 | TC-049 | E2E | Playwright | P1 |
 | TC-050 | E2E | Playwright | P1 |
-| TC-051 | E2E | Playwright | P1 |
+| TC-051 | Unit | Vitest | P1 |
 | TC-052 | Manual | Manual | P2 |
 | TC-054 | API | Playwright-API | P1 |
-| TC-058 | API | Playwright-API | P2 |
-| TC-061 | E2E | Playwright | P2 |
+| TC-058 | Unit | Vitest | P2 |
+| TC-061 | Trim | — | P2 |
 
 ### Mobile seller assignments
 
@@ -128,37 +129,37 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-134 | Seller order list is scoped to own account (IDOR) | API | Playwright-API | P1 |
 | TC-155 | Seller accepts a pending card order — payment is captured | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
 | TC-156 | Seller sees the acceptance deadline only while the order is pending | Unit | Vitest | P2 |
-| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-158 | Seller pending cancellation needs a valid reason | API | Playwright-API | P1 |
-| TC-159 | Seller cancels a pending COD order without any Stripe request | Multi | Vitest (integration) + Playwright | P1 |
+| TC-157 | Seller cancels a pending card order with a reason — hold released, buyer sees why | Integration | Vitest (integration) | P0 |
+| TC-158 | Seller pending cancellation needs a valid reason | Component | Vitest (component) | P1 |
+| TC-159 | Seller cancels a pending COD order without any Stripe request | Integration | Vitest (integration) | P1 |
 | TC-160 | Seller cannot cancel from shipped, and cannot cancel card orders after pending | Unit | Vitest + Playwright-API | P1 |
-| TC-164 | Seller approves a refund request — refund settles | Multi | Vitest (integration) + Playwright-API + Playwright | P0 |
-| TC-165 | Seller rejects a refund request with a required explanation | Component | Vitest + RTL | P1 |
+| TC-164 | Seller approves a refund request — refund settles | E2E | Playwright | P0 |
+| TC-165 | Seller rejects a refund request with a required explanation | Integration | Vitest (integration) | P1 |
 | TC-170 | Seller Return/Refund tab groups requests and shows a badge | Component | Vitest + RTL | P2 |
 | TC-171 | Offline banner appears when the connection drops | Component | Vitest + RTL | P2 |
 | TC-182 | Seller accepts a pending card order (mobile) | Multi | flutter_test + Patrol | P0 |
-| TC-183 | Seller cancels a pending order with a required reason (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-183 | Seller cancels a pending order with a required reason (mobile) | Component | flutter_test (widget) | P0 |
 | TC-184 | Cancel is hidden when the seller may not cancel (mobile) | Component | flutter_test | P2 |
-| TC-186 | Seller approves or rejects a refund request (mobile) | Multi | flutter_test + Patrol | P0 |
+| TC-186 | Seller approves or rejects a refund request (mobile) | Component | flutter_test (widget) | P0 |
 | TC-188 | Offline banner (mobile) | Component | flutter_test + Manual | P2 |
 | TC-199 | Seller accept captures exactly the held amount | Multi | Vitest (integration) + Playwright-API | P0 |
 | TC-200 | Repeat or late accept returns 409 `order_not_pending` | API | Playwright-API | P1 |
 | TC-201 | Another seller cannot accept or cancel the order | API | Playwright-API | P0 |
 | TC-202 | Accept after the deadline is refused | Integration | Vitest | P1 |
 | TC-204 | Accept racing cancel has exactly one winner | Integration | Vitest | P1 |
-| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-210 | Seller cancel validation and ownership errors | API | Playwright-API | P1 |
+| TC-209 | Seller cancels a pending order — 200 with the payment operation | Multi | Vitest (integration) + Playwright-API (1 smoke) | P0 |
+| TC-210 | Seller cancel validation and ownership errors | Integration | Vitest (integration) | P1 |
 | TC-211 | Seller cancel conflicts and unsupported order shapes | Integration | Vitest | P1 |
-| TC-212 | Seller cannot cancel a shipped order | API | Playwright-API + Vitest | P1 |
-| TC-213 | `canSellerCancelPending` is derived by the server | API | Playwright-API | P1 |
+| TC-212 | Seller cannot cancel a shipped order | Unit | Vitest | P1 |
+| TC-213 | `canSellerCancelPending` is derived by the server | Unit | Vitest | P1 |
 | TC-219 | Refunds can be switched off | Integration | Vitest | P1 |
-| TC-222 | Seller isolation and role checks on refund decisions | API | Playwright-API | P0 |
-| TC-223 | Approve starts one refund; repeat and races converge | Multi | Vitest (integration) + Playwright-API | P0 |
-| TC-224 | Rejection needs an explanation | Multi | Vitest + Playwright-API | P1 |
+| TC-222 | Seller isolation and role checks on refund decisions | Integration | Vitest (integration) | P0 |
+| TC-223 | Approve starts one refund; repeat and races converge | Integration | Vitest (integration) | P0 |
+| TC-224 | Rejection needs an explanation | Unit | Vitest | P1 |
 | TC-225 | A refund does not undo fulfillment | API | Playwright-API | P1 |
-| TC-226 | Seller refund list pagination and filters | Unit | Vitest | P2 |
+| TC-226 | Seller refund list pagination and filters | Integration | Vitest (integration) | P2 |
 | TC-227 | Delivery records `deliveredAt` and the 7-day deadline on every path | Multi | Vitest (integration) + Playwright-API | P1 |
-| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Multi | Vitest + Playwright-API | P1 |
+| TC-231 | Draft (`awaiting_payment`) orders stay hidden | Integration | Vitest (integration) | P1 |
 | TC-232 | Login returns a token for valid credentials | API | Playwright-API | P0 |
 | TC-233 | Login rejects an invalid password | API | Playwright-API | P1 |
 | TC-234 | `GET /api/auth/me` returns the logged-in user | API | Playwright-API | P1 |
@@ -197,5 +198,12 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-309 | Malformed JSON in a product field returns 400 | API | Playwright-API | P2 |
 | TC-310 | Empty strings for number fields are never turned into 0 | API | Playwright-API | P2 |
 | TC-311 | Leading and trailing spaces are trimmed before saving | API | Playwright-API | P2 |
+
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | Integration | Vitest (integration) | P1 |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | Integration | Vitest (integration) | P0 |
 
 Full detail: **`docs/test-strategies/test-strategy.md`** · Mobile phases: **`test-strategy-mobile.md`**

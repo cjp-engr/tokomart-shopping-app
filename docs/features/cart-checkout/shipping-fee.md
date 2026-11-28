@@ -81,7 +81,7 @@ total          = afterDiscounts + tax + shipping
 3. **Fees have no upper limit.** Negative fees, unknown delivery options and empty or non-numeric amounts are rejected, but a very large fee is accepted. The database schema itself does not require the settings, so a product written outside the API (a script, the seed) can still lack them.
 4. **Three copies of the rule.** The backend (`computeSellerTotals`), the web helper and the mobile helper each implement it and each hold the 9.99 constant. Change all three together.
 5. **The carts differ before a choice is made.** For a `buyer_pays` seller the web cart shows "Select option above" until a fee is known; the mobile cart adds nothing for that seller until an option is selected.
-6. **Stale domain doc.** `.claude/skills/tokomart-domain/business-rules.md` §4 still describes the old "$9.99 under $50, free at $50 or more" default.
+6. **Old domain doc removed.** The skill file `business-rules.md` described the old "$9.99 under $50, free at $50 or more" default. It was deleted on 2026-11-28; the current rule is REQ-PRC-05 in the `tokomart-requirements` skill.
 
 ## Code, tests and scenarios
 
