@@ -217,4 +217,65 @@ describe('createOrders refusals change nothing (REQ-ORD-03, REQ-INV-02; replica 
       await expect(place([{ productId: product._id.toString(), quantity: 2 }], {})).rejects.toMatchObject({ name: 'ValidationError' });
     });
   });
+
+  // The stock check reads the product first and the decrement happens later, so buyers racing for the last units
+  // all pass the check. The decrement itself must refuse to go below zero (Open question 18).
+  describe('buyers racing for the last units never oversell', () => {
+    const racers = (n: number, productId: string, variantId?: string) => Promise.allSettled(
+      Array.from({ length: n }, () => createOrders({
+        userId: new mongoose.Types.ObjectId().toString(),
+        items: [{ productId, variantId, quantity: 1 }],
+        shippingAddress: address,
+        paymentMethod: cod,
+      })),
+    );
+
+    it('lets exactly as many buyers through as there is stock, and the rest get 400 Insufficient stock', async () => {
+      const product = await makeProduct({ stock: 2, soldCount: 0 });
+
+      const results = await racers(6, product._id.toString());
+
+      expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(2);
+      const refused = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      expect(refused).toHaveLength(4);
+      for (const r of refused) expect(r.reason).toMatchObject({ statusCode: 400, message: 'Insufficient stock for: Item' });
+      const stored = await Product.findById(product._id).lean();
+      expect(stored).toMatchObject({ stock: 0, soldCount: 2 });
+      expect(await Order.countDocuments()).toBe(2);
+    });
+
+    it('does the same for the stock of a variant', async () => {
+      const product = await makeVariantProduct(2);
+      const variantId = String((product.variants as unknown as Array<{ _id: mongoose.Types.ObjectId }>)[0]._id);
+
+      const results = await racers(6, product._id.toString(), variantId);
+
+      expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(2);
+      for (const r of results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')) {
+        expect(r.reason).toMatchObject({ statusCode: 400, message: 'Insufficient stock for variant of: Shirt' });
+      }
+      const stored = await Product.findById(product._id).lean();
+      expect(stored!.variants!.map(v => v.stock)).toEqual([0]);
+      expect(stored!.soldCount).toBe(2);
+      expect(await Order.countDocuments()).toBe(2);
+    });
+
+    it('gives back the first line when the second line sells out under the buyer', async () => {
+      const scarce = await makeProduct({ stock: 2, soldCount: 0 });
+      const plenty = await makeProduct({ stock: 10, soldCount: 0 });
+
+      const results = await Promise.allSettled(Array.from({ length: 5 }, () => createOrders({
+        userId: new mongoose.Types.ObjectId().toString(),
+        items: [{ productId: plenty._id.toString(), quantity: 1 }, { productId: scarce._id.toString(), quantity: 1 }],
+        shippingAddress: address,
+        paymentMethod: cod,
+      })));
+
+      expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(2);
+      expect(await Product.findById(scarce._id).lean()).toMatchObject({ stock: 0, soldCount: 2 });
+      // The three refused buyers must not keep the unit of the plentiful product they took first.
+      expect(await Product.findById(plenty._id).lean()).toMatchObject({ stock: 8, soldCount: 2 });
+      expect(await Order.countDocuments()).toBe(2);
+    });
+  });
 });

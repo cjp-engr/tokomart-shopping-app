@@ -629,7 +629,7 @@ Rules or behaviours with no assigned or verified test. "Harness exists" means th
 | Buyer cancel route answers `409 cancellation_conflict`, and the legacy flow says "only pending" | §12 Cancellations | Integration | **Closed 2026-11-28**: `controllers/__tests__/orderController.cancel.integration.test.ts` |
 | Web buyer cancel button and the seller Return/Refund tab | §12 / §13 | Component | No component test found |
 | Requirements with no scenario: REQ-CAN-04, REQ-REF-02, REQ-REF-04, REQ-ORD-13, REQ-ORD-14 | `requirements-trace.md` | Scenario first | Run `/create-scenarios` for them, then assign a layer |
-| A COD order takes stock before `Order.create`; the stock decrement has no `stock >= quantity` guard | `tokomart-requirements` Open question 18 | Integration | The refused-order case is fixed and tested (2026-11-28, compensation in `createOrders`); the race for the last unit is open and has no test |
+| A COD order takes stock before `Order.create`, outside a transaction | `tokomart-requirements` Open question 18 | Integration | The refused-order case and the race for the last unit are fixed and tested (2026-11-28: compensation and a guarded decrement in `createOrders`). A crash between the steps can still leave stock taken; making the order atomic needs a replica set (owner decision) |
 
 Closed since the last version: pure 8% tax and pricing math (candidate `checkoutPricing.test.ts`), auto-complete shipped→delivered (candidates `jobs/__tests__/autoCompleteOrders.test.ts`, `orderDelivery.integration.test.ts`), and the "no unit or component harness" blocker. Closed 2026-11-28: no integration test for order creation, order history or reviews, and no unit test for the auth and order validators (see item 45a for the files).
 

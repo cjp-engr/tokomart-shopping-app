@@ -213,15 +213,19 @@ export async function createOrders(params: CreateOrderParams) {
       reservations.push(reservation);
       const deductions = await Promise.allSettled(
         groupItems.map(async ({ productDoc, variantId, quantity }) => {
-          if (variantId) {
-            await Product.findOneAndUpdate(
-              { _id: productDoc._id, 'variants._id': variantId },
+          // The filter holds the stock check again, so the decrement and the check are one atomic step:
+          // buyers racing for the last units all pass the earlier read, and all but the winners match nothing here.
+          const taken = variantId
+            ? await Product.findOneAndUpdate(
+              { _id: productDoc._id, variants: { $elemMatch: { _id: variantId, stock: { $gte: quantity } } } },
               { $inc: { 'variants.$.stock': -quantity, soldCount: quantity } },
+            )
+            : await Product.findOneAndUpdate(
+              { _id: productDoc._id, stock: { $gte: quantity } },
+              { $inc: { stock: -quantity, soldCount: quantity } },
             );
-          } else {
-            await Product.findByIdAndUpdate(productDoc._id, {
-              $inc: { stock: -quantity, soldCount: quantity },
-            });
+          if (!taken) {
+            throw new AppError(400, variantId ? `Insufficient stock for variant of: ${productDoc.name}` : `Insufficient stock for: ${productDoc.name}`);
           }
           reservation.lines.push({ productId: productDoc._id, variantId, quantity });
         }),
