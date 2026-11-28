@@ -133,6 +133,11 @@ export class CheckoutPage {
 
   /** Use when buyer should pay with COD or enter a new card. */
   async selectPaymentMethod(method: string): Promise<void> {
+    // Cash on Delivery is its own option beside Saved Card and New Card; the type dropdown only lists card types.
+    if (method === 'cash-on-delivery') {
+      await this.paymentSection.getByTestId('payment-option-cod').click();
+      return;
+    }
     await this.chooseNewCardIfOffered();
     await this.paymentSection.locator('select[name="type"]').selectOption(method);
   }

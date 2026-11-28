@@ -782,7 +782,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - *Updated 2026-10-24:* no Stripe call is made (the test asserts only that the order has no payment intent, not that no Stripe request is made; see TC-153, TC-159 for COD cancellation)
 
 **Business Rule**: §4 Payment methods, §4 Post-checkout  
-**Selectors/API**: `checkout-page`, `shipping-section`, `payment-section`, `place-order-btn`, `orders-page`, `order-card-{id}`, `POST /api/orders`  
+**Selectors/API**: `checkout-page`, `shipping-section`, `payment-section`, `payment-option-cod`, `place-order-btn`, `orders-page`, `order-card-{id}`, `POST /api/orders`  
 **Suggested Layer**: E2E Web  
 
 ---
@@ -889,7 +889,7 @@ Tracking fields follow [the master index conventions](test-scenarios.md#how-to-t
 - Cart cleared for checked-out items; order status `pending`, payment COD
 
 **Business Rule**: §2 Variant pricing, §4 Checkout, §4 Stock validation (variant-aware)  
-**Selectors/API**: `variant-value-{attr}-{value}`, `add-to-cart-btn`, `cart-page`, `checkout-page`, `place-order-btn`, `order-detail-page`, `GET /api/orders/:id`, `GET /api/products/:id`  
+**Selectors/API**: `variant-value-{attr}-{value}`, `add-to-cart-btn`, `cart-page`, `checkout-page`, `payment-option-cod`, `place-order-btn`, `order-detail-page`, `GET /api/orders/:id`, `GET /api/products/:id`  
 **Suggested Layer**: E2E Web  
 
 ---
