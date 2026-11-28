@@ -199,4 +199,11 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-310 | Empty strings for number fields are never turned into 0 | API | Playwright-API | P2 |
 | TC-311 | Leading and trailing spaces are trimmed before saving | API | Playwright-API | P2 |
 
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | Integration | Vitest (integration) | P1 |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | Integration | Vitest (integration) | P0 |
+
 Full detail: **`docs/test-strategies/test-strategy.md`** · Mobile phases: **`test-strategy-mobile.md`**

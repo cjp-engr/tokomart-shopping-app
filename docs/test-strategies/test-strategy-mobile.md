@@ -2,7 +2,7 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Mobile (79 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
+**Platform filter:** Mobile (81 scenarios in `docs/test-cases/test-scenarios-mobile.md`)  
 **Updated:** 2026-10-24; TC-401 added 2026-11-08  
 **Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
@@ -216,5 +216,12 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-622 | Scrolling to the bottom loads more products | E2E | Patrol | P1 |
 | TC-623 | Loading spinner visible while fetching more products | E2E | Patrol | P1 |
 | TC-624 | No further fetch when all products are loaded | E2E | Patrol | P1 |
+
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-502 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then (mobile) | Component | flutter_test (widget) | P2 |
+| TC-504 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy (mobile) | Component | flutter_test (widget) | P2 |
 
 Full master strategy: **`docs/test-strategies/test-strategy.md`**

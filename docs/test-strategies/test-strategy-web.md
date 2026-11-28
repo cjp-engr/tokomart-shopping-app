@@ -2,7 +2,7 @@
 
 *Filtered view of `docs/test-strategies/test-strategy.md` — do not edit independently.*
 
-**Platform filter:** Web scenarios (`test-scenarios-web.md`, 110) · API scenarios (`test-scenarios-api.md`, 150) are listed in the shared-API section below  
+**Platform filter:** Web scenarios (`test-scenarios-web.md`, 112) · API scenarios (`test-scenarios-api.md`, 155) are listed in the shared-API section below  
 **Updated:** 2026-11-05. Mobile assignments are in `test-strategy-mobile.md`. The old assignment table below still lists some API rows under "Web"; the master uses the scenario files' platform tags.  
 **Layers updated 2026-11-28** from the shift-left reviews of checkout, cancellations and refunds. The reasons for each change are in the master (`test-strategy.md`, §6a). `Trim` means the test is covered elsewhere and the owner removes it.
 
@@ -320,5 +320,17 @@ These API scenarios are implemented once and used by web and mobile. Integration
 | TC-232 | Login returns a token for valid credentials | API | Playwright-API | P0 |
 | TC-233 | Login rejects an invalid password | API | Playwright-API | P1 |
 | TC-234 | `GET /api/auth/me` returns the logged-in user | API | Playwright-API | P1 |
+
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | Integration | Vitest (integration) | P1 |
+| TC-313 | A delivered Cash on Delivery order cannot be refunded in the app | Multi | Vitest (integration) + Playwright-API (1 smoke) | P1 |
+| TC-314 | A refund for chosen units follows the order's own allocation of price, discount and tax | Integration | Vitest (integration) | P0 |
+| TC-315 | A unit already requested or refunded cannot be requested again, and the refunds never exceed the payment | Integration | Vitest (integration) | P1 |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | Integration | Vitest (integration) | P0 |
+| TC-501 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then | Multi | Vitest (component) + Playwright (1 check) | P2 |
+| TC-503 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy | Component | Vitest (component) | P2 |
 
 Full rationale and implementation order: **`docs/test-strategies/test-strategy.md`**

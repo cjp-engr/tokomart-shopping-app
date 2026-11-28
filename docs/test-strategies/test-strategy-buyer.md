@@ -256,4 +256,18 @@ Layers, sources, rationale and existing-coverage candidates for every row are in
 | TC-623 | Loading spinner visible while fetching more products | E2E | Patrol | P1 |
 | TC-624 | No further fetch when all products are loaded | E2E | Patrol | P1 |
 
+### Added 2026-11-28
+
+| ID | Scenario | Final layer | Tool | Priority |
+|----|----------|-------------|------|----------|
+| TC-312 | Cancelling an order gives back stock, sold count and coupon use, once | Integration | Vitest (integration) | P1 |
+| TC-313 | A delivered Cash on Delivery order cannot be refunded in the app | Multi | Vitest (integration) + Playwright-API (1 smoke) | P1 |
+| TC-314 | A refund for chosen units follows the order's own allocation of price, discount and tax | Integration | Vitest (integration) | P0 |
+| TC-315 | A unit already requested or refunded cannot be requested again, and the refunds never exceed the payment | Integration | Vitest (integration) | P1 |
+| TC-316 | A card order that is cancelled or expires never leaves a charge | Integration | Vitest (integration) | P0 |
+| TC-501 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then | Multi | Vitest (component) + Playwright (1 check) | P2 |
+| TC-502 | The "Inspect before you pay" note shows under Cash on Delivery at checkout, and only then (mobile) | Component | flutter_test (widget) | P2 |
+| TC-503 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy | Component | Vitest (component) | P2 |
+| TC-504 | A delivered Cash on Delivery order shows the "Inspect before you pay" note instead of the refund policy (mobile) | Component | flutter_test (widget) | P2 |
+
 Full detail: **`docs/test-strategies/test-strategy.md`** · Mobile phases: **`test-strategy-mobile.md`**
